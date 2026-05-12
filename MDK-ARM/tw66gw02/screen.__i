@@ -1,0 +1,5 @@
+--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ..\MDK-ARM
+-I.\RTE\_TEST2
+-ID:\Keil\ARM\CMSIS\5.9.0\CMSIS\Core\Include
+-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8
+-o test2\screen.o --omf_browse test2\screen.crf --depend test2\screen.d "screen.c"
