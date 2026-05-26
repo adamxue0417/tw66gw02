@@ -1,3 +1,12 @@
+/**
+  ******************************************************************************
+  * @file    wireless.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Wireless protocol receive, parse, dispatch and reply module.
+  ******************************************************************************
+  */
 #include "config.h"
 
 /*
@@ -6,29 +15,17 @@
  * Frame: [0]=0xFE, [1]=CMD, [...payload...], [last]=0xFF
  */
 
-#define WL_HEAD                     0xFEu
-#define WL_TAIL                     0xFFu
-#define WL_TX_MAX                   64u
 
-#define WL_CMD_POWER                0x01u
-#define WL_CMD_TEMP_UP              0x03u
-#define WL_CMD_TEMP_DOWN            0x04u
-#define WL_CMD_SET_TEMP             0x05u
-#define WL_CMD_JUMP_SET             0x06u
-#define WL_CMD_QUERY_PROBE          0x07u
-#define WL_CMD_UNIT                 0x09u
-#define WL_CMD_QUERY_STATUS         0x0Bu
-#define WL_CMD_QUERY_SET_ALL        0x0Du
-#define WL_CMD_QUERY_ACT_ALL        0x0Eu
-#define WL_CMD_BT_STATUS            0x24u
-#define WL_CMD_FW_INFO              0x5Fu
-
-#define WL_TEMP_MIN                 175u
-#define WL_TEMP_MAX                 455u
 
 static uint8_t s_tx[WL_TX_MAX];
 static uint8_t s_bt_status = 0u;
-
+/**
+  * @function wl_get_probe_temp()
+  * -------------------
+  * @brief    Get the current probe temperature for wireless reporting.
+  * @param    None
+  * @note     None
+  */
 static uint16_t wl_get_probe_temp(void)
 {
     if (g_probe_connected == 0u) {
@@ -37,13 +34,30 @@ static uint16_t wl_get_probe_temp(void)
     return system_data.pt1000_temp[3];
 }
 
+static uint8_t wl_is_special_temp(uint16_t t)
+{
+    return ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) ? 1u : 0u;
+}
+/**
+  * @function wl_get_temp_by_channel()
+  * ------------------------
+  * @brief    Get a temperature value by wireless protocol channel.
+  * @param    ch - input parameter
+  * @note     None
+  */
 static uint16_t wl_get_temp_by_channel(uint8_t ch)
 {
-    if (ch == 0x01u) { return system_data.pt1000_temp[3]; } /* probe1 in legacy protocol */
+    if (ch == 0x01u) { return wl_get_probe_temp(); }        /* probe1 in legacy protocol */
     if (ch == 0x02u) { return HaveTempErr; }                /* probe2 unsupported */
     return HaveTempErr;
 }
-
+/**
+  * @function wl_get_display_main_temp()
+  * --------------------------
+  * @brief    Get the main display temperature for wireless reporting.
+  * @param    None
+  * @note     None
+  */
 static uint16_t wl_get_display_main_temp(void)
 {
     if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return system_data.pt1000_temp[1]; }
@@ -52,7 +66,16 @@ static uint16_t wl_get_display_main_temp(void)
     if (DisplayMode == DISPLAY_MODE_PROBE)     { return wl_get_probe_temp(); }
     return system_data.pt1000_temp[0];
 }
-
+/**
+  * @function wl_split3()
+  * ------------
+  * @brief    Split a temperature value into three display digits.
+  * @param    v - input parameter
+  * @param    h - input parameter
+  * @param    t - input parameter
+  * @param    l - input parameter
+  * @note     None
+  */
 static void wl_split3(uint16_t v, uint8_t *h, uint8_t *t, uint8_t *l)
 {
     if (v > 999u) { v = 999u; }
@@ -60,7 +83,14 @@ static void wl_split3(uint16_t v, uint8_t *h, uint8_t *t, uint8_t *l)
     *t = (uint8_t)((v / 10u) % 10u);
     *l = (uint8_t)(v % 10u);
 }
-
+/**
+  * @function wl_send()
+  * ------------
+  * @brief    Send one wireless protocol frame.
+  * @param    buf - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_send(const uint8_t *buf, uint16_t len)
 {
     if ((buf == NULL) || (len == 0u)) {
@@ -68,7 +98,14 @@ static void wl_send(const uint8_t *buf, uint16_t len)
     }
     USART1_SendData((uint8_t *)buf, len);
 }
-
+/**
+  * @function wl_ack_cmd2()
+  * -------------
+  * @brief    Reply to a two-byte wireless command acknowledgement.
+  * @param    cmd - input parameter
+  * @param    p2 - input parameter
+  * @note     None
+  */
 static void wl_ack_cmd2(uint8_t cmd, uint8_t p2)
 {
     s_tx[0] = WL_HEAD;
@@ -77,7 +114,14 @@ static void wl_ack_cmd2(uint8_t cmd, uint8_t p2)
     s_tx[3] = WL_TAIL;
     wl_send(s_tx, 4u);
 }
-
+/**
+  * @function wl_handle_power()
+  * -----------------
+  * @brief    Handle wireless power command.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_power(const uint8_t *rx, uint16_t len)
 {
     (void)len;
@@ -89,7 +133,14 @@ static void wl_handle_power(const uint8_t *rx, uint16_t len)
     UI_NotifyLocalInteraction();
     wl_ack_cmd2(WL_CMD_POWER, rx[2]);
 }
-
+/**
+  * @function wl_handle_temp_up()
+  * -------------------
+  * @brief    Handle wireless temperature increment command.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_temp_up(const uint8_t *rx, uint16_t len)
 {
     uint16_t step;
@@ -109,7 +160,14 @@ static void wl_handle_temp_up(const uint8_t *rx, uint16_t len)
     s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
     wl_send(s_tx, 7u);
 }
-
+/**
+  * @function wl_handle_temp_down()
+  * ---------------------
+  * @brief    Handle wireless temperature decrement command.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_temp_down(const uint8_t *rx, uint16_t len)
 {
     uint16_t step;
@@ -130,7 +188,14 @@ static void wl_handle_temp_down(const uint8_t *rx, uint16_t len)
     s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
     wl_send(s_tx, 7u);
 }
-
+/**
+  * @function wl_handle_set_temp()
+  * --------------------
+  * @brief    Handle wireless set-temperature command.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_set_temp(const uint8_t *rx, uint16_t len)
 {
     uint16_t v;
@@ -150,7 +215,14 @@ static void wl_handle_set_temp(const uint8_t *rx, uint16_t len)
     s_tx[2] = rx[2]; s_tx[3] = rx[3]; s_tx[4] = rx[4]; s_tx[5] = rx[5]; s_tx[6] = WL_TAIL;
     wl_send(s_tx, 7u);
 }
-
+/**
+  * @function wl_handle_jump_set()
+  * --------------------
+  * @brief    Handle wireless jump-to-set command.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_jump_set(const uint8_t *rx, uint16_t len)
 {
     uint8_t h, t, l;
@@ -161,7 +233,14 @@ static void wl_handle_jump_set(const uint8_t *rx, uint16_t len)
     s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
     wl_send(s_tx, 7u);
 }
-
+/**
+  * @function wl_handle_query_probe()
+  * -----------------------
+  * @brief    Handle wireless probe temperature query.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_query_probe(const uint8_t *rx, uint16_t len)
 {
     uint16_t p;
@@ -169,7 +248,7 @@ static void wl_handle_query_probe(const uint8_t *rx, uint16_t len)
     (void)len;
 
     p = wl_get_temp_by_channel(rx[2]);
-    if (p == HaveTempErr) { h = 0x09u; t = 0x06u; l = 0x00u; }
+    if (wl_is_special_temp(p) != 0u) { h = 0x09u; t = 0x06u; l = 0x00u; }
     else { wl_split3(p, &h, &t, &l); }
 
     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_PROBE; s_tx[2] = rx[2];
@@ -177,7 +256,14 @@ static void wl_handle_query_probe(const uint8_t *rx, uint16_t len)
     s_tx[6] = h; s_tx[7] = t; s_tx[8] = l; s_tx[9] = WL_TAIL;
     wl_send(s_tx, 10u);
 }
-
+/**
+  * @function wl_handle_unit()
+  * ----------------
+  * @brief    Handle wireless unit switch command.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_unit(const uint8_t *rx, uint16_t len)
 {
     (void)len;
@@ -186,7 +272,14 @@ static void wl_handle_unit(const uint8_t *rx, uint16_t len)
     UI_NotifyLocalInteraction();
     wl_ack_cmd2(WL_CMD_UNIT, rx[2]);
 }
-
+/**
+  * @function wl_handle_query_status()
+  * ------------------------
+  * @brief    Handle wireless status query command.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_query_status(const uint8_t *rx, uint16_t len)
 {
     uint16_t in_t;
@@ -213,8 +306,9 @@ static void wl_handle_query_status(const uint8_t *rx, uint16_t len)
     s_tx[2] = 0x01u;
     s_tx[3] = (system_data.units == unitF) ? 0x01u : 0x02u;
     s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u;
-    wl_split3(in_t, &h, &t, &l); s_tx[8] = h; s_tx[9] = t; s_tx[10] = l;
-    if (p1 == HaveTempErr) { s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u; s_tx[14] = 0x02u; }
+    if (wl_is_special_temp(in_t) != 0u) { s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u; }
+    else { wl_split3(in_t, &h, &t, &l); s_tx[8] = h; s_tx[9] = t; s_tx[10] = l; }
+    if (wl_is_special_temp(p1) != 0u) { s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u; s_tx[14] = 0x02u; }
     else { wl_split3(p1, &h, &t, &l); s_tx[11] = h; s_tx[12] = t; s_tx[13] = l; s_tx[14] = 0x00u; }
     s_tx[15] = WL_TAIL;
     wl_send(s_tx, 16u);
@@ -227,7 +321,14 @@ static void wl_handle_query_status(const uint8_t *rx, uint16_t len)
     s_tx[15] = WL_TAIL;
     wl_send(s_tx, 16u);
 }
-
+/**
+  * @function wl_handle_query_set_all()
+  * -------------------------
+  * @brief    Handle wireless query of all set temperatures.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_query_set_all(const uint8_t *rx, uint16_t len)
 {
     uint8_t h, t, l;
@@ -240,7 +341,14 @@ static void wl_handle_query_set_all(const uint8_t *rx, uint16_t len)
     s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; s_tx[23] = WL_TAIL;
     wl_send(s_tx, 24u);
 }
-
+/**
+  * @function wl_handle_query_act_all()
+  * -------------------------
+  * @brief    Handle wireless query of all actual temperatures.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_query_act_all(const uint8_t *rx, uint16_t len)
 {
     uint16_t in_t, p1;
@@ -252,18 +360,26 @@ static void wl_handle_query_act_all(const uint8_t *rx, uint16_t len)
     p1 = wl_get_probe_temp();
 
     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_ACT_ALL;
-    if (p1 == HaveTempErr) { s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; }
+    if (wl_is_special_temp(p1) != 0u) { s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; }
     else { wl_split3(p1, &h, &t, &l); s_tx[2] = h; s_tx[3] = t; s_tx[4] = l; }
     s_tx[5] = 0x09u; s_tx[6] = 0x06u; s_tx[7] = 0x00u;
     s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u;
     s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u;
     s_tx[14] = 0x09u; s_tx[15] = 0x06u; s_tx[16] = 0x00u;
     s_tx[17] = 0x09u; s_tx[18] = 0x06u; s_tx[19] = 0x00u;
-    wl_split3(in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l;
+    if (wl_is_special_temp(in_t) != 0u) { s_tx[20] = 0x09u; s_tx[21] = 0x06u; s_tx[22] = 0x00u; }
+    else { wl_split3(in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; }
     s_tx[23] = WL_TAIL;
     wl_send(s_tx, 24u);
 }
-
+/**
+  * @function wl_handle_fw_info()
+  * -------------------
+  * @brief    Handle wireless firmware information query.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_handle_fw_info(const uint8_t *rx, uint16_t len)
 {
     (void)len;
@@ -279,7 +395,14 @@ static void wl_handle_fw_info(const uint8_t *rx, uint16_t len)
     s_tx[20] = WL_TAIL;
     wl_send(s_tx, 21u);
 }
-
+/**
+  * @function wl_dispatch()
+  * -------------
+  * @brief    Dispatch a received wireless command frame.
+  * @param    rx - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 static void wl_dispatch(const uint8_t *rx, uint16_t len)
 {
     switch (rx[1])
@@ -306,7 +429,13 @@ static void wl_dispatch(const uint8_t *rx, uint16_t len)
         default:                   wl_ack_cmd2(rx[1], rx[2]); break;
     }
 }
-
+/**
+  * @function Wireless_Init()
+  * ---------------
+  * @brief    Initialize wireless module state.
+  * @param    None
+  * @note     None
+  */
 void Wireless_Init(void)
 {
     COM1.rxFlag = 0u;
@@ -314,7 +443,13 @@ void Wireless_Init(void)
     s_bt_status = 0u;
 	
 }
-
+/**
+  * @function WirelessTask()
+  * --------------
+  * @brief    Run the wireless receive and dispatch task.
+  * @param    None
+  * @note     None
+  */
 void WirelessTask(void)
 {
     uint16_t len;

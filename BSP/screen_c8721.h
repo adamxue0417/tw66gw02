@@ -1,3 +1,12 @@
+/**
+  ******************************************************************************
+  * @file    screen_c8721.h
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   C8721 screen mapping and display interface definitions.
+  ******************************************************************************
+  */
 #ifndef __SCREEN_C8721_H__
 #define __SCREEN_C8721_H__
 
@@ -89,7 +98,6 @@ typedef union
 
 extern _screen_data Screen_Data;
 
-// 在某个公共头文件或本文件顶部定义
 typedef enum {
     DISPLAY_MODE_D_SURFACE,   // 0
     DISPLAY_MODE_O_SURFACE,   // 1

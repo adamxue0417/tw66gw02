@@ -4,8 +4,7 @@
   * @author 
   * @version V1.0
   * @date
-  * @brief   Command and communication driver level with C8721. 
-  *          Functional configuration and low level display function.
+  * @brief   Command and communication driver level with C8721.
   ******************************************************************************
   */
 #include "C8721.h"
@@ -26,7 +25,13 @@ const uint8 BreathGamma[64] = { 0  ,1  ,2  ,3  ,4  ,5  ,6  ,7  ,
                                 114,119,124,129,134,140,146,152,
                                 158,164,170,176,182,188,195,202,
                                 209,216,223,230,237,244,251,255 };
-
+/**
+  * @function CF_TimeDlyUs()
+  * --------------
+  * @brief    Provide a short delay for C8721 serial timing.
+  * @param    None
+  * @note     None
+  */
 void		CF_TimeDlyUs(void)
 {
 	 uint16_t i=0;
@@ -115,9 +120,9 @@ static void CF_SendByte(uint8 sdata)
 }
 
 /**
-  * @function CF_SendCLK()
-  * ----------------------
-  * @brief    Sending one CLK.
+  * @function CF_SendSCK()
+  * ------------
+  * @brief    CF_SendSCK function.
   * @param    None
   * @note     None
   */
@@ -332,7 +337,13 @@ void CF_DisplayBufAutomatic(void)
     CF_SendCommandPackage(CmdDataUpdate); 
     CF_SendSCK();
 }
-
+/**
+  * @function CF_DisplaySegment()
+  * -------------------
+  * @brief    CF_DisplaySegment function.
+  * @param    step - input parameter
+  * @note     None
+  */
 
 void  CF_DisplaySegment(uint8_t step)
 {

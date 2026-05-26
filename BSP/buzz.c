@@ -1,23 +1,21 @@
-#include "config.h"
 /**
- * @file    buzz.c
- * @brief   蜂鸣器驱动文件
- * @author  niu
- * @date    2026.02.21
- * @version 1.0
- * 
- * 详细描述:该文件实现了蜂鸣器功能模块，可以控制蜂鸣器的开启和关闭。对蜂鸣器的控制接口为GPIO口，
-   通过控制GPIO口的高低电平，输出控制蜂鸣器的开启及关闭。对应硬件标准库中电路编码C01电路。
- */
+  ******************************************************************************
+  * @file    buzz.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Buzzer driver implementation.
+  ******************************************************************************
+  */
+#include "config.h"
 /***************************************************************************************************************************************************************/ 
 /**
- * @brief   buzzer函数功能简述
- * @param   buzzer_control     蜂鸣器的开启和关闭 :0 关闭蜂鸣器  1 开启蜂鸣器  
- * @return  none
- * @note    none
- * 
- * 详细说明：此函数通过传入形式参数，来控制蜂鸣器的开启和关闭，常常应用于系统声音报警，设定时间到提示，按钮触摸音。
- */
+  * @function buzzer()
+  * ------------
+  * @brief    Control buzzer output timing.
+  * @param    buzzer_control - input parameter
+  * @note     None
+  */
 void buzzer(uint8_t buzzer_control)
 {
        if(buzzer_control){buzzer_on_gpio;}

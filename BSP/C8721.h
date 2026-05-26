@@ -1,4 +1,12 @@
-
+/**
+  ******************************************************************************
+  * @file    C8721.h
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   C8721 command, display buffer and driver interface definitions.
+  ******************************************************************************
+  */
 /* Define to prevent recursive inclusion --------------------------------------*/
 #ifndef __C8721_H__
 #define __C8721_H__

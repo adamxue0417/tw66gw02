@@ -1,9 +1,24 @@
+/**
+  ******************************************************************************
+  * @file    gagent_md5.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   GAgent MD5 algorithm implementation.
+  ******************************************************************************
+  */
 #include "config.h"
 unsigned char PADDING[] = { 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
+/**
+  * @function GAgent_MD5Init()
+  * ----------------
+  * @brief    Initialize an MD5 context.
+  * @param    context - input parameter
+  * @note     None
+  */
 void GAgent_MD5Init(MD5_CTX *context)
 {
 	context->count[0] = 0;
@@ -13,7 +28,15 @@ void GAgent_MD5Init(MD5_CTX *context)
 	context->state[2] = 0x98BADCFE;
 	context->state[3] = 0x10325476;
 }
-
+/**
+  * @function GAgent_MD5Update()
+  * ------------------
+  * @brief    Update the MD5 context with input data.
+  * @param    context - input parameter
+  * @param    input - input parameter
+  * @param    inputlen - input parameter
+  * @note     None
+  */
 void GAgent_MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen)
 {
 	unsigned int i = 0, index = 0, partlen = 0;
@@ -38,6 +61,14 @@ void GAgent_MD5Update(MD5_CTX *context, unsigned char *input, unsigned int input
 	}
 	memcpy(&context->buffer[index], &input[i], inputlen - i);
 }
+/**
+  * @function GAgent_MD5Final()
+  * -----------------
+  * @brief    Finalize MD5 calculation and output digest.
+  * @param    context - input parameter
+  * @param    digest - input parameter
+  * @note     None
+  */
 void GAgent_MD5Final(MD5_CTX *context, unsigned char digest[16])
 {
 	unsigned int index = 0, padlen = 0;
@@ -49,7 +80,15 @@ void GAgent_MD5Final(MD5_CTX *context, unsigned char digest[16])
 	GAgent_MD5Update(context, bits, 8);
 	GAgent_MD5Encode(digest, context->state, 16);
 }
-
+/**
+  * @function GAgent_MD5Encode()
+  * ------------------
+  * @brief    Encode 32-bit words into little-endian bytes.
+  * @param    output - input parameter
+  * @param    input - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 void GAgent_MD5Encode(unsigned char *output, unsigned int *input, unsigned int len)
 {
 	unsigned int i = 0, j = 0;
@@ -63,7 +102,15 @@ void GAgent_MD5Encode(unsigned char *output, unsigned int *input, unsigned int l
 		j += 4;
 	}
 }
-
+/**
+  * @function GAgent_MD5Decode()
+  * ------------------
+  * @brief    Decode little-endian bytes into 32-bit words.
+  * @param    output - input parameter
+  * @param    input - input parameter
+  * @param    len - input parameter
+  * @note     None
+  */
 void GAgent_MD5Decode(unsigned int *output, unsigned char *input, unsigned int len)
 {
 	unsigned int i = 0, j = 0;
@@ -77,7 +124,14 @@ void GAgent_MD5Decode(unsigned int *output, unsigned char *input, unsigned int l
 		j += 4;
 	}
 }
-
+/**
+  * @function GAgent_MD5Transform()
+  * ---------------------
+  * @brief    Transform one 64-byte MD5 block.
+  * @param    state - input parameter
+  * @param    block - input parameter
+  * @note     None
+  */
 void GAgent_MD5Transform(unsigned int state[4], unsigned char block[64])
 {
 	unsigned int a = state[0];

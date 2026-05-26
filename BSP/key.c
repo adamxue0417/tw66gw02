@@ -1,10 +1,30 @@
+/**
+  ******************************************************************************
+  * @file    key.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Key scan, key event dispatch and key action implementation.
+  ******************************************************************************
+  */
 #include "config.h"
 
 _KeyState KeyState[KeyNumber];
-
+/**
+  * @function ConvertTempToUnit()
+  * -------------------
+  * @brief    Convert a temperature value between Celsius and Fahrenheit units.
+  * @param    value - input parameter
+  * @param    toUnit - input parameter
+  * @note     None
+  */
 static int16_t ConvertTempToUnit(int16_t value, uint8_t toUnit)
 {
     int32_t t = (int32_t)value;
+
+    if ((value == HaveTempErr) || (value == TempDisconnected) || (value == TempHigh) || (value == TempLow)) {
+        return value;
+    }
 
     if (toUnit == unitF) {
         t = (t * 9) / 5 + 32;
@@ -16,7 +36,13 @@ static int16_t ConvertTempToUnit(int16_t value, uint8_t toUnit)
     if (t < -200) { t = -200; }
     return (int16_t)t;
 }
-
+/**
+  * @function SyncTempsAfterUnitSwitch()
+  * --------------------------
+  * @brief    Synchronize cached temperatures after a unit switch.
+  * @param    toUnit - input parameter
+  * @note     None
+  */
 static void SyncTempsAfterUnitSwitch(uint8_t toUnit)
 {
     uint8_t i;
@@ -26,16 +52,31 @@ static void SyncTempsAfterUnitSwitch(uint8_t toUnit)
         system_data.pt1000_temp[i] = ConvertTempToUnit(system_data.pt1000_temp[i], toUnit);
     }
 }
-
+/**
+  * @function IsDisplayDashOnlyAlarm()
+  * ------------------------
+  * @brief    Check whether the main display should keep dash-only alarm state.
+  * @param    None
+  * @note     None
+  */
 static uint8_t IsDisplayDashOnlyAlarm(void)
 {
     uint8_t inv0, inv1, inv2;
-    inv0 = (uint8_t)(system_data.pt1000_temp[0] == HaveTempErr);
-    inv1 = (uint8_t)(system_data.pt1000_temp[1] == HaveTempErr);
-    inv2 = (uint8_t)(system_data.pt1000_temp[2] == HaveTempErr);
+    inv0 = (uint8_t)((system_data.pt1000_temp[0] == HaveTempErr) ||
+                     (system_data.pt1000_temp[0] == TempDisconnected));
+    inv1 = (uint8_t)((system_data.pt1000_temp[1] == HaveTempErr) ||
+                     (system_data.pt1000_temp[1] == TempDisconnected));
+    inv2 = (uint8_t)((system_data.pt1000_temp[2] == HaveTempErr) ||
+                     (system_data.pt1000_temp[2] == TempDisconnected));
     return (uint8_t)(inv0 && inv1 && inv2);
 }
-
+/**
+  * @function Key_Scan()
+  * ------------
+  * @brief    Scan keys and update key press states.
+  * @param    None
+  * @note     None
+  */
 void Key_Scan(void)
 {
     static uint16_t time_count[KeyNumber];
@@ -89,7 +130,18 @@ void Key_Scan(void)
         }
     }
 }
-
+/**
+  * @function KeyRespose()
+  * ------------
+  * @brief    Dispatch key events to the configured callback functions.
+  * @param    Key0ShortPress - input parameter
+  * @param    Key1ShortPress - input parameter
+  * @param    Key0LongPress - input parameter
+  * @param    Key1LongPress - input parameter
+  * @param    Key0VeryLongPress - input parameter
+  * @param    Key1VeryLongPress - input parameter
+  * @note     None
+  */
 void KeyRespose(void(*Key0ShortPress)(),
                 void(*Key1ShortPress)(),
                 void(*Key0LongPress)(),
@@ -124,9 +176,21 @@ void KeyRespose(void(*Key0ShortPress)(),
         }
     }
 }
-
+/**
+  * @function Key_Respose_Nothing()
+  * ---------------------
+  * @brief    Provide an empty key response callback.
+  * @param    None
+  * @note     None
+  */
 void Key_Respose_Nothing(void) {}
-
+/**
+  * @function Key0_short_press()
+  * ------------------
+  * @brief    Handle KEY0 short press action.
+  * @param    None
+  * @note     None
+  */
 void Key0_short_press(void)
 {
     switch (work_process)
@@ -140,14 +204,20 @@ void Key0_short_press(void)
             break;
 
         default:
-            if ((IsDisplayDashOnlyAlarm() == 0u) && (g_probe_connected != 0u)) {
+            if (IsDisplayDashOnlyAlarm() == 0u) {
                 UI_CycleDisplayMode();
             }
             UI_NotifyLocalInteraction();
             break;
     }
 }
-
+/**
+  * @function Key1_short_press()
+  * ------------------
+  * @brief    Handle KEY1 short press action.
+  * @param    None
+  * @note     None
+  */
 void Key1_short_press(void)
 {
     switch (work_process)
@@ -157,7 +227,8 @@ void Key1_short_press(void)
             break;
 
         default:
-            if ((IsDisplayDashOnlyAlarm() != 0u) || (UI_GetDisplaySpecial() == 3u)) {
+            if (((IsDisplayDashOnlyAlarm() != 0u) || (UI_GetDisplaySpecial() == 3u)) &&
+                (UI_IsProbeConnected() == 0u)) {
                 UI_NotifyLocalInteraction();
                 break;
             }
@@ -172,14 +243,26 @@ void Key1_short_press(void)
             break;
     }
 }
-
+/**
+  * @function Key0_long_press()
+  * -----------------
+  * @brief    Handle KEY0 long press action.
+  * @param    None
+  * @note     None
+  */
 void Key0_long_press(void)
 {
     /* KEY0 >=1s: force shutdown from any state (no release required). */
     work_process = shutdown;
     UI_NotifyLocalInteraction();
 }
-
+/**
+  * @function Key1_long_press()
+  * -----------------
+  * @brief    Handle KEY1 long press action.
+  * @param    None
+  * @note     None
+  */
 void Key1_long_press(void)
 {
     switch (work_process)
@@ -195,12 +278,24 @@ void Key1_long_press(void)
             break;
     }
 }
-
+/**
+  * @function Key0_very_long_press()
+  * ----------------------
+  * @brief    Handle KEY0 very long press action.
+  * @param    None
+  * @note     None
+  */
 void Key0_very_long_press(void)
 {
     Key0_long_press();
 }
-
+/**
+  * @function Key1_very_long_press()
+  * ----------------------
+  * @brief    Handle KEY1 very long press action.
+  * @param    None
+  * @note     None
+  */
 void Key1_very_long_press(void)
 {
     switch (work_process)

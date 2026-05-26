@@ -1,3 +1,12 @@
+/**
+  ******************************************************************************
+  * @file    temp.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Temperature and battery acquisition implementation.
+  ******************************************************************************
+  */
 #include "config.h"
 #include "temp.h"
 
@@ -14,24 +23,35 @@ static uint8_t s_probe_c_filt_valid = 0u;
 static uint8_t s_probe_hi_latched = 0u;
 static uint8_t s_probe_hi_pending_cnt = 0u;
 static uint8_t s_probe_hi_release_cnt = 0u;
+static uint8_t s_probe_lo_latched = 0u;
+static uint8_t s_probe_lo_pending_cnt = 0u;
+static uint8_t s_probe_lo_release_cnt = 0u;
 static uint16_t s_probe_f_prev = 0u;
 static uint8_t s_probe_f_prev_valid = 0u;
 static uint8_t s_probe_drop_glitch_cnt = 0u;
 static uint8_t s_probe_disconnect_pending_cnt = 0u;
 static uint8_t s_probe_reconnect_pending_cnt = 0u;
 static uint16_t s_probe_temp_hist[10] = {0u};
+static uint8_t s_comm_hi_latched[3] = {0u, 0u, 0u};
+static uint8_t s_comm_hi_pending_cnt[3] = {0u, 0u, 0u};
+static uint8_t s_comm_hi_release_cnt[3] = {0u, 0u, 0u};
+static uint8_t s_comm_lo_latched[3] = {0u, 0u, 0u};
+static uint8_t s_comm_lo_pending_cnt[3] = {0u, 0u, 0u};
+static uint8_t s_comm_lo_release_cnt[3] = {0u, 0u, 0u};
 #define PROBE_TEMP_C_LOW_LIMIT   (-20)
-#define PROBE_TEMP_C_HIGH_LIMIT  (455)
-#define PROBE_TEMP_C_HIGH_RELEASE (445)
+#define PROBE_TEMP_C_HIGH_LIMIT  (500)
+#define PROBE_TEMP_C_HIGH_RELEASE (PROBE_TEMP_C_HIGH_LIMIT)
 #define PROBE_TEMP_HI_CONFIRM_COUNT (3u)
 #define PROBE_TEMP_HI_RELEASE_CONFIRM_COUNT (2u)
+#define PROBE_TEMP_LO_CONFIRM_COUNT (3u)
+#define PROBE_TEMP_LO_RELEASE_CONFIRM_COUNT (2u)
 #define PROBE_DISCONNECT_CONFIRM_COUNT (3u)
 #define PROBE_RECONNECT_CONFIRM_COUNT (2u)
 #define BATTERY_LOW_MV_THRESHOLD   (1100u)
 #define BATTERY_RECOVER_MV_THRESHOLD (1200u)
 #define BATTERY_DEBOUNCE_COUNT     (20u)
 
-/* PT1000 lookup table: -25C..455C, step 5C, value scaled by 10 (10000 = 1000.0 ohm) */
+/* PT1000 lookup table: -25C..500C, step 5C, value scaled by 10 (10000 = 1000.0 ohm) */
 static const uint16_t RTD_TAB_PT1000[] =
 {
     9020,9216,9413,9609,9805,
@@ -44,13 +64,17 @@ static const uint16_t RTD_TAB_PT1000[] =
     21205,21383,21560,21738,21915,22092,22268,22444,22620,22796,
     22971,23146,23321,23495,23670,23844,24017,24191,24364,24536,
     24709,24881,25053,25224,25396,25567,25737,25908,26078,26248,
-    26417,26587
+    26417,26587,26770,26937,27104,27271,27437,27604,27769,27934,
+    28098
 };
 
 /**
- * @brief Initialize ADC channel accumulation context.
- * @details Clears max/min/sum/filtered voltage buffers before a new ADC sampling round.
- */
+  * @function channel_env_init()
+  * ------------------
+  * @brief    Initialize ADC channel accumulation context.
+  * @param    None
+  * @note     None
+  */
 void channel_env_init(void)
 {
     uint8_t i;
@@ -65,9 +89,12 @@ void channel_env_init(void)
 }
 
 /**
- * @brief Acquire filtered ADC values for all local channels.
- * @details Runs ADC calibration, samples multiple frames via DMA, removes max/min, and keeps mean value.
- */
+  * @function Get_Filter_ADC12bitResult()
+  * ---------------------------
+  * @brief    Acquire filtered ADC values for all local channels.
+  * @param    None
+  * @note     None
+  */
 void Get_Filter_ADC12bitResult(void)
 {
     uint16_t i, j;
@@ -99,14 +126,15 @@ void Get_Filter_ADC12bitResult(void)
 }
 
 /**
- * @brief Convert PT1000 resistance to temperature in Celsius.
- * @details Uses binary search on a lookup table (-20C to 455C) and linear interpolation between points.
- * @param fR PT1000 resistance value scaled by 10.
- * @return Temperature in Celsius.
- */
+  * @function PT1000_CalculateTemperature()
+  * -----------------------------
+  * @brief    Convert PT1000 resistance to Celsius temperature.
+  * @param    fR - input parameter
+  * @note     None
+  */
 float PT1000_CalculateTemperature(uint16_t fR)
 {
-    const int16_t temp_min = -20;
+    const int16_t temp_min = -25;
     const int16_t step = 5;
     const uint8_t tab_last = (uint8_t)(sizeof(RTD_TAB_PT1000) / sizeof(RTD_TAB_PT1000[0]) - 1u);
     uint8_t cBottom, cTop, i;
@@ -122,7 +150,7 @@ float PT1000_CalculateTemperature(uint16_t fR)
 
     if (fR > RTD_TAB_PT1000[tab_last])
     {
-        return 455.0f;
+        return 500.0f;
     }
 
     cBottom = 0u;
@@ -157,14 +185,15 @@ float PT1000_CalculateTemperature(uint16_t fR)
 }
 
 /**
- * @brief Convert raw ADC channel reading to probe temperature.
- * @details Translates ADC voltage to PT1000 resistance and returns Fahrenheit, TempErr, or TempHigh sentinel.
- * @param channel ADC channel index, where channel 0 is probe temperature.
- * @return Probe temperature in Fahrenheit or error sentinel.
- */
-uint16_t Temp_Get(uint8_t channel) 
+  * @function Temp_Get()
+  * ------------
+  * @brief    Convert raw ADC reading to probe temperature.
+  * @param    channel - input parameter
+  * @note     None
+  */
+int16_t Temp_Get(uint8_t channel)
 {
-	uint16_t temp;
+	int16_t temp;
 	uint32_t R_Value,vol;
 	vol=(uint32_t)ch_env[channel].vol; 
   
@@ -175,31 +204,32 @@ uint16_t Temp_Get(uint8_t channel)
 	else
 	{
 		R_Value=20000*(uint32_t)vol/(4096-(uint32_t)vol);
-		/* Distinguish unplug/error from over-temperature. */
-		if (R_Value < 9020u)
+		/* Distinguish open/error from out-of-range temperature. */
+		if (R_Value < 9216u)
 		{
-			temp = TempErr;
+			temp = TempLow;
 		}
-		else if (R_Value > 26587u)
+		else if (R_Value > 28098u)
 		{
 			temp = TempHigh;
 		}
 		else
 		{
-			temp=(uint16_t)PT1000_CalculateTemperature((uint16_t)R_Value);
-			temp=temp*9/5+32;
+            int16_t temp_c = (int16_t)PT1000_CalculateTemperature((uint16_t)R_Value);
+			temp = (int16_t)(((int32_t)temp_c * 9) / 5 + 32);
 		}
 	}
 	return	temp;
 }
 
 /**
- * @brief Compute arithmetic mean of a temperature buffer.
- * @details Sums all items in the provided array and returns integer average.
- * @param arr Input temperature buffer.
- * @param Length Number of elements to average.
- * @return Averaged temperature value.
- */
+  * @function Average_Temp()
+  * --------------
+  * @brief    Calculate the arithmetic average of a temperature buffer.
+  * @param    arr - input parameter
+  * @param    Length - input parameter
+  * @note     None
+  */
 uint16_t  Average_Temp(uint16_t arr[],uint8_t Length)
 {
 	static uint8_t i = 0;
@@ -218,13 +248,15 @@ uint16_t  Average_Temp(uint16_t arr[],uint8_t Length)
 }
 
 /**
- * @brief Push one new sample into a fixed-size history buffer.
- * @details Shifts the buffer to the left and appends the latest sample at the tail.
- * @param arr Target history buffer.
- * @param Length Buffer length.
- * @param New_Data New sample to append.
- */
-void Add_Temp(uint16_t arr[],uint8_t Length,uint16_t New_Data)		//在数组中加入一个新元素
+  * @function Add_Temp()
+  * ------------
+  * @brief    Push one new sample into a fixed-size history buffer.
+  * @param    arr - target history buffer
+  * @param    Length - buffer length
+  * @param    New_Data - new sample to append
+  * @note     None
+  */
+void Add_Temp(uint16_t arr[],uint8_t Length,uint16_t New_Data)
 {
 	uint16_t *str = arr;
 	static uint8_t i = 0;
@@ -237,14 +269,15 @@ void Add_Temp(uint16_t arr[],uint8_t Length,uint16_t New_Data)		//在数组中加入一
 
 
 /**
- * @brief Update moving-average state for probe temperature.
- * @details Fills the buffer during startup, then keeps a rolling window and returns current average.
- * @param arr History buffer used for smoothing.
- * @param length Window length.
- * @param temp Latest probe sample.
- * @return Smoothed probe temperature sample.
- */
-uint16_t Temp_Handle(uint16_t arr[],uint8_t length, uint16_t temp)	//温度处理
+  * @function Temp_Handle()
+  * ---------------
+  * @brief    Update moving-average state for probe temperature.
+  * @param    arr - history buffer used for smoothing
+  * @param    length - window length
+  * @param    temp - latest probe sample
+  * @note     None
+  */
+uint16_t Temp_Handle(uint16_t arr[],uint8_t length, uint16_t temp)
 {
 	static uint8_t Size=0;
 	static uint16_t InTtemp=0;
@@ -266,11 +299,12 @@ uint16_t Temp_Handle(uint16_t arr[],uint8_t length, uint16_t temp)	//温度处理
 
 /* channel: ADC1=battery voltage */
 /**
- * @brief Convert ADC reading to battery voltage in millivolts.
- * @details Applies linear scaling from 12-bit ADC code to the 3.3V reference domain.
- * @param channel ADC channel index, where channel 1 is battery voltage.
- * @return Battery voltage in mV.
- */
+  * @function Battery_Get_mV()
+  * ----------------
+  * @brief    Convert ADC reading to battery voltage in millivolts.
+  * @param    channel - input parameter
+  * @note     None
+  */
 static uint16_t Battery_Get_mV(uint8_t channel)
 {
     uint32_t vol = (uint32_t)ch_env[channel].vol;
@@ -278,10 +312,12 @@ static uint16_t Battery_Get_mV(uint8_t channel)
 }
 
 /**
- * @brief Update low-battery flag with debounce and hysteresis.
- * @details Sets or clears global low-battery state only after consecutive threshold confirmations.
- * @param batt_mV Current battery voltage in mV.
- */
+  * @function UpdateBatteryLevel()
+  * --------------------
+  * @brief    Update battery low flag with debounce and hysteresis.
+  * @param    batt_mV - input parameter
+  * @note     None
+  */
 static void UpdateBatteryLevel(uint16_t batt_mV)
 {
     static uint8_t low_cnt = 0u;
@@ -303,12 +339,13 @@ static void UpdateBatteryLevel(uint16_t batt_mV)
 }
 
 /**
- * @brief Parse one big-endian 32-bit temperature payload into Celsius.
- * @details Converts source scaling (/100), validates protocol sentinels and bounds, then returns value or HaveTempErr.
- * @param buf Pointer to 4-byte big-endian payload.
- * @return Temperature in Celsius or HaveTempErr.
- */
-static int16_t parse_be32_to_int16_c(const uint8_t *buf)
+  * @function parse_be32_raw_c()
+  * -----------------------
+  * @brief    Parse a big-endian 32-bit temperature payload into Celsius or disconnected sentinel.
+  * @param    buf - input parameter
+  * @note     None
+  */
+static int32_t parse_be32_raw_c(const uint8_t *buf)
 {
     int32_t raw;
 
@@ -320,21 +357,115 @@ static int16_t parse_be32_to_int16_c(const uint8_t *buf)
     /* Source value is scaled by 100. */
     raw /= 100;
 
-    /* Only this function decides whether source value is unplugged/invalid. */
-    if ((raw == -10) || (raw == 14) || (raw > 455) || (raw < -20)) {
-        return HaveTempErr;
+    if ((raw == TempDisconnected) || (raw == -10) || (raw == 14)) {
+        return TempDisconnected;
     }
+
+    return raw;
+}
+
+/**
+  * @function normalize_external_temp_c()
+  * -------------------------------
+  * @brief    Normalize external channel temperature and sentinel values.
+  * @param    raw - input parameter
+  * @note     None
+  */
+static int16_t normalize_external_temp_c(int32_t raw)
+{
+    if (raw == TempDisconnected) {
+        return TempDisconnected;
+    }
+    if (raw >= PROBE_TEMP_C_HIGH_LIMIT) { return TempHigh; }
+    if (raw <= PROBE_TEMP_C_LOW_LIMIT) { return TempLow; }
 
     return (int16_t)raw;
 }
 
+static int16_t debounce_external_temp(uint8_t idx, int16_t sample)
+{
+    if (idx >= 3u) {
+        return sample;
+    }
+
+    if ((sample == HaveTempErr) || (sample == TempDisconnected)) {
+        s_comm_hi_latched[idx] = 0u;
+        s_comm_hi_pending_cnt[idx] = 0u;
+        s_comm_hi_release_cnt[idx] = 0u;
+        s_comm_lo_latched[idx] = 0u;
+        s_comm_lo_pending_cnt[idx] = 0u;
+        s_comm_lo_release_cnt[idx] = 0u;
+        return sample;
+    }
+
+    if (s_comm_hi_latched[idx] != 0u) {
+        if (sample == TempHigh) {
+            s_comm_hi_release_cnt[idx] = 0u;
+            return TempHigh;
+        }
+        if (s_comm_hi_release_cnt[idx] < 255u) { s_comm_hi_release_cnt[idx]++; }
+        if (s_comm_hi_release_cnt[idx] < PROBE_TEMP_HI_RELEASE_CONFIRM_COUNT) {
+            return TempHigh;
+        }
+        s_comm_hi_latched[idx] = 0u;
+        s_comm_hi_pending_cnt[idx] = 0u;
+        s_comm_hi_release_cnt[idx] = 0u;
+    }
+
+    if (s_comm_lo_latched[idx] != 0u) {
+        if (sample == TempLow) {
+            s_comm_lo_release_cnt[idx] = 0u;
+            return TempLow;
+        }
+        if (s_comm_lo_release_cnt[idx] < 255u) { s_comm_lo_release_cnt[idx]++; }
+        if (s_comm_lo_release_cnt[idx] < PROBE_TEMP_LO_RELEASE_CONFIRM_COUNT) {
+            return TempLow;
+        }
+        s_comm_lo_latched[idx] = 0u;
+        s_comm_lo_pending_cnt[idx] = 0u;
+        s_comm_lo_release_cnt[idx] = 0u;
+    }
+
+    if (sample == TempHigh) {
+        s_comm_lo_pending_cnt[idx] = 0u;
+        if (s_comm_hi_pending_cnt[idx] < 255u) { s_comm_hi_pending_cnt[idx]++; }
+        if (s_comm_hi_pending_cnt[idx] >= PROBE_TEMP_HI_CONFIRM_COUNT) {
+            s_comm_hi_latched[idx] = 1u;
+            s_comm_hi_release_cnt[idx] = 0u;
+            return TempHigh;
+        }
+        return PROBE_TEMP_C_HIGH_LIMIT;
+    }
+
+    if (sample == TempLow) {
+        s_comm_hi_pending_cnt[idx] = 0u;
+        if (s_comm_lo_pending_cnt[idx] < 255u) { s_comm_lo_pending_cnt[idx]++; }
+        if (s_comm_lo_pending_cnt[idx] >= PROBE_TEMP_LO_CONFIRM_COUNT) {
+            s_comm_lo_latched[idx] = 1u;
+            s_comm_lo_release_cnt[idx] = 0u;
+            return TempLow;
+        }
+        return PROBE_TEMP_C_LOW_LIMIT;
+    }
+
+    s_comm_hi_pending_cnt[idx] = 0u;
+    s_comm_lo_pending_cnt[idx] = 0u;
+    return sample;
+}
+
 /**
- * @brief Request and parse three external PT1000 temperatures via UART2.
- * @details Sends poll frame, checks RX DMA completion, validates frame length, and updates channel cache.
- */
+  * @function update_three_temps_from_uart2()
+  * -------------------------------
+  * @brief    Request and parse three external PT1000 temperatures by UART2.
+  * @param    None
+  * @note     None
+  */
 static void update_three_temps_from_uart2(void)
 {
     uint8_t tx_req[8] = {0xAA, 0x55, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
+    int32_t raw0;
+    int32_t raw1;
+    int32_t raw2;
 
     /* Use blocking TX on USART2 to avoid DMA state-machine lockups. */
     (void)HAL_UART_Transmit(&huart2, tx_req, (uint16_t)sizeof(tx_req), 20u);
@@ -350,32 +481,48 @@ static void update_three_temps_from_uart2(void)
         return;
     }
 
-    s_comm_temp_c[0] = parse_be32_to_int16_c(&COM2.rxBuf[3]);
-    s_comm_temp_c[1] = parse_be32_to_int16_c(&COM2.rxBuf[7]);
-    s_comm_temp_c[2] = parse_be32_to_int16_c(&COM2.rxBuf[11]);
+    raw0 = parse_be32_raw_c(&COM2.rxBuf[3]);
+    raw1 = parse_be32_raw_c(&COM2.rxBuf[7]);
+    raw2 = parse_be32_raw_c(&COM2.rxBuf[11]);
+
+    if ((raw0 == 0) && (raw1 == 0) && (raw2 == 0)) {
+        s_comm_temp_c[0] = TempDisconnected;
+        s_comm_temp_c[1] = TempDisconnected;
+        s_comm_temp_c[2] = TempDisconnected;
+    } else {
+        s_comm_temp_c[0] = normalize_external_temp_c(raw0);
+        s_comm_temp_c[1] = normalize_external_temp_c(raw1);
+        s_comm_temp_c[2] = normalize_external_temp_c(raw2);
+    }
 
     s_comm_temp_valid = 1u;
 }
 
 /**
- * @brief Initialize temperature acquisition peripherals.
- * @details Initializes ADC hardware used by local probe and battery acquisition.
- */
+  * @function Temp_Get_Init()
+  * ---------------
+  * @brief    Initialize temperature acquisition peripherals.
+  * @param    None
+  * @note     None
+  */
 void Temp_Get_Init(void)
 {
     MX_ADC_Init();
 }
 
 /**
- * @brief Run one temperature acquisition and state-update cycle.
- * @details Updates main channels from UART, probe from ADC with filtering and protections, and battery status.
- */
+  * @function TempGetTask()
+  * -------------
+  * @brief    Run one temperature acquisition and state update cycle.
+  * @param    None
+  * @note     None
+  */
 void TempGetTask(void)
 {
     uint8_t i;
     int32_t t;
-    uint16_t probe_f;
-    uint16_t probe_f_raw;
+    int16_t probe_f;
+    int16_t probe_f_raw;
     int16_t probe_c;
     uint16_t battery_mV;
 
@@ -384,25 +531,25 @@ void TempGetTask(void)
     {
         for (i = 0u; i < 3u; i++)
         {
-            t = s_comm_temp_c[i];
+            t = debounce_external_temp(i, s_comm_temp_c[i]);
 
-            if (t == HaveTempErr)
+            if ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow))
             {
-                system_data.pt1000_temp[i] = HaveTempErr;
+                system_data.pt1000_temp[i] = (int16_t)t;
                 continue;
             }
 
             if (system_data.units == unitC)
             {
                 if (t < PROBE_TEMP_C_LOW_LIMIT) { t = PROBE_TEMP_C_LOW_LIMIT; }
-                if (t > 455) { t = 455; }
+                if (t > PROBE_TEMP_C_HIGH_LIMIT) { t = PROBE_TEMP_C_HIGH_LIMIT; }
                 system_data.pt1000_temp[i] = (int16_t)t;
             }
             else
             {
                 t = (t * 9) / 5 + 32;
                 if (t < -4) { t = -4; }
-                if (t > 851) { t = 851; }
+                if (t > 932) { t = 932; }
                 system_data.pt1000_temp[i] = (int16_t)t;
             }
         }
@@ -415,9 +562,9 @@ void TempGetTask(void)
     Get_Filter_ADC12bitResult();
 
     probe_f_raw = Temp_Get(0u);
-    if ((probe_f_raw != TempErr) && (probe_f_raw != TempHigh))
+    if ((probe_f_raw != TempErr) && (probe_f_raw != TempHigh) && (probe_f_raw != TempLow) && (probe_f_raw >= 0))
     {
-        probe_f = Temp_Handle(s_probe_temp_hist, 10u, probe_f_raw);
+        probe_f = (int16_t)Temp_Handle(s_probe_temp_hist, 10u, (uint16_t)probe_f_raw);
     }
     else
     {
@@ -427,10 +574,10 @@ void TempGetTask(void)
     /* High-temperature ADC drop glitch guard:
      * if previous reading is >=350C and current reading suddenly drops a lot,
      * ignore short transient drops to avoid false plunge. */
-    if ((probe_f != TempErr) && (probe_f != TempHigh) && (probe_f < 851u))
+    if ((probe_f != TempErr) && (probe_f != TempHigh) && (probe_f != TempLow) && (probe_f >= 0) && (probe_f < 932))
     {
         if ((s_probe_f_prev_valid != 0u) && (s_probe_f_prev >= 662u) &&
-            (((probe_f + 120u) < s_probe_f_prev) || ((probe_f + 72u) < s_probe_f_prev)))
+            (((probe_f + 120) < s_probe_f_prev) || ((probe_f + 72) < s_probe_f_prev)))
         {
             if (s_probe_drop_glitch_cnt < 255u) { s_probe_drop_glitch_cnt++; }
             if (s_probe_drop_glitch_cnt < 3u)
@@ -469,6 +616,9 @@ void TempGetTask(void)
         s_probe_hi_latched = 0u;
         s_probe_hi_pending_cnt = 0u;
         s_probe_hi_release_cnt = 0u;
+        s_probe_lo_latched = 0u;
+        s_probe_lo_pending_cnt = 0u;
+        s_probe_lo_release_cnt = 0u;
         s_probe_f_prev_valid = 0u;
         s_probe_drop_glitch_cnt = 0u;
         s_probe_disconnect_pending_cnt = 0u;
@@ -485,7 +635,7 @@ void TempGetTask(void)
         }
     }
     s_probe_reconnect_pending_cnt = 0u;
-    if ((probe_f == TempHigh) || (probe_f >= 851u))
+    if ((probe_f == TempHigh) || (probe_f >= 932))
     {
         if (s_probe_hi_pending_cnt < 255u) { s_probe_hi_pending_cnt++; }
         if (s_probe_hi_pending_cnt >= PROBE_TEMP_HI_CONFIRM_COUNT)
@@ -496,6 +646,9 @@ void TempGetTask(void)
             g_probe_over_lo = 0u;
             s_probe_c_filt_valid = 0u;
             s_probe_hi_release_cnt = 0u;
+            s_probe_lo_latched = 0u;
+            s_probe_lo_pending_cnt = 0u;
+            s_probe_lo_release_cnt = 0u;
             if (system_data.units == unitC) {
                 system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
             } else {
@@ -509,12 +662,38 @@ void TempGetTask(void)
         s_probe_hi_pending_cnt = 0u;
     }
 
-    probe_c = (int16_t)((((int32_t)probe_f - 32) * 5) / 9);
     g_probe_connected = 1u;
+    if (probe_f == TempLow)
+    {
+        if (s_probe_lo_pending_cnt < 255u) { s_probe_lo_pending_cnt++; }
+        if (s_probe_lo_pending_cnt >= PROBE_TEMP_LO_CONFIRM_COUNT)
+        {
+            s_probe_lo_latched = 1u;
+            g_probe_over_hi = 0u;
+            g_probe_over_lo = 1u;
+            s_probe_c_filt_valid = 0u;
+            s_probe_hi_latched = 0u;
+            s_probe_hi_pending_cnt = 0u;
+            s_probe_hi_release_cnt = 0u;
+            s_probe_lo_release_cnt = 0u;
+            if (system_data.units == unitC) {
+                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+            } else {
+                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
+            }
+        }
+        return;
+    }
+    else
+    {
+        s_probe_lo_pending_cnt = 0u;
+    }
+
+    probe_c = (int16_t)((((int32_t)probe_f - 32) * 5) / 9);
     /* HI hysteresis: keep -HI until temperature drops below release threshold. */
     if (s_probe_hi_latched != 0u)
     {
-        if (probe_c > PROBE_TEMP_C_HIGH_RELEASE)
+        if (probe_c >= PROBE_TEMP_C_HIGH_RELEASE)
         {
             g_probe_over_hi = 1u;
             g_probe_over_lo = 0u;
@@ -541,6 +720,38 @@ void TempGetTask(void)
         s_probe_hi_latched = 0u;
         s_probe_hi_pending_cnt = 0u;
         s_probe_hi_release_cnt = 0u;
+        s_probe_f_prev_valid = 0u;
+        s_probe_drop_glitch_cnt = 0u;
+    }
+    if (s_probe_lo_latched != 0u)
+    {
+        if (probe_c <= PROBE_TEMP_C_LOW_LIMIT)
+        {
+            g_probe_over_hi = 0u;
+            g_probe_over_lo = 1u;
+            s_probe_lo_release_cnt = 0u;
+            if (system_data.units == unitC) {
+                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+            } else {
+                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
+            }
+            return;
+        }
+        if (s_probe_lo_release_cnt < 255u) { s_probe_lo_release_cnt++; }
+        if (s_probe_lo_release_cnt < PROBE_TEMP_LO_RELEASE_CONFIRM_COUNT)
+        {
+            g_probe_over_hi = 0u;
+            g_probe_over_lo = 1u;
+            if (system_data.units == unitC) {
+                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+            } else {
+                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
+            }
+            return;
+        }
+        s_probe_lo_latched = 0u;
+        s_probe_lo_pending_cnt = 0u;
+        s_probe_lo_release_cnt = 0u;
         s_probe_f_prev_valid = 0u;
         s_probe_drop_glitch_cnt = 0u;
     }
@@ -595,6 +806,10 @@ void TempGetTask(void)
             s_probe_hi_latched = 1u;
             s_probe_hi_release_cnt = 0u;
             g_probe_over_hi = 1u;
+            g_probe_over_lo = 0u;
+            s_probe_lo_latched = 0u;
+            s_probe_lo_pending_cnt = 0u;
+            s_probe_lo_release_cnt = 0u;
             if (system_data.units == unitC) {
                 system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
             } else {
@@ -608,9 +823,23 @@ void TempGetTask(void)
         s_probe_hi_pending_cnt = 0u;
         g_probe_over_hi = 0u;
     }
-    if (probe_c < PROBE_TEMP_C_LOW_LIMIT) {
-        g_probe_over_lo = 1u;
+    if (probe_c <= PROBE_TEMP_C_LOW_LIMIT) {
+        if (s_probe_lo_pending_cnt < 255u) { s_probe_lo_pending_cnt++; }
+        if (s_probe_lo_pending_cnt >= PROBE_TEMP_LO_CONFIRM_COUNT)
+        {
+            s_probe_lo_latched = 1u;
+            s_probe_lo_release_cnt = 0u;
+            g_probe_over_hi = 0u;
+            g_probe_over_lo = 1u;
+            if (system_data.units == unitC) {
+                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+            } else {
+                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
+            }
+            return;
+        }
     } else {
+        s_probe_lo_pending_cnt = 0u;
         g_probe_over_lo = 0u;
     }
 
@@ -625,10 +854,12 @@ void TempGetTask(void)
 }
 
 /**
- * @brief ADC conversion complete callback.
- * @details Clears DMA wait flag used by synchronous ADC sampling routine when ADC1 transfer finishes.
- * @param hadc ADC handle provided by HAL.
- */
+  * @function HAL_ADC_ConvCpltCallback()
+  * --------------------------
+  * @brief    Handle ADC conversion complete callback.
+  * @param    hadc - input parameter
+  * @note     None
+  */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if (hadc->Instance == ADC1)

@@ -1,3 +1,12 @@
+/**
+  ******************************************************************************
+  * @file    key.h
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Key scan and key event interface definitions.
+  ******************************************************************************
+  */
 #ifndef  __KEY_H__
 #define   __KEY_H__
 #include "config.h"
@@ -20,7 +29,7 @@ void KeyRespose(void(*Key0ShortPress)(),
                 void(*Key1ShortPress)(),
                 void(*Key0LongPress)(),
                 void(*Key1LongPress)(),
-                void(*Key0VeryLongPress)(),   // 新增超长按回调
+                void(*Key0VeryLongPress)(),
                 void(*Key1VeryLongPress)());
 void Key_Respose_Nothing(void);  
 void Key0_short_press(void);

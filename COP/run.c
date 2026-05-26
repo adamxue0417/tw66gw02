@@ -1,30 +1,27 @@
-#include "config.h"
 /**
- * @file    run.c
- * @brief   运行状态文件
- * @author  niu
- * @date    2026.02.26
- * @version 1.0
- * 
- * 详细描述:该文件实现了运行状态下，设备的运行情况，是状态机中运行情况下，设备的运行逻辑和情况。
- */
+  ******************************************************************************
+  * @file    run.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Run state control and PID timing implementation.
+  ******************************************************************************
+  */
+#include "config.h"
 /***************************************************************************************************************************************************************/ 
 /**
- * @brief   runing_control函数功能简述
- * @param   none      
- * @return  none
- * @note    none
- * 
- * 详细说明：此函数为设备运行情况下的控制逻辑函数。
- */
+  * @function runing_control()
+  * ----------------
+  * @brief    Execute run state control logic.
+  * @param    None
+  * @note     None
+  */
 void runing_control(void)	
 {
 //      uint8_t i;
 //	    uint16_t j=0x0001;
-//	    fan_turn_on();																//风扇开启
 //	    if(screen_data.DisplayMap.control_mode)
 //			{
-//				  //自动控制
 //					for(i=0;i<8;i++)
 //					{
 //							if(system_data.pt1000_temp[i]>screen_data.DisplayMap.set_temp[i]){heat_control(i,off);}
@@ -33,7 +30,6 @@ void runing_control(void)
 //			}
 //			else
 //			{
-//				  //手动控制
 //					for(i=0;i<8;i++)
 //					{
 //							if(screen_data.DisplayMap.mamal_control&j){
@@ -47,13 +43,12 @@ void runing_control(void)
 //			}		
 }
 /**
- * @brief   PidTimeFillIrq函数功能简述
- * @param   none
- * @return  none
- * @note    none
- * 
- * 详细说明：此函数为设备运行情况下的PID计时逻辑函数，放置于外部中断中用于精准计时。
- */
+  * @function PidTimeFillIrq()
+  * ----------------
+  * @brief    Update PID timing counters from timer interrupt.
+  * @param    None
+  * @note     None
+  */
 void PidTimeFillIrq(void)
 {
 //			if(work_process==run)

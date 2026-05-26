@@ -1,3 +1,12 @@
+/**
+  ******************************************************************************
+  * @file    gagent_md5.h
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   GAgent MD5 context, macro and function declarations.
+  ******************************************************************************
+  */
 #ifndef _GAGENT_MD5_H
 #define _GAGENT_MD5_H
 #include "config.h"

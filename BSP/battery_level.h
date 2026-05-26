@@ -1,9 +1,12 @@
-/******************************************************************************
- * @file    battery_level.h
- * @brief   Battery Level Monitoring Module Header File
- * @details This module monitors battery voltage and calculates battery level
- *          percentage for display and power management
- ******************************************************************************/
+/**
+  ******************************************************************************
+  * @file    battery_level.h
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Battery level monitoring interface definitions.
+  ******************************************************************************
+  */
 #ifndef		__BATTERY_LEVEL_H__
 #define		__BATTERY_LEVEL_H__
 #include "config.h"

@@ -1,7 +1,7 @@
 Dependencies for Project 'tw66gw02', Target 'tw66gw02': (DO NOT MODIFY !)
 CompilerVersion: 5060960::V5.06 update 7 (build 960)::.\ARM_Compiler_5.06u7
 F (startup_stm32f030x8.s)(0x69F1A84B)(--cpu Cortex-M0 -g --apcs=interwork -I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include--pd "__UVISION_VERSION SETA 539" --pd "_RTE_ SETA 1" --pd "STM32F030x8 SETA 1" --pd "_RTE_ SETA 1"--list startup_stm32f030x8.lst --xref -o .\tw66gw02\startup_stm32f030x8.o --depend .\tw66gw02\startup_stm32f030x8.d)
-F (../Core/Src/main.c)(0x69FF0CC2)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\main.o --omf_browse .\tw66gw02\main.crf --depend .\tw66gw02\main.d)
+F (../Core/Src/main.c)(0x6A154D56)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\main.o --omf_browse .\tw66gw02\main.crf --depend .\tw66gw02\main.d)
 I (../Core/Inc/main.h)(0x69E605C1)
 I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal.h)(0x69DCAAB5)
 I (../Core/Inc/stm32f0xx_hal_conf.h)(0x69E76F98)
@@ -40,22 +40,22 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/config.h)(0x69FC6C03)
+I (../BSP/config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdlib.h)(0x5E8E3CC2)
 I (../Core/Inc/gpio.h)(0x69E605C0)
-I (../BSP/buzz.h)(0x6927BE34)
-I (../BSP/key.h)(0x69EF4BE8)
-I (../BSP/temp.h)(0x69FDB2F8)
-I (../BSP/wireless.h)(0x69F1CDC8)
-I (../BSP/C8721.h)(0x69E9AEC5)
-I (../BSP/screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/buzz.h)(0x6A0FC0A3)
+I (../BSP/key.h)(0x6A0FC0A3)
+I (../BSP/temp.h)(0x6A154E07)
+I (../BSP/wireless.h)(0x6A154E07)
+I (../BSP/C8721.h)(0x6A0FC0A3)
+I (../BSP/screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
 F (../Core/Src/gpio.c)(0x69E76F95)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\gpio.o --omf_browse .\tw66gw02\gpio.crf --depend .\tw66gw02\gpio.d)
 I (../Core/Inc/gpio.h)(0x69E605C0)
@@ -237,7 +237,7 @@ I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim.h)(0x69DCAAB5)
 I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h)(0x69DCAAB5)
 I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h)(0x69DCAAB5)
 I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h)(0x69DCAAB5)
-I (../BSP/config.h)(0x69FC6C03)
+I (../BSP/config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -246,16 +246,16 @@ I (../Core/Inc/gpio.h)(0x69E605C0)
 I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
-I (../BSP/buzz.h)(0x6927BE34)
-I (../BSP/key.h)(0x69EF4BE8)
-I (../BSP/temp.h)(0x69FDB2F8)
-I (../BSP/wireless.h)(0x69F1CDC8)
-I (../BSP/C8721.h)(0x69E9AEC5)
-I (../BSP/screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/buzz.h)(0x6A0FC0A3)
+I (../BSP/key.h)(0x6A0FC0A3)
+I (../BSP/temp.h)(0x6A154E07)
+I (../BSP/wireless.h)(0x6A154E07)
+I (../BSP/C8721.h)(0x6A0FC0A3)
+I (../BSP/screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
 F (../Core/Src/stm32f0xx_it.c)(0x69F1D6DF)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\stm32f0xx_it.o --omf_browse .\tw66gw02\stm32f0xx_it.crf --depend .\tw66gw02\stm32f0xx_it.d)
 I (../Core/Inc/main.h)(0x69E605C1)
@@ -293,7 +293,7 @@ I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h)(0x69DCAAB5)
 I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h)(0x69DCAAB5)
 I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h)(0x69DCAAB5)
 I (../Core/Inc/stm32f0xx_it.h)(0x69F1A848)
-I (../BSP/config.h)(0x69FC6C03)
+I (../BSP/config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -303,16 +303,16 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/buzz.h)(0x6927BE34)
-I (../BSP/key.h)(0x69EF4BE8)
-I (../BSP/temp.h)(0x69FDB2F8)
-I (../BSP/wireless.h)(0x69F1CDC8)
-I (../BSP/C8721.h)(0x69E9AEC5)
-I (../BSP/screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/buzz.h)(0x6A0FC0A3)
+I (../BSP/key.h)(0x6A0FC0A3)
+I (../BSP/temp.h)(0x6A154E07)
+I (../BSP/wireless.h)(0x6A154E07)
+I (../BSP/C8721.h)(0x6A0FC0A3)
+I (../BSP/screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
 F (../Core/Src/stm32f0xx_hal_msp.c)(0x69E605C1)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\stm32f0xx_hal_msp.o --omf_browse .\tw66gw02\stm32f0xx_hal_msp.crf --depend .\tw66gw02\stm32f0xx_hal_msp.d)
 I (../Core/Inc/main.h)(0x69E605C1)
@@ -1032,9 +1032,9 @@ I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h)(0x69DCAAB5)
 F (..\OS\TaskScheduler.c)(0x699EBF22)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\taskscheduler.o --omf_browse .\tw66gw02\taskscheduler.crf --depend .\tw66gw02\taskscheduler.d)
 I (..\OS\TaskScheduler.h)(0x699D4066)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdint.h)(0x5E8E3CC2)
-F (..\BSP\C8721.c)(0x69EB3069)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\c8721.o --omf_browse .\tw66gw02\c8721.crf --depend .\tw66gw02\c8721.d)
-I (..\BSP\C8721.h)(0x69E9AEC5)
-I (..\BSP\screen_c8721.h)(0x69FF0F1A)
+F (..\BSP\C8721.c)(0x6A0FC0A3)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\c8721.o --omf_browse .\tw66gw02\c8721.crf --depend .\tw66gw02\c8721.d)
+I (..\BSP\C8721.h)(0x6A0FC0A3)
+I (..\BSP\screen_c8721.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdint.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (../Drivers/CMSIS/Device/ST/STM32F0xx/Include/stm32f030x8.h)(0x69DCAAB8)
@@ -1071,8 +1071,8 @@ I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h)(0x69DCAAB5)
 I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h)(0x69DCAAB5)
 I (../Core/Inc/gpio.h)(0x69E605C0)
 I (../Core/Inc/main.h)(0x69E605C1)
-F (..\BSP\key.c)(0x6A029900)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\key.o --omf_browse .\tw66gw02\key.crf --depend .\tw66gw02\key.d)
-I (..\BSP\config.h)(0x69FC6C03)
+F (..\BSP\key.c)(0x6A154BE5)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\key.o --omf_browse .\tw66gw02\key.crf --depend .\tw66gw02\key.d)
+I (..\BSP\config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -1116,20 +1116,20 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/config.h)(0x69FC6C03)
-I (..\BSP\buzz.h)(0x6927BE34)
-I (..\BSP\key.h)(0x69EF4BE8)
-I (..\BSP\temp.h)(0x69FDB2F8)
-I (..\BSP\wireless.h)(0x69F1CDC8)
-I (..\BSP\C8721.h)(0x69E9AEC5)
-I (..\BSP\screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/config.h)(0x6A0FC0A3)
+I (..\BSP\buzz.h)(0x6A0FC0A3)
+I (..\BSP\key.h)(0x6A0FC0A3)
+I (..\BSP\temp.h)(0x6A154E07)
+I (..\BSP\wireless.h)(0x6A154E07)
+I (..\BSP\C8721.h)(0x6A0FC0A3)
+I (..\BSP\screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
-F (..\BSP\screen_c8721.c)(0x6A029769)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\screen_c8721.o --omf_browse .\tw66gw02\screen_c8721.crf --depend .\tw66gw02\screen_c8721.d)
-I (..\BSP\screen_c8721.h)(0x69FF0F1A)
+F (..\BSP\screen_c8721.c)(0x6A154E07)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\screen_c8721.o --omf_browse .\tw66gw02\screen_c8721.crf --depend .\tw66gw02\screen_c8721.d)
+I (..\BSP\screen_c8721.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdint.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (../Drivers/CMSIS/Device/ST/STM32F0xx/Include/stm32f030x8.h)(0x69DCAAB8)
@@ -1166,8 +1166,8 @@ I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h)(0x69DCAAB5)
 I (../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h)(0x69DCAAB5)
 I (../Core/Inc/gpio.h)(0x69E605C0)
 I (../Core/Inc/main.h)(0x69E605C1)
-I (..\BSP\C8721.h)(0x69E9AEC5)
-I (..\BSP\config.h)(0x69FC6C03)
+I (..\BSP\C8721.h)(0x6A0FC0A3)
+I (..\BSP\config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdlib.h)(0x5E8E3CC2)
@@ -1175,18 +1175,18 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/config.h)(0x69FC6C03)
-I (..\BSP\buzz.h)(0x6927BE34)
-I (..\BSP\key.h)(0x69EF4BE8)
-I (..\BSP\temp.h)(0x69FDB2F8)
-I (..\BSP\wireless.h)(0x69F1CDC8)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/config.h)(0x6A0FC0A3)
+I (..\BSP\buzz.h)(0x6A0FC0A3)
+I (..\BSP\key.h)(0x6A0FC0A3)
+I (..\BSP\temp.h)(0x6A154E07)
+I (..\BSP\wireless.h)(0x6A154E07)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
-F (..\BSP\temp.c)(0x6A01B6A1)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\temp.o --omf_browse .\tw66gw02\temp.crf --depend .\tw66gw02\temp.d)
-I (..\BSP\config.h)(0x69FC6C03)
+F (..\BSP\temp.c)(0x6A154CF2)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\temp.o --omf_browse .\tw66gw02\temp.crf --depend .\tw66gw02\temp.d)
+I (..\BSP\config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -1230,20 +1230,20 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/config.h)(0x69FC6C03)
-I (..\BSP\buzz.h)(0x6927BE34)
-I (..\BSP\key.h)(0x69EF4BE8)
-I (..\BSP\temp.h)(0x69FDB2F8)
-I (..\BSP\wireless.h)(0x69F1CDC8)
-I (..\BSP\C8721.h)(0x69E9AEC5)
-I (..\BSP\screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/config.h)(0x6A0FC0A3)
+I (..\BSP\buzz.h)(0x6A0FC0A3)
+I (..\BSP\key.h)(0x6A0FC0A3)
+I (..\BSP\temp.h)(0x6A154E07)
+I (..\BSP\wireless.h)(0x6A154E07)
+I (..\BSP\C8721.h)(0x6A0FC0A3)
+I (..\BSP\screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
-F (..\BSP\wireless.c)(0x69FDB28F)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\wireless.o --omf_browse .\tw66gw02\wireless.crf --depend .\tw66gw02\wireless.d)
-I (..\BSP\config.h)(0x69FC6C03)
+F (..\BSP\wireless.c)(0x6A154E07)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\wireless.o --omf_browse .\tw66gw02\wireless.crf --depend .\tw66gw02\wireless.d)
+I (..\BSP\config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -1287,20 +1287,20 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/config.h)(0x69FC6C03)
-I (..\BSP\buzz.h)(0x6927BE34)
-I (..\BSP\key.h)(0x69EF4BE8)
-I (..\BSP\temp.h)(0x69FDB2F8)
-I (..\BSP\wireless.h)(0x69F1CDC8)
-I (..\BSP\C8721.h)(0x69E9AEC5)
-I (..\BSP\screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/config.h)(0x6A0FC0A3)
+I (..\BSP\buzz.h)(0x6A0FC0A3)
+I (..\BSP\key.h)(0x6A0FC0A3)
+I (..\BSP\temp.h)(0x6A154E07)
+I (..\BSP\wireless.h)(0x6A154E07)
+I (..\BSP\C8721.h)(0x6A0FC0A3)
+I (..\BSP\screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
-F (..\BSP\bh66f5242.c)(0x69F1A170)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\bh66f5242.o --omf_browse .\tw66gw02\bh66f5242.crf --depend .\tw66gw02\bh66f5242.d)
-I (..\BSP\config.h)(0x69FC6C03)
+F (..\BSP\bh66f5242.c)(0x6A0FC0A3)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\bh66f5242.o --omf_browse .\tw66gw02\bh66f5242.crf --depend .\tw66gw02\bh66f5242.d)
+I (..\BSP\config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -1344,20 +1344,20 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/config.h)(0x69FC6C03)
-I (..\BSP\buzz.h)(0x6927BE34)
-I (..\BSP\key.h)(0x69EF4BE8)
-I (..\BSP\temp.h)(0x69FDB2F8)
-I (..\BSP\wireless.h)(0x69F1CDC8)
-I (..\BSP\C8721.h)(0x69E9AEC5)
-I (..\BSP\screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/config.h)(0x6A0FC0A3)
+I (..\BSP\buzz.h)(0x6A0FC0A3)
+I (..\BSP\key.h)(0x6A0FC0A3)
+I (..\BSP\temp.h)(0x6A154E07)
+I (..\BSP\wireless.h)(0x6A154E07)
+I (..\BSP\C8721.h)(0x6A0FC0A3)
+I (..\BSP\screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
-F (..\COP\main_control.c)(0x6A029D7E)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\main_control.o --omf_browse .\tw66gw02\main_control.crf --depend .\tw66gw02\main_control.d)
-I (../BSP/config.h)(0x69FC6C03)
+F (..\COP\main_control.c)(0x6A154E07)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\main_control.o --omf_browse .\tw66gw02\main_control.crf --depend .\tw66gw02\main_control.d)
+I (../BSP/config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -1401,19 +1401,19 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/buzz.h)(0x6927BE34)
-I (../BSP/key.h)(0x69EF4BE8)
-I (../BSP/temp.h)(0x69FDB2F8)
-I (../BSP/wireless.h)(0x69F1CDC8)
-I (../BSP/C8721.h)(0x69E9AEC5)
-I (../BSP/screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/buzz.h)(0x6A0FC0A3)
+I (../BSP/key.h)(0x6A0FC0A3)
+I (../BSP/temp.h)(0x6A154E07)
+I (../BSP/wireless.h)(0x6A154E07)
+I (../BSP/C8721.h)(0x6A0FC0A3)
+I (../BSP/screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
-F (..\COP\shutdown.c)(0x69FC40A6)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\shutdown.o --omf_browse .\tw66gw02\shutdown.crf --depend .\tw66gw02\shutdown.d)
-I (../BSP/config.h)(0x69FC6C03)
+F (..\COP\shutdown.c)(0x6A0FC0A3)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\shutdown.o --omf_browse .\tw66gw02\shutdown.crf --depend .\tw66gw02\shutdown.d)
+I (../BSP/config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -1457,19 +1457,19 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/buzz.h)(0x6927BE34)
-I (../BSP/key.h)(0x69EF4BE8)
-I (../BSP/temp.h)(0x69FDB2F8)
-I (../BSP/wireless.h)(0x69F1CDC8)
-I (../BSP/C8721.h)(0x69E9AEC5)
-I (../BSP/screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/buzz.h)(0x6A0FC0A3)
+I (../BSP/key.h)(0x6A0FC0A3)
+I (../BSP/temp.h)(0x6A154E07)
+I (../BSP/wireless.h)(0x6A154E07)
+I (../BSP/C8721.h)(0x6A0FC0A3)
+I (../BSP/screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
-F (..\COP\start_up.c)(0x69FC40A6)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\start_up.o --omf_browse .\tw66gw02\start_up.crf --depend .\tw66gw02\start_up.d)
-I (../BSP/config.h)(0x69FC6C03)
+F (..\COP\start_up.c)(0x6A0FC0A3)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\start_up.o --omf_browse .\tw66gw02\start_up.crf --depend .\tw66gw02\start_up.d)
+I (../BSP/config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -1513,19 +1513,19 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/buzz.h)(0x6927BE34)
-I (../BSP/key.h)(0x69EF4BE8)
-I (../BSP/temp.h)(0x69FDB2F8)
-I (../BSP/wireless.h)(0x69F1CDC8)
-I (../BSP/C8721.h)(0x69E9AEC5)
-I (../BSP/screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/buzz.h)(0x6A0FC0A3)
+I (../BSP/key.h)(0x6A0FC0A3)
+I (../BSP/temp.h)(0x6A154E07)
+I (../BSP/wireless.h)(0x6A154E07)
+I (../BSP/C8721.h)(0x6A0FC0A3)
+I (../BSP/screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
-F (..\COP\test.c)(0x699FD97C)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\test.o --omf_browse .\tw66gw02\test.crf --depend .\tw66gw02\test.d)
-I (../BSP/config.h)(0x69FC6C03)
+F (..\COP\test.c)(0x6A0FC0A3)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\test.o --omf_browse .\tw66gw02\test.crf --depend .\tw66gw02\test.d)
+I (../BSP/config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -1569,19 +1569,19 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/buzz.h)(0x6927BE34)
-I (../BSP/key.h)(0x69EF4BE8)
-I (../BSP/temp.h)(0x69FDB2F8)
-I (../BSP/wireless.h)(0x69F1CDC8)
-I (../BSP/C8721.h)(0x69E9AEC5)
-I (../BSP/screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/buzz.h)(0x6A0FC0A3)
+I (../BSP/key.h)(0x6A0FC0A3)
+I (../BSP/temp.h)(0x6A154E07)
+I (../BSP/wireless.h)(0x6A154E07)
+I (../BSP/C8721.h)(0x6A0FC0A3)
+I (../BSP/screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)
-F (..\COP\warning.c)(0x69FEBD1D)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\warning.o --omf_browse .\tw66gw02\warning.crf --depend .\tw66gw02\warning.d)
-I (../BSP/config.h)(0x69FC6C03)
+F (..\COP\warning.c)(0x6A0FC0A3)(--c99 -c --cpu Cortex-M0 -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc -I ../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F0xx/Include -I ../Drivers/CMSIS/Include -I ../MDK-ARM -I ../BSP -I ../COP -I ../OS-I.\RTE\_tw66gw02-IC:\Users\PC\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\Core\Include-D__UVISION_VERSION="539" -D_RTE_ -DSTM32F030x8 -D_RTE_ -DUSE_HAL_DRIVER -DSTM32F030x8-o .\tw66gw02\warning.o --omf_browse .\tw66gw02\warning.crf --depend .\tw66gw02\warning.d)
+I (../BSP/config.h)(0x6A0FC0A3)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\string.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\stdio.h)(0x5E8E3CC2)
 I (C:\Keil_v5\ARM\ARM_Compiler_5.06u7\include\math.h)(0x5E8E3CC2)
@@ -1625,14 +1625,14 @@ I (../Core/Inc/adc.h)(0x69E88A5C)
 I (../Core/Inc/dma.h)(0x69E76F96)
 I (../Core/Inc/tim.h)(0x69E76F97)
 I (../Core/Inc/usart.h)(0x69F1A09B)
-I (../BSP/buzz.h)(0x6927BE34)
-I (../BSP/key.h)(0x69EF4BE8)
-I (../BSP/temp.h)(0x69FDB2F8)
-I (../BSP/wireless.h)(0x69F1CDC8)
-I (../BSP/C8721.h)(0x69E9AEC5)
-I (../BSP/screen_c8721.h)(0x69FF0F1A)
-I (../COP/main_control.h)(0x69F305D4)
-I (../COP/start_up.h)(0x699E9FA6)
-I (../COP/shutdown.h)(0x699EA0CE)
-I (../COP/warning.h)(0x699FFD36)
+I (../BSP/buzz.h)(0x6A0FC0A3)
+I (../BSP/key.h)(0x6A0FC0A3)
+I (../BSP/temp.h)(0x6A154E07)
+I (../BSP/wireless.h)(0x6A154E07)
+I (../BSP/C8721.h)(0x6A0FC0A3)
+I (../BSP/screen_c8721.h)(0x6A0FC0A3)
+I (../COP/main_control.h)(0x6A154E07)
+I (../COP/start_up.h)(0x6A0FC0A3)
+I (../COP/shutdown.h)(0x6A0FC0A3)
+I (../COP/warning.h)(0x6A0FC0A3)
 I (../OS/TaskScheduler.h)(0x699D4066)

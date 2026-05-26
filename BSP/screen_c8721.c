@@ -1,3 +1,12 @@
+/**
+  ******************************************************************************
+  * @file    screen_c8721.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   C8721 screen mapping and display task implementation.
+  ******************************************************************************
+  */
 #include "screen_c8721.h"
 #include "C8721.h"
 #include "config.h"
@@ -36,10 +45,13 @@ static const uint16_t s_gaugeThreshF[GAUGE_SEG_COUNT] =
 {
     86u, 158u, 230u, 302u, 374u, 446u, 518u, 590u, 662u
 };
-/*
- * Port implementations for C8721 driver.
- * C8721.h maps CF_SCL_Write(x) -> SCL_Write(x) and CF_SDA_Write(x) -> SDA_Write(x).
- */
+/**
+  * @function SCL_Write()
+  * ------------
+  * @brief    Drive the C8721 SCL pin to the requested level.
+  * @param    x - input parameter
+  * @note     None
+  */
 void SCL_Write(uint8_t x)
 {
     if (x)
@@ -47,7 +59,13 @@ void SCL_Write(uint8_t x)
     else
         C8721_SCL_L();
 }
-
+/**
+  * @function SDA_Write()
+  * ------------
+  * @brief    Drive the C8721 SDA pin to the requested level.
+  * @param    x - input parameter
+  * @note     None
+  */
 void SDA_Write(uint8_t x)
 {
     if (x)
@@ -56,15 +74,13 @@ void SDA_Write(uint8_t x)
         C8721_SDA_L();
 }
 
-/*
- * Convert DisplayMapTable to CF_DisplayBuf.
- *
- * TM1640 layout:  DisplayMapTable[g] bit s  = LED on/off at grid g, seg s
- * C8721 layout:   CF_DisplayBuf[g + s*16]   = PWM brightness for that LED
- *
- * Mapping: g = 0..15 (SEG axis), s = 0..7 (COM axis)
- *   bit=1 -> CF_LUMI_FULL (0xFF), bit=0 -> CF_LUMI_OFF (0x00)
- */
+/**
+  * @function Screen_MapToDisplayBuf()
+  * ------------------------
+  * @brief    Map logical display bits into the C8721 PWM display buffer.
+  * @param    None
+  * @note     None
+  */
 static void Screen_MapToDisplayBuf(void)
 {
     uint8_t g, s;
@@ -72,14 +88,18 @@ static void Screen_MapToDisplayBuf(void)
         for (g = 0u; g < 16u; g++) {
             CF_DisplayBuf[g + s * CF_SEG_NUM] =
                 (Screen_Data.DisplayMapTable[g] & (1u << s)) ? CF_LUMI_FULL : CF_LUMI_OFF;
+					
         }
     }
 }
 
-/*
- * Initialize C8721 driver and clear display.
- * Call once at startup before the main loop.
- */
+/**
+  * @function Screen_C8721_Init()
+  * -------------------
+  * @brief    Initialize the C8721 display driver and clear the screen.
+  * @param    None
+  * @note     None
+  */
 void Screen_C8721_Init(void)
 {
     CF_Init();
@@ -87,9 +107,13 @@ void Screen_C8721_Init(void)
     CF_DisplayBufAutomatic();
 }
 
-/* Write a 7-segment code to all three display digit positions simultaneously.
- * Each digit uses two complementary hardware banks (e.g. SearHundred0 and
- * SearHundred1) that are driven with identical segment data. */
+/**
+  * @function ShowTemp3Digits()
+  * -----------------
+  * @brief    Write a signed temperature value to the three display digits.
+  * @param    displayTemp - input parameter
+  * @note     None
+  */
 static void ShowTemp3Digits(int16_t displayTemp)
 {
     uint8_t hundred, ten, low;
@@ -126,7 +150,15 @@ static void ShowTemp3Digits(int16_t displayTemp)
     Screen_Data.DisplayMap.SearLow1     = DigitalTubeDisplayTable[low];
 }
 
-/* Write raw 7-segment codes to the three digit positions (for special strings) */
+/**
+  * @function ShowSpecialChars()
+  * ------------------
+  * @brief    Write raw segment codes to the three display digits.
+  * @param    charH - input parameter
+  * @param    charT - input parameter
+  * @param    charL - input parameter
+  * @note     None
+  */
 static void ShowSpecialChars(uint8 charH, uint8 charT, uint8 charL)
 {
     /* Mask to 7 bits: bit 7 belongs to the icon field, not the digit */
@@ -140,7 +172,13 @@ static void ShowSpecialChars(uint8 charH, uint8 charT, uint8 charL)
 
 
 
-/* Apply temperature-unit indicators [9][10] for the current tempUnit */
+/**
+  * @function ApplyUnitIcons()
+  * ----------------
+  * @brief    Apply Celsius or Fahrenheit unit icons.
+  * @param    None
+  * @note     None
+  */
 static void ApplyUnitIcons(void)
 {
     if(system_data.units == unitC)
@@ -155,7 +193,13 @@ static void ApplyUnitIcons(void)
     }
 }
 
-/* Turn off all temperature-source icons [6][7][8][13] */
+/**
+  * @function ClearTempSourceIcons()
+  * ----------------------
+  * @brief    Clear all temperature source icons.
+  * @param    None
+  * @note     None
+  */
 static void ClearTempSourceIcons(void)
 {
     Screen_Data.DisplayMap.PIcon       = 0u;  /* [6]  Probe icon          */
@@ -166,7 +210,13 @@ static void ClearTempSourceIcons(void)
     Screen_Data.DisplayMap.CavityIcon3 = 0u;
 }
 
-/* Apply source icon for the current display mode */
+/**
+  * @function ApplySourceIcon()
+  * -----------------
+  * @brief    Apply the source icon for the current display mode.
+  * @param    None
+  * @note     None
+  */
 static void ApplySourceIcon(void)
 {
     ClearTempSourceIcons();
@@ -197,8 +247,13 @@ static void ApplySourceIcon(void)
     }
 }
 
-/* Update the Temperature Gauge Line .
- * displayTemp is already in the currently selected unit. */
+/**
+  * @function UpdateGauge()
+  * -------------
+  * @brief    Update the temperature gauge line according to the display temperature.
+  * @param    displayTemp - input parameter
+  * @note     None
+  */
 static void UpdateGauge(uint16_t displayTemp)
 {
     const uint16_t *thresh;
@@ -231,7 +286,13 @@ static void UpdateGauge(uint16_t displayTemp)
     Screen_Data.DisplayMap.TempI = (segOn >= 9u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
 }
 
-/* Clear all gauge segments */
+/**
+  * @function ClearGauge()
+  * ------------
+  * @brief    Turn off all temperature gauge segments.
+  * @param    None
+  * @note     None
+  */
 static void ClearGauge(void)
 {
     Screen_Data.DisplayMap.TempA = GAUGE_SEG_OFF;
@@ -251,7 +312,13 @@ static void ClearGauge(void)
  * Call periodically (e.g. every 10 ms) from the scheduler .
  */
 uint8_t  displaystep=0;
-
+/**
+  * @function DisplayTask()
+  * -------------
+  * @brief    Refresh the display buffer and send it to the C8721 driver.
+  * @param    None
+  * @note     None
+  */
 void DisplayTask(void)
 {
     int16_t displayTemp;

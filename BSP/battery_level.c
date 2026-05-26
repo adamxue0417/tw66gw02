@@ -1,5 +1,13 @@
+/**
+  ******************************************************************************
+  * @file    battery_level.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Battery level lookup and power switching implementation.
+  ******************************************************************************
+  */
 ///******************************************************************************
-// * @file    battery_level.c
 // * @brief   Battery Level Monitoring Module Implementation
 // * @details Implements battery voltage monitoring, percentage calculation, and
 // *          power source management for 4-cell 18650 battery pack

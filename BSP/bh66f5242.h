@@ -1,10 +1,12 @@
-/******************************************************************************
- * @file    bh66f5242.h
- * @brief   BH66F5242 Temperature Acquisition Module Header File
- * @details This module handles temperature reading from RTD (PT1000) sensors
- *          and thermocouples via UART communication with BH66F5242 chips,
- *          includes ADC filtering, calibration, and LCD display calculation
- ******************************************************************************/
+/**
+  ******************************************************************************
+  * @file    bh66f5242.h
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   BH66F5242 temperature acquisition interface definitions.
+  ******************************************************************************
+  */
 #ifndef		__BH66F5242_H__
 #define		__BH66F5242_H__
 #include "config.h"

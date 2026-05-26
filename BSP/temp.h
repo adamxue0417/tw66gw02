@@ -1,11 +1,22 @@
+/**
+  ******************************************************************************
+  * @file    temp.h
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Temperature and battery acquisition interface definitions.
+  ******************************************************************************
+  */
 #ifndef   __TEMP_H__
 #define   __TEMP_H__
 #include "config.h"
 #define TempCount 4
 #define USR_ADC_COUNT	4
 #define USR_ADC_CH_NR	2
-#define  TempErr 999             //计算出错/探头断开
-#define  TempHigh 998            //探头存在但温度超上限
+#define  TempErr 999
+#define  TempHigh 998
+#define  TempLow 997
+#define  TempDisconnected (-30)
 typedef struct channel_evn_s {
 	uint16_t max;
 	uint16_t min;

@@ -1,13 +1,13 @@
-#include "config.h"
 /**
- * @file    start_up.c
- * @brief   启动状态文件
- * @author  niu
- * @date    2026.02.26
- * @version 1.0
- * 
- * 详细描述:该文件实现了启动状态下，设备的运行情况，是状态机中启动情况下，设备的运行逻辑和情况。
- */
+  ******************************************************************************
+  * @file    start_up.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Startup state control implementation.
+  ******************************************************************************
+  */
+#include "config.h"
 /***************************************************************************************************************************************************************/ 
 int StartUpStartTemp=0,StartUpRiseTemp=0;
 uint16_t StartUpTimeFill=0;
@@ -15,13 +15,12 @@ int Thermocouple1Backup=0;
 uint16_t StartUpKeepTempTimer=0;
 //#define ThermocoupleWarningValue    120
 /**
- * @brief   ResetStartUpControl函数功能简述
- * @param   none      
- * @return  none
- * @note    none
- * 
- * 详细说明：此函数为设备启动情况下的运行控制复位函数，让设备在启动阶段各参数恢复初始默认状态。
- */
+  * @function ResetStartUpControl()
+  * ---------------------
+  * @brief    Reset startup state control counters.
+  * @param    None
+  * @note     None
+  */
 void ResetStartUpControl(void)
 {
 //		ignitor_success_flag=0;
@@ -29,25 +28,23 @@ void ResetStartUpControl(void)
 //	  StartUpKeepTempTimer=pid_run_cycle;
 }
 /**
- * @brief   start_up_control函数功能简述
- * @param   none      
- * @return  none
- * @note    none
- * 
- * 详细说明：此函数为设备启动情况下的控制逻辑函数。
- */
+  * @function start_up_control()
+  * ------------------
+  * @brief    Execute startup state control logic.
+  * @param    None
+  * @note     None
+  */
 void start_up_control(void)
 {
 
 }
 /**
- * @brief   StartUpTimeFillIrq函数功能简述
- * @param   none
- * @return  none
- * @note    none
- * 
- * 详细说明：此函数为设备启动情况下的计时逻辑函数，放置于外部中断中用于精准计时。
- */
+  * @function StartUpTimeFillIrq()
+  * --------------------
+  * @brief    Update startup timing counters from timer interrupt.
+  * @param    None
+  * @note     None
+  */
 void StartUpTimeFillIrq(void)
 {
 //	static uint16_t Timer1SCounter=0;

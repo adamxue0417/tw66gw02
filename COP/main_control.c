@@ -1,3 +1,12 @@
+/**
+  ******************************************************************************
+  * @file    main_control.c
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   Main control state machine and UI runtime cache implementation.
+  ******************************************************************************
+  */
 #include "config.h"
 
 _work_process work_process,work_process_backups;
@@ -14,14 +23,7 @@ enum {
     BT_RECONNECTING = 3
 };
 
-#define IDLE_AUTO_SHUTDOWN_TICKS_100MS  (3000u)
-#define FIT_TEMP_C_THRESHOLD             (50)
-#define FIT_OUTLIER_DIFF_C               (5)
-#define FIT_MAIN_OUTLIER_DIFF_C          (3)
-#define FIT_MAIN_OUTLIER_HOLD_COUNT      (2u)
-#define FIT_MAIN_DYNAMIC_STEP_C          (1)
-#define FIT_MAIN_DYNAMIC_CONFIRM_COUNT   (2u)
-#define PROBE_REINSERT_MIN_OFF_TICKS_100MS (5u)
+
 
 static uint8_t s_bt_state = BT_OFF;
 static uint8_t s_bt_icon_on = 0u;
@@ -44,30 +46,63 @@ static uint8_t s_main_outlier_hold_cnt[3] = {0u, 0u, 0u};
 static uint8_t s_main_outlier_dynamic_cnt[3] = {0u, 0u, 0u};
 static int16_t s_main_prev_src_c[3] = {0, 0, 0};
 static uint8_t s_main_prev_src_valid[3] = {0u, 0u, 0u};
+static int16_t s_fit_prev_c[4] = {0, 0, 0, 0};
+static int16_t s_fit_trend_acc_c[4] = {0, 0, 0, 0};
+static uint8_t s_fit_prev_valid[4] = {0u, 0u, 0u, 0u};
 
 static void BluetoothHwPowerOn(void);
 static void BluetoothHwPowerOff(void);
 
 /**
- * @brief Check whether a main temperature sample is invalid.
- * @details Treats HaveTempErr sentinel as invalid and all other values as valid.
- * @param t Temperature sample in current display unit.
- * @return 1 if invalid, otherwise 0.
- */
+  * @function IsMainTempInvalid()
+  * -------------------
+  * @brief    Check whether a main temperature sample is invalid.
+  * @param    t - input parameter
+  * @note     None
+  */
 static uint8_t IsMainTempInvalid(int16_t t)
 {
-    if (t == HaveTempErr) {
+    if ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) {
+        return 1u;
+    }
+    return 0u;
+}
+
+static uint8_t IsMainChannelDisconnected(int16_t t)
+{
+    if ((t == HaveTempErr) || (t == TempDisconnected)) {
+        return 1u;
+    }
+    return 0u;
+}
+
+static uint8_t ApplyTempSpecial(int16_t t)
+{
+    if (t == TempHigh) {
+        s_display_special = 1u;
+        s_display_temp = 0;
+        return 1u;
+    }
+    if (t == TempLow) {
+        s_display_special = 2u;
+        s_display_temp = 0;
+        return 1u;
+    }
+    if ((t == HaveTempErr) || (t == TempDisconnected)) {
+        s_display_special = 3u;
+        s_display_temp = 0;
         return 1u;
     }
     return 0u;
 }
 
 /**
- * @brief Convert temperature from current UI unit to Celsius.
- * @details Passes through value in Celsius mode and converts from Fahrenheit otherwise.
- * @param t Temperature in current system unit.
- * @return Temperature converted to Celsius.
- */
+  * @function TempToC()
+  * ------------
+  * @brief    Convert temperature from current UI unit to Celsius.
+  * @param    t - input parameter
+  * @note     None
+  */
 static int16_t TempToC(int16_t t)
 {
     if (system_data.units == unitC) {
@@ -77,11 +112,12 @@ static int16_t TempToC(int16_t t)
 }
 
 /**
- * @brief Convert temperature from Celsius to current UI unit.
- * @details Passes through value in Celsius mode and converts to Fahrenheit otherwise.
- * @param c Temperature in Celsius.
- * @return Temperature converted to current system unit.
- */
+  * @function TempFromC()
+  * ------------
+  * @brief    Convert temperature from Celsius to current UI unit.
+  * @param    c - input parameter
+  * @note     None
+  */
 static int16_t TempFromC(int16_t c)
 {
     if (system_data.units == unitC) {
@@ -92,13 +128,14 @@ static int16_t TempFromC(int16_t c)
 
 
 /**
- * @brief Apply main-channel consensus correction for outlier suppression.
- * @details Compares source channel against median/mean of valid main channels and optionally outputs corrected value.
- * @param src_idx Source channel index (0..2).
- * @param raw_temp Raw source temperature in current unit.
- * @param out_display_temp Output pointer for corrected display value.
- * @return 1 when correction is applied, otherwise 0.
- */
+  * @function CalcMainConsensusTemp()
+  * -----------------------
+  * @brief    Apply main-channel consensus correction for outlier suppression.
+  * @param    src_idx - input parameter
+  * @param    raw_temp - input parameter
+  * @param    out_display_temp - input parameter
+  * @note     None
+  */
 static uint8_t CalcMainConsensusTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_display_temp)
 {
     // Store valid main-channel temperatures (converted to Celsius) for consensus calculation.
@@ -140,6 +177,10 @@ static uint8_t CalcMainConsensusTemp(uint8_t src_idx, int16_t raw_temp, int16_t 
 
     // Convert source reading to Celsius so all thresholds stay unit-consistent.
     src_c = TempToC(raw_temp);
+    if (src_c >= FIT_TEMP_C_THRESHOLD) {
+        *out_display_temp = raw_temp;
+        return 1u;
+    }
     // Track dynamic behavior of the source channel to distinguish real movement from static drift.
     if (s_main_prev_src_valid[src_idx] != 0u) {
         int16_t step = (src_c >= s_main_prev_src_c[src_idx]) ? (src_c - s_main_prev_src_c[src_idx]) : (int16_t)(s_main_prev_src_c[src_idx] - src_c);
@@ -164,20 +205,9 @@ static uint8_t CalcMainConsensusTemp(uint8_t src_idx, int16_t raw_temp, int16_t 
     d = (src_c >= ref) ? (src_c - ref) : (int16_t)(ref - src_c);
     // Enter outlier handling only when deviation exceeds configured threshold.
     if (d > FIT_MAIN_OUTLIER_DIFF_C) {
-        // Increase outlier hold count with saturation.
-        if (s_main_outlier_hold_cnt[src_idx] < 255u) {
-            s_main_outlier_hold_cnt[src_idx]++;
-        }
-        // Keep forcing consensus output until outlier persists long enough and dynamic evidence is sufficient.
-        if ((s_main_outlier_hold_cnt[src_idx] <= FIT_MAIN_OUTLIER_HOLD_COUNT) ||
-            (s_main_outlier_dynamic_cnt[src_idx] < FIT_MAIN_DYNAMIC_CONFIRM_COUNT)) {
-            *out_display_temp = TempFromC(ref);
-            return 1u;
-        }
-        // Outlier has enough persistence and dynamics, so allow raw source to pass through.
-        return 0u;
+        *out_display_temp = raw_temp;
+        return 1u;
     }
-
     // Source returned to consensus range, so clear outlier tracking state.
     s_main_outlier_hold_cnt[src_idx] = 0u;
     s_main_outlier_dynamic_cnt[src_idx] = 0u;
@@ -185,13 +215,14 @@ static uint8_t CalcMainConsensusTemp(uint8_t src_idx, int16_t raw_temp, int16_t 
 }
 
 /**
- * @brief Calculate fitted display temperature using probe and main channels.
- * @details Applies main consensus first, then performs weighted fusion with probe under valid and low-temperature conditions.
- * @param src_idx Source channel index.
- * @param raw_temp Raw source temperature in current unit.
- * @param out_display_temp Output pointer for fitted value.
- * @return 1 when fitted/corrected output is produced, otherwise 0.
- */
+  * @function CalcFittedTemp()
+  * ----------------
+  * @brief    Calculate fitted display temperature using probe and main channels.
+  * @param    src_idx - input parameter
+  * @param    raw_temp - input parameter
+  * @param    out_display_temp - input parameter
+  * @note     None
+  */
 static uint8_t CalcFittedTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_display_temp)
 {
     // Probe temperature in Celsius used as fusion anchor.
@@ -204,6 +235,116 @@ static uint8_t CalcFittedTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_di
     int32_t wsum;
     // Total weight accumulator for fused output.
     int32_t w;
+    int16_t src_c;
+    int16_t src_step = 0;
+    uint8_t trend_single = 0u;
+    uint8_t trend_peer_ok = 0u;
+
+    if (out_display_temp == 0) {
+        return 0u;
+    }
+    if (src_idx > 3u) {
+        return 0u;
+    }
+    src_c = TempToC(raw_temp);
+    if (src_c >= FIT_TEMP_C_THRESHOLD) {
+        *out_display_temp = raw_temp;
+        return 1u;
+    }
+
+    /* If one channel keeps rising/falling by 4C, prefer standalone display for that channel.
+     * Exception: if peers move in same direction and remain within original trigger diff,
+     * keep this channel in fitting. */
+    if (s_fit_prev_valid[src_idx] != 0u) {
+        src_step = (int16_t)(src_c - s_fit_prev_c[src_idx]);
+        if (src_step > 0) {
+            if (s_fit_trend_acc_c[src_idx] >= 0) { s_fit_trend_acc_c[src_idx] = (int16_t)(s_fit_trend_acc_c[src_idx] + src_step); }
+            else { s_fit_trend_acc_c[src_idx] = src_step; }
+        } else if (src_step < 0) {
+            if (s_fit_trend_acc_c[src_idx] <= 0) { s_fit_trend_acc_c[src_idx] = (int16_t)(s_fit_trend_acc_c[src_idx] + src_step); }
+            else { s_fit_trend_acc_c[src_idx] = src_step; }
+        } else {
+            s_fit_trend_acc_c[src_idx] = 0;
+        }
+    } else {
+        s_fit_trend_acc_c[src_idx] = 0;
+    }
+    s_fit_prev_c[src_idx] = src_c;
+    s_fit_prev_valid[src_idx] = 1u;
+
+    if ((s_fit_trend_acc_c[src_idx] >= 4) || (s_fit_trend_acc_c[src_idx] <= -4)) {
+        trend_single = 1u;
+    }
+
+    if ((0u) && (trend_single != 0u) && (src_step != 0)) {
+        if (src_idx <= 2u) {
+            uint8_t i;
+            for (i = 0u; i < 3u; i++) {
+                int16_t peer;
+                int16_t peer_step;
+                int16_t dpeer;
+                if ((i == src_idx) || (IsMainTempInvalid(system_data.pt1000_temp[i]) != 0u) || (s_fit_prev_valid[i] == 0u)) {
+                    continue;
+                }
+                peer = TempToC(system_data.pt1000_temp[i]);
+                peer_step = (int16_t)(peer - s_fit_prev_c[i]);
+                dpeer = (src_c >= peer) ? (src_c - peer) : (int16_t)(peer - src_c);
+                if (((src_step > 0) && (peer_step > 0)) || ((src_step < 0) && (peer_step < 0))) {
+                    if (dpeer <= FIT_MAIN_OUTLIER_DIFF_C) {
+                        trend_peer_ok = 1u;
+                        break;
+                    }
+                }
+            }
+        } else {
+            int16_t t[3];
+            uint8_t vcnt = 0u;
+            if (IsMainTempInvalid(system_data.pt1000_temp[0]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[0]); }
+            if (IsMainTempInvalid(system_data.pt1000_temp[1]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[1]); }
+            if (IsMainTempInvalid(system_data.pt1000_temp[2]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[2]); }
+            if (vcnt >= 2u) {
+                int16_t ref;
+                int16_t ref_prev;
+                int16_t ref_step;
+                int16_t dref;
+                if (vcnt == 2u) {
+                    ref = (int16_t)(((int32_t)t[0] + (int32_t)t[1]) / 2);
+                } else {
+                    if (t[0] > t[1]) { int16_t x = t[0]; t[0] = t[1]; t[1] = x; }
+                    if (t[1] > t[2]) { int16_t x = t[1]; t[1] = t[2]; t[2] = x; }
+                    if (t[0] > t[1]) { int16_t x = t[0]; t[0] = t[1]; t[1] = x; }
+                    ref = t[1];
+                }
+                ref_prev = ref;
+                if ((s_fit_prev_valid[0] != 0u) && (IsMainTempInvalid(system_data.pt1000_temp[0]) == 0u) &&
+                    (s_fit_prev_valid[1] != 0u) && (IsMainTempInvalid(system_data.pt1000_temp[1]) == 0u)) {
+                    if (vcnt == 2u) {
+                        ref_prev = (int16_t)(((int32_t)s_fit_prev_c[0] + (int32_t)s_fit_prev_c[1]) / 2);
+                    } else {
+                        int16_t p[3];
+                        p[0] = s_fit_prev_c[0];
+                        p[1] = s_fit_prev_c[1];
+                        p[2] = s_fit_prev_c[2];
+                        if (p[0] > p[1]) { int16_t x = p[0]; p[0] = p[1]; p[1] = x; }
+                        if (p[1] > p[2]) { int16_t x = p[1]; p[1] = p[2]; p[2] = x; }
+                        if (p[0] > p[1]) { int16_t x = p[0]; p[0] = p[1]; p[1] = x; }
+                        ref_prev = p[1];
+                    }
+                }
+                ref_step = (int16_t)(ref - ref_prev);
+                dref = (src_c >= ref) ? (src_c - ref) : (int16_t)(ref - src_c);
+                if ((((src_step > 0) && (ref_step > 0)) || ((src_step < 0) && (ref_step < 0))) &&
+                    (dref <= FIT_OUTLIER_DIFF_C)) {
+                    trend_peer_ok = 1u;
+                }
+            }
+        }
+
+        if (trend_peer_ok == 0u) {
+            *out_display_temp = raw_temp;
+            return 1u;
+        }
+    }
 
     // First apply main-channel consensus correction; if applied, finish immediately.
     if (CalcMainConsensusTemp(src_idx, raw_temp, out_display_temp) != 0u) {
@@ -211,7 +352,7 @@ static uint8_t CalcFittedTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_di
     }
 
     // Fusion requires valid output pointer, connected probe, and no probe over-range alarms.
-    if ((out_display_temp == 0) || (g_probe_connected == 0u) || (g_probe_over_hi != 0u) || (g_probe_over_lo != 0u)) {
+    if ((g_probe_connected == 0u) || (g_probe_over_hi != 0u) || (g_probe_over_lo != 0u)) {
         return 0u;
     }
     // Probe channel must contain a valid temperature sample.
@@ -266,9 +407,12 @@ static uint8_t CalcFittedTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_di
 }
 
 /**
- * @brief Initialize runtime system state after power-on.
- * @details Sets default work mode, unit, display mode, and Bluetooth-related state flags.
- */
+  * @function SysDataInit()
+  * -------------
+  * @brief    Initialize runtime system state after power-on.
+  * @param    None
+  * @note     None
+  */
 void SysDataInit(void)
 {
     uint8_t i;
@@ -291,26 +435,32 @@ void SysDataInit(void)
 }
 
 /**
- * @brief Notify UI logic of local user interaction.
- * @details Resets idle timer used by auto-shutdown logic.
- */
+  * @function UI_NotifyLocalInteraction()
+  * ---------------------------
+  * @brief    Notify UI logic of local user interaction.
+  * @param    None
+  * @note     None
+  */
 void UI_NotifyLocalInteraction(void)
 {
     s_idle_ticks_100ms = 0u;
 }
 
 /**
- * @brief Cycle through available display modes.
- * @details Skips probe mode when probe is absent and blocks mode switching if all main channels are invalid.
- */
+  * @function UI_CycleDisplayMode()
+  * ---------------------
+  * @brief    Cycle through available display modes.
+  * @param    None
+  * @note     None
+  */
 void UI_CycleDisplayMode(void)
 {
     DisplayMode_t next = DisplayMode;
     uint8_t no_main_temp;
 
-    no_main_temp = (IsMainTempInvalid(system_data.pt1000_temp[0]) != 0u) &&
-                   (IsMainTempInvalid(system_data.pt1000_temp[1]) != 0u) &&
-                   (IsMainTempInvalid(system_data.pt1000_temp[2]) != 0u);
+    no_main_temp = (IsMainChannelDisconnected(system_data.pt1000_temp[0]) != 0u) &&
+                   (IsMainChannelDisconnected(system_data.pt1000_temp[1]) != 0u) &&
+                   (IsMainChannelDisconnected(system_data.pt1000_temp[2]) != 0u);
     if (no_main_temp != 0u) {
         return;
     }
@@ -329,9 +479,12 @@ void UI_CycleDisplayMode(void)
 }
 
 /**
- * @brief Request Bluetooth pairing mode.
- * @details Sets pairing request flag and ensures Bluetooth hardware power is enabled.
- */
+  * @function UI_RequestBluetoothPairing()
+  * ----------------------------
+  * @brief    Request Bluetooth pairing mode.
+  * @param    None
+  * @note     None
+  */
 void UI_RequestBluetoothPairing(void)
 {
     s_bt_pairing_req = 1u;
@@ -339,9 +492,12 @@ void UI_RequestBluetoothPairing(void)
 }
 
 /**
- * @brief Request Bluetooth power-off.
- * @details Sets power-off request flag and immediately powers hardware down path.
- */
+  * @function UI_RequestBluetoothPowerOff()
+  * -----------------------------
+  * @brief    Request Bluetooth power-off.
+  * @param    None
+  * @note     None
+  */
 void UI_RequestBluetoothPowerOff(void)
 {
     s_bt_poweroff_req = 1u;
@@ -349,10 +505,12 @@ void UI_RequestBluetoothPowerOff(void)
 }
 
 /**
- * @brief Update Bluetooth link state input.
- * @details Stores external connection state for Bluetooth state machine processing.
- * @param connected Non-zero means connected.
- */
+  * @function UI_SetBluetoothConnectionState()
+  * --------------------------------
+  * @brief    Update Bluetooth link state input.
+  * @param    connected - input parameter
+  * @note     None
+  */
 void UI_SetBluetoothConnectionState(uint8_t connected)
 {
     if (connected != 0u) {
@@ -363,58 +521,72 @@ void UI_SetBluetoothConnectionState(uint8_t connected)
 }
 
 /**
- * @brief Get current cached display temperature.
- * @details Returns numeric temperature field used by UI rendering.
- * @return Cached display temperature.
- */
+  * @function UI_GetDisplayTemp()
+  * -------------------
+  * @brief    Get current cached display temperature.
+  * @param    None
+  * @note     None
+  */
 int16_t UI_GetDisplayTemp(void)
 {
     return s_display_temp;
 }
 
 /**
- * @brief Get current special display status.
- * @details Returns special flag for -HI, -LO, or --- display conditions.
- * @return Special display code.
- */
+  * @function UI_GetDisplaySpecial()
+  * ----------------------
+  * @brief    Get current special display status.
+  * @param    None
+  * @note     None
+  */
 uint8_t UI_GetDisplaySpecial(void)
 {
     return s_display_special;
 }
 
 /**
- * @brief Get current Bluetooth icon visibility state.
- * @details Used by UI to render steady/blinking/off Bluetooth indicator.
- * @return Icon on/off state.
- */
+  * @function UI_GetBluetoothIconState()
+  * --------------------------
+  * @brief    Get current Bluetooth icon visibility state.
+  * @param    None
+  * @note     None
+  */
 uint8_t UI_GetBluetoothIconState(void)
 {
     return s_bt_icon_on;
 }
 
 /**
- * @brief Check whether probe is currently considered connected.
- * @details Returns debounced probe connection state.
- * @return 1 if connected, otherwise 0.
- */
+  * @function UI_IsProbeConnected()
+  * ---------------------
+  * @brief    Check whether probe is currently considered connected.
+  * @param    None
+  * @note     None
+  */
 uint8_t UI_IsProbeConnected(void)
 {
     return g_probe_connected;
 }
 
 /**
- * @brief Execute periodic LED task.
- * @details Toggles run indicator LED.
- */
+  * @function LedTask()
+  * ------------
+  * @brief    Execute periodic LED task.
+  * @param    None
+  * @note     None
+  */
 static void LedTask(void)
 {
     run_led_toggle;
 }
 
 /**
- * @brief Power on Bluetooth hardware block.
- * @details Enables Bluetooth power pin and applies reset sequence once.
- */
+  * @function BluetoothHwPowerOn()
+  * --------------------
+  * @brief    Power on Bluetooth hardware block.
+  * @param    None
+  * @note     None
+  */
 static void BluetoothHwPowerOn(void)
 {
     if (s_bt_hw_on == 0u) {
@@ -426,9 +598,12 @@ static void BluetoothHwPowerOn(void)
 }
 
 /**
- * @brief Power off Bluetooth hardware block.
- * @details Disables Bluetooth power and clears hardware-on tracking flag.
- */
+  * @function BluetoothHwPowerOff()
+  * ---------------------
+  * @brief    Power off Bluetooth hardware block.
+  * @param    None
+  * @note     None
+  */
 static void BluetoothHwPowerOff(void)
 {
     if (s_bt_hw_on != 0u) {
@@ -439,9 +614,12 @@ static void BluetoothHwPowerOff(void)
 }
 
 /**
- * @brief Run 100 ms Bluetooth state-machine tick.
- * @details Handles pairing, reconnecting, link transitions, icon blinking, and pairing timeout.
- */
+  * @function BluetoothTask_100ms()
+  * ---------------------
+  * @brief    Run 100 ms Bluetooth state-machine tick.
+  * @param    None
+  * @note     None
+  */
 static void BluetoothTask_100ms(void)
 {
     if (s_bt_poweroff_req != 0u) {
@@ -502,9 +680,12 @@ static void BluetoothTask_100ms(void)
 }
 
 /**
- * @brief Refresh display cache from latest temperature states.
- * @details Selects channel by mode, applies fitted temperature logic, and updates special display flags.
- */
+  * @function UpdateDisplayCache()
+  * --------------------
+  * @brief    Refresh display cache from latest temperature states.
+  * @param    None
+  * @note     None
+  */
 static void UpdateDisplayCache(void)
 {
     uint8_t no_main_temp;
@@ -512,13 +693,18 @@ static void UpdateDisplayCache(void)
     int16_t fitted_temp;
 
     s_display_special = 0u;
-    no_main_temp = (IsMainTempInvalid(system_data.pt1000_temp[0]) != 0u) &&
-                   (IsMainTempInvalid(system_data.pt1000_temp[1]) != 0u) &&
-                   (IsMainTempInvalid(system_data.pt1000_temp[2]) != 0u);
+    no_main_temp = (IsMainChannelDisconnected(system_data.pt1000_temp[0]) != 0u) &&
+                   (IsMainChannelDisconnected(system_data.pt1000_temp[1]) != 0u) &&
+                   (IsMainChannelDisconnected(system_data.pt1000_temp[2]) != 0u);
 
-    if (no_main_temp != 0u) {
+    if ((no_main_temp != 0u) && (g_probe_connected != 0u)) {
+        DisplayMode = DISPLAY_MODE_PROBE;
+    }
+
+    if ((no_main_temp != 0u) && !((DisplayMode == DISPLAY_MODE_PROBE) && (g_probe_connected != 0u))) {
         s_display_special = 3u;
         s_display_temp = 0;
+        DisplayMode = DISPLAY_MODE_D_SURFACE;
         return;
     }
 
@@ -526,10 +712,7 @@ static void UpdateDisplayCache(void)
     {
         case DISPLAY_MODE_O_SURFACE:
             ch_temp = system_data.pt1000_temp[1];
-            if (IsMainTempInvalid(ch_temp) != 0u) {
-                s_display_special = 3u;
-                s_display_temp = 0;
-            } else {
+            if (ApplyTempSpecial(ch_temp) == 0u) {
                 if (CalcFittedTemp(1u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
                 else { s_display_temp = ch_temp; }
 						
@@ -538,10 +721,7 @@ static void UpdateDisplayCache(void)
 
         case DISPLAY_MODE_D_SURFACE:
             ch_temp = system_data.pt1000_temp[0];
-            if (IsMainTempInvalid(ch_temp) != 0u) {
-                s_display_special = 3u;
-                s_display_temp = 0;
-            } else {
+            if (ApplyTempSpecial(ch_temp) == 0u) {
                 if (CalcFittedTemp(0u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
                 else { s_display_temp = ch_temp; }
 						
@@ -550,10 +730,7 @@ static void UpdateDisplayCache(void)
 
         case DISPLAY_MODE_CAVITY:
             ch_temp = system_data.pt1000_temp[2];
-            if (IsMainTempInvalid(ch_temp) != 0u) {
-                s_display_special = 3u;
-                s_display_temp = 0;
-            } else {
+            if (ApplyTempSpecial(ch_temp) == 0u) {
                 if (CalcFittedTemp(2u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
                 else { s_display_temp = ch_temp; }
 		
@@ -562,7 +739,8 @@ static void UpdateDisplayCache(void)
 
         case DISPLAY_MODE_PROBE:
             if (g_probe_connected == 0u) {
-                s_display_temp = (int16_t)system_data.pt1000_temp[0];
+                s_display_special = 3u;
+                s_display_temp = 0;
             } else if (g_probe_over_hi != 0u) {
                 s_display_special = 1u;
                 s_display_temp = 0;
@@ -584,9 +762,12 @@ static void UpdateDisplayCache(void)
 }
 
 /**
- * @brief Main control loop task.
- * @details Runs sensor acquisition, key handling, mode transitions, UI cache updates, and process state actions.
- */
+  * @function MainControl()
+  * -------------
+  * @brief    Execute main control loop task.
+  * @param    None
+  * @note     None
+  */
 void MainControl(void)
 {
     uint8_t probe_now;
@@ -597,10 +778,6 @@ void MainControl(void)
     TempGetTask();
 	
     probe_now = g_probe_connected;
-
-    if (probe_now == 0u) {
-        DisplayMode = DISPLAY_MODE_D_SURFACE;
-    }
 
     KeyRespose(Key0_short_press, Key1_short_press, Key0_long_press, Key1_long_press, Key0_very_long_press, Key1_very_long_press);
 

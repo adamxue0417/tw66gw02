@@ -102,13 +102,10 @@ int main(void)
 	Temp_Get_Init();
   com_init();
   Wireless_Init();
-//  MainControl();
-//  DisplayTask();
-
 	
  SCH_Add_Task(Key_Scan, 0, 10);
  SCH_Add_Task(DisplayTask, 0 , 10); 
- SCH_Add_Task(TempGetTask, 0 , 500);
+ SCH_Add_Task(TempGetTask, 0 , 900);
  SCH_Add_Task(MainControl, 0 , 100);
 // SCH_Add_Task(WirelessTask, 0, 20);
  
@@ -122,6 +119,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	 SCH_Dispatch_Tasks();
+		
   }
   /* USER CODE END 3 */
 }

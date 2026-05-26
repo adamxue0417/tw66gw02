@@ -21,17 +21,37 @@ Target DLL:      Segger\JL2CM3.dll V2.99.43.0
 Dialog DLL:      TARMCM1.DLL V1.14.6.0
  
 <h2>Project:</h2>
-C:\Users\PC\Desktop\TW66GW02\1\tw66gw02\MDK-ARM\tw66gw02.uvprojx
+C:\Users\PC\Desktop\TW66GW02\3\tw66gw02\MDK-ARM\tw66gw02.uvprojx
 Project File Date:  05/09/2026
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'C:\Keil_v5\ARM\ARM_Compiler_5.06u7\Bin'
 Build target 'tw66gw02'
+compiling shutdown.c...
+compiling usart.c...
+compiling warning.c...
+compiling key.c...
+compiling main.c...
+compiling stm32f0xx_it.c...
+compiling temp.c...
+compiling bh66f5242.c...
+compiling start_up.c...
+compiling test.c...
+compiling wireless.c...
+..\BSP\wireless.c(39): warning:  #514-D: pointless comparison of unsigned integer with a negative constant
+      return ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) ? 1u : 0u;
+..\BSP\wireless.c(21): warning:  #550-D: variable "s_bt_status"  was set but never used
+  static uint8_t s_bt_status = 0u;
+..\BSP\wireless.c: 2 warnings, 0 errors
+compiling screen_c8721.c...
 compiling main_control.c...
+..\COP\main_control.c(45): warning:  #550-D: variable "s_main_outlier_hold_cnt"  was set but never used
+  static uint8_t s_main_outlier_hold_cnt[3] = {0u, 0u, 0u};
+..\COP\main_control.c: 1 warning, 0 errors
 linking...
-Program Size: Code=24368 RO-data=580 RW-data=152 ZI-data=5656  
+Program Size: Code=25756 RO-data=596 RW-data=196 ZI-data=5652  
 FromELF: creating hex file...
-".\tw66gw02\tw66gw02.axf" - 0 Error(s), 0 Warning(s).
+".\tw66gw02\tw66gw02.axf" - 0 Error(s), 3 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -54,7 +74,7 @@ Package Vendor: Keil
 
    * Component: ARM::CMSIS:CORE@5.6.0
       Include file:  CMSIS/Core/Include/tz_context.h
-Build Time Elapsed:  00:00:00
+Build Time Elapsed:  00:00:01
 </pre>
 </body>
 </html>

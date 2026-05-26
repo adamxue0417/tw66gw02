@@ -1,9 +1,17 @@
+/**
+  ******************************************************************************
+  * @file    ota.h
+  * @author 
+  * @version V1.0
+  * @date
+  * @brief   OTA and IAP upgrade interface definitions.
+  ******************************************************************************
+  */
 #ifndef __OTA_H__
 #define __OTA_H__
 #include "config.h"
-//FLASH解锁键值
 #define UPGRADEaddr1      0x08005000		// offset:20KB
-#define FLASH_BAK_ADDR		0x08024800  	// 第一个应用程序起始地址(存放在FLASH)
+#define FLASH_BAK_ADDR		0x08024800
 typedef struct 
 {
   uint8_t McuVersionSucess;
