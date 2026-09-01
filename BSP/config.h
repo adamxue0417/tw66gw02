@@ -19,7 +19,6 @@
 #include "gpio.h"
 #include "adc.h"
 #include "dma.h"
-#include "tim.h"
 #include "usart.h"
 //BSP
 #include "buzz.h"
@@ -75,7 +74,10 @@
 #define PGout(n)   BIT_ADDR(GPIOG_ODR_Addr,n)
 #define PGin(n)    BIT_ADDR(GPIOG_IDR_Addr,n)
 #define delay_ms(X)    HAL_Delay(X);   
-#define system_version                   100
+#ifndef MATHIS_FW_VERSION
+#define MATHIS_FW_VERSION                100u
+#endif
+#define system_version                   MATHIS_FW_VERSION
 #define unitF                            0
 #define unitC                            1
 #define off                              0
@@ -133,6 +135,7 @@ extern volatile uint8_t g_probe_connected;
 extern volatile uint8_t g_probe_over_hi;
 extern volatile uint8_t g_probe_over_lo;
 extern volatile uint8_t g_battery_low;
+extern volatile uint16_t g_battery_mv;
 typedef struct {
     uint8_t RtdErr;
     uint8_t HighTempErr;

@@ -36,7 +36,6 @@
 .\tw66gw02\main.o: ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h
 .\tw66gw02\main.o: ../Core/Inc/adc.h
 .\tw66gw02\main.o: ../Core/Inc/dma.h
-.\tw66gw02\main.o: ../Core/Inc/tim.h
 .\tw66gw02\main.o: ../Core/Inc/usart.h
 .\tw66gw02\main.o: ../BSP/config.h
 .\tw66gw02\main.o: C:\Keil_v5\ARM\ARM_Compiler_5.06u7\Bin\..\include\string.h
@@ -57,3 +56,5 @@
 .\tw66gw02\main.o: ../COP/shutdown.h
 .\tw66gw02\main.o: ../COP/warning.h
 .\tw66gw02\main.o: ../OS/TaskScheduler.h
+.\tw66gw02\main.o: ../COP/ota_boot.h
+.\tw66gw02\main.o: ../BSP/ota_layout.h

@@ -43,7 +43,6 @@
 .\tw66gw02\stm32f0xx_it.o: ../Core/Inc/gpio.h
 .\tw66gw02\stm32f0xx_it.o: ../Core/Inc/adc.h
 .\tw66gw02\stm32f0xx_it.o: ../Core/Inc/dma.h
-.\tw66gw02\stm32f0xx_it.o: ../Core/Inc/tim.h
 .\tw66gw02\stm32f0xx_it.o: ../Core/Inc/usart.h
 .\tw66gw02\stm32f0xx_it.o: ../BSP/config.h
 .\tw66gw02\stm32f0xx_it.o: ../BSP/buzz.h

@@ -1,0 +1,293 @@
+TA920 000:001.705   SEGGER J-Link V9.68 Log File
+TA920 000:001.866   DLL Compiled: Aug 12 2026 15:23:53
+TA920 000:001.877   Logging started @ 2026-08-31 09:25
+TA920 000:001.880   Process: C:\Keil_v5\ARM\Segger\JLink.exe
+TA920 000:001.891 - 1.884ms 
+TA920 000:001.992 JLINK_SetWarnOutHandler(...)
+TA920 000:001.998 - 0.006ms 
+TA920 000:002.006 JLINK_OpenEx(...)
+TA920 000:009.817   Firmware: J-Link V9 compiled Dec 13 2022 11:14:50
+TA920 000:010.826   Firmware: J-Link V9 compiled Dec 13 2022 11:14:50
+TA920 000:011.698   Decompressing FW timestamp took 616 us
+TA920 000:016.932   Hardware: V9.70
+TA920 000:016.944   S/N: 69736254
+TA920 000:016.949   OEM: SEGGER
+TA920 000:016.954   Feature(s): RDI, GDB, FlashDL, FlashBP, JFlash
+TA920 000:018.475   Bootloader: (FW returned invalid version)
+TA920 000:019.634   TELNET listener socket opened on port 19021
+TA920 000:019.742   WEBSRV WEBSRV_Init(): Starting webserver thread(s)
+TA920 000:019.997   WEBSRV Webserver running on local port 19080
+TA920 000:020.077   Looking for J-Link GUI Server exe at: C:\Keil_v5\ARM\Segger\JLinkGUIServer.exe
+TA920 000:020.172   Looking for J-Link GUI Server exe at: C:\Program Files (x86)\SEGGER\JLink\\JLinkGUIServer.exe
+TA920 000:326.350   Failed to connect to J-Link GUI Server.
+TA920 000:327.284 - 324.370ms returns "O.K."
+TA920 000:327.543 JLINK_GetFirmwareString(...)
+TA920 000:327.548 - 0.007ms 
+TA920 000:327.555 JLINK_GetHardwareVersion()
+TA920 000:327.559 - 0.003ms returns 97000
+TA920 000:327.566 JLINK_GetHWInfoEx(...)
+TA920 000:328.081 - 0.516ms returns 0
+TA920 000:328.091 JLINK_GetSN()
+TA920 000:328.095 - 0.004ms returns 69736254
+TA920 000:328.101 JLINK_GetOEMString(...)
+TA920 000:328.690 JLINK_EMU_GetCurrConnectionInfo()
+TA920 000:328.816 - 0.125ms returns 0
+TA920 000:328.823 JLINK_EMU_HasCapEx(0x00000026)
+TA920 000:328.827 - 0.003ms returns 0
+TA920 000:328.831 JLINK_GetEmuCaps()
+TA920 000:328.835 - 0.003ms returns 0xB9FF7BBF
+TA920 000:328.839 JLINK_GetEmuCaps()
+TA920 000:328.842 - 0.003ms returns 0xB9FF7BBF
+TA920 000:328.846 JLINK_GetHWStatus(...)
+TA920 000:328.970 - 0.124ms returns 0
+TA920 000:328.975 JLINK_EMU_HasCapEx(0x00000044)
+TA920 000:328.978 - 0.003ms returns 1
+TA920 000:328.984 JLINK_ReadEmuConfigMem(..., Off = 0x9A, NumBytes = 0x01)
+TA920 000:328.988 - 0.003ms returns 0
+TA920 000:329.265 JLINK_ExecCommand("device=STM32F030C8", ...). 
+TA920 000:376.632   XML file found at: C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\JLinkDevices.xml
+TA920 000:378.122   C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\JLinkDevices.xml evaluated successfully.
+TA920 000:378.136     Device entry created:  FCMA62N
+TA920 000:378.140       ChipInfo:
+TA920 000:378.145         Vendor:          QUECTEL
+TA920 000:378.150         Name:            FCMA62N
+TA920 000:378.156         WorkRAMAddr:     0x20000000
+TA920 000:378.161         WorkRAMSize:     0x00010000
+TA920 000:378.167         Core:            JLINK_CORE_CORTEX_M33
+TA920 000:378.216         Script:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FCMA62N\FCMA62N.JLinkScript
+TA920 000:378.222       FlashBankInfo:
+TA920 000:378.228         Name:            QSPI flash
+TA920 000:378.233         BaseAddr:        0x08000000
+TA920 000:378.301         LoaderInfo:
+TA920 000:378.307           Name:            QSPI_flash
+TA920 000:378.312           MaxSize:         0x00800000
+TA920 000:378.317           Loader:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FCMA62N\FCMA62N_FLEXSPI.FLM
+TA920 000:378.322           LoaderType:      FLASH_ALGO_TYPE_OPEN
+TA920 000:378.327       FlashBankInfo:
+TA920 000:378.332         Name:            Secure QSPI flash
+TA920 000:378.337         BaseAddr:        0x18000000
+TA920 000:378.380         LoaderInfo:
+TA920 000:378.385           Name:            Secure_QSPI_flash
+TA920 000:378.390           MaxSize:         0x00800000
+TA920 000:378.395           Loader:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FCMA62N\FCMA62N_FLEXSPI_S.FLM
+TA920 000:378.400           LoaderType:      FLASH_ALGO_TYPE_OPEN
+TA920 000:378.727     Device entry created:  FCM363X
+TA920 000:378.732       ChipInfo:
+TA920 000:378.737         Vendor:          QUECTEL
+TA920 000:378.742         Name:            FCM363X
+TA920 000:378.747         WorkRAMAddr:     0x20000000
+TA920 000:378.752         WorkRAMSize:     0x00010000
+TA920 000:378.758         Core:            JLINK_CORE_CORTEX_M33
+TA920 000:378.783         Script:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FCM363X\FCM363X.JLinkScript
+TA920 000:378.789       FlashBankInfo:
+TA920 000:378.794         Name:            QSPI flash
+TA920 000:378.799         BaseAddr:        0x08000000
+TA920 000:378.852         LoaderInfo:
+TA920 000:378.857           Name:            QSPI_flash
+TA920 000:378.862           MaxSize:         0x00800000
+TA920 000:378.868           Loader:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FCM363X\FCM363X_FLEXSPI.FLM
+TA920 000:378.873           LoaderType:      FLASH_ALGO_TYPE_OPEN
+TA920 000:378.878       FlashBankInfo:
+TA920 000:378.882         Name:            Secure QSPI flash
+TA920 000:378.887         BaseAddr:        0x18000000
+TA920 000:378.927         LoaderInfo:
+TA920 000:378.932           Name:            Secure_QSPI_flash
+TA920 000:378.937           MaxSize:         0x00800000
+TA920 000:378.942           Loader:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FCM363X\FCM363X_FLEXSPI_S.FLM
+TA920 000:378.947           LoaderType:      FLASH_ALGO_TYPE_OPEN
+TA920 000:378.971     Alias entry created:
+TA920 000:378.975       ChipInfo:
+TA920 000:378.980         Alias of:        FCM363X
+TA920 000:378.984         Name:            FCM363XAB
+TA920 000:379.002     Alias entry created:
+TA920 000:379.005       ChipInfo:
+TA920 000:379.010         Alias of:        FCM363X
+TA920 000:379.015         Name:            FCM363XAC
+TA920 000:379.031     Device entry created:  FGMH63X
+TA920 000:379.034       ChipInfo:
+TA920 000:379.039         Vendor:          QUECTEL
+TA920 000:379.044         Name:            FGMH63X
+TA920 000:379.049         WorkRAMAddr:     0x20000000
+TA920 000:379.054         WorkRAMSize:     0x00010000
+TA920 000:379.059         Core:            JLINK_CORE_CORTEX_M33
+TA920 000:379.073         Script:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FGMH63X\FGMH63X.JLinkScript
+TA920 000:379.078       FlashBankInfo:
+TA920 000:379.084         Name:            QSPI flash
+TA920 000:379.089         BaseAddr:        0x08000000
+TA920 000:379.127         LoaderInfo:
+TA920 000:379.131           Name:            QSPI_flash
+TA920 000:379.136           MaxSize:         0x01000000
+TA920 000:379.141           Loader:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FGMH63X\FGMH63X_FLEXSPI.FLM
+TA920 000:379.146           LoaderType:      FLASH_ALGO_TYPE_OPEN
+TA920 000:379.151       FlashBankInfo:
+TA920 000:379.157         Name:            Secure QSPI flash
+TA920 000:379.163         BaseAddr:        0x18000000
+TA920 000:379.200         LoaderInfo:
+TA920 000:379.207           Name:            Secure_QSPI_flash
+TA920 000:379.212           MaxSize:         0x01000000
+TA920 000:379.217           Loader:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FGMH63X\FGMH63X_FLEXSPI_S.FLM
+TA920 000:379.222           LoaderType:      FLASH_ALGO_TYPE_OPEN
+TA920 000:379.230     Device entry created:  FCMB63X
+TA920 000:379.234       ChipInfo:
+TA920 000:379.239         Vendor:          QUECTEL
+TA920 000:379.244         Name:            FCMB63X
+TA920 000:379.249         WorkRAMAddr:     0x20000000
+TA920 000:379.254         WorkRAMSize:     0x00100000
+TA920 000:379.260         Core:            JLINK_CORE_CORTEX_M33
+TA920 000:379.275         Script:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FCMB63X\FCMB63X.JLinkScript
+TA920 000:379.281       FlashBankInfo:
+TA920 000:379.286         Name:            QSPI flash
+TA920 000:379.291         BaseAddr:        0x08000000
+TA920 000:379.333         LoaderInfo:
+TA920 000:379.338           Name:            QSPI_flash
+TA920 000:379.343           MaxSize:         0x02000000
+TA920 000:379.349           Loader:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FCMB63X\FCMB63X_FLEXSPI.FLM
+TA920 000:379.362           LoaderType:      FLASH_ALGO_TYPE_OPEN
+TA920 000:379.367       FlashBankInfo:
+TA920 000:379.372         Name:            Secure QSPI flash
+TA920 000:379.377         BaseAddr:        0x18000000
+TA920 000:379.418         LoaderInfo:
+TA920 000:379.423           Name:            Secure_QSPI_flash
+TA920 000:379.429           MaxSize:         0x02000000
+TA920 000:379.434           Loader:          C:\Users\PC\AppData\Roaming\SEGGER\JLinkDevices\Devices\QUECTEL\FCMB63X\FCMB63X_FLEXSPI_S.FLM
+TA920 000:379.439           LoaderType:      FLASH_ALGO_TYPE_OPEN
+TA920 000:393.444   Ref file found at: C:\Keil_v5\ARM\Segger\JLinkDevices.ref
+TA920 000:393.616   REF file references invalid XML file: D:\adam\jflash\JLink\JLinkDevices.xml
+TA920 000:396.215   Device "STM32F030C8" selected.
+TA920 000:415.636 - 86.371ms returns 0x00
+TA920 000:415.664 JLINK_EnableLog(...)
+TA920 000:415.668 - 0.004ms 
+TA920 000:415.728 JLINK_GetEmuCaps()
+TA920 000:415.742 - 0.014ms returns 0xB9FF7BBF
+TA920 000:415.748 JLINK_TIF_GetAvailable(...)
+TA920 000:415.887 - 0.139ms 
+TA920 000:415.896 JLINK_TIF_Select(JLINKARM_TIF_SWD)
+TA920 000:416.778 - 0.882ms returns 0x00
+TA920 000:416.790 JLINK_IsConnected()
+TA920 000:416.795 - 0.006ms returns FALSE
+TA920 000:416.800 JLINK_SetSpeed(1000)
+TA920 000:416.869 - 0.069ms 
+TA920 000:416.876 JLINK_Connect()
+TA920 000:418.136   InitTarget() start
+TA920 000:418.427    J-Link Script File: Executing InitTarget()
+TA920 000:419.187   SWD selected. Executing JTAG -> SWD switching sequence.
+TA920 000:421.043   DAP initialized successfully.
+TA920 000:427.716   InitTarget() end - Took 9.56ms
+TA920 000:428.699   Found SW-DP with ID 0x0BC11477
+TA920 000:430.399   Old FW that does not support reading DPIDR via DAP jobs
+TA920 000:431.642   DPv0 detected
+TA920 000:431.653   CoreSight SoC-400 or earlier
+TA920 000:431.658   Scanning AP map to find all available APs
+TA920 000:432.322   AP[1]: Stopped AP scan as end of AP map has been reached
+TA920 000:432.328   AP[0]: AHB-AP (IDR: 0x04770031, ADDR: 0x00000000)
+TA920 000:432.346   Iterating through AP map to find AHB-AP to use
+TA920 000:433.516   AP[0]: Core found
+TA920 000:433.522   AP[0]: AHB-AP ROM base: 0xE00FF000
+TA920 000:434.331   CPUID register: 0x410CC601. Implementer code: 0x41 (ARM)
+TA920 000:434.338   Found Cortex-M0 r0p1, Little endian.
+TA920 000:434.631   -- Max. mem block: 0x00010BB0
+TA920 000:435.104   CPU_ReadMem(4 bytes @ 0xE000EDF0)
+TA920 000:435.686   CPU_ReadMem(4 bytes @ 0xE0002000)
+TA920 000:436.224   FPUnit: 4 code (BP) slots and 0 literal slots
+TA920 000:436.230   CPU_ReadMem(4 bytes @ 0xE000EDFC)
+TA920 000:436.772   CPU_WriteMem(4 bytes @ 0xE000EDFC)
+TA920 000:437.373   CPU_ReadMem(4 bytes @ 0xE0001000)
+TA920 000:437.828   CPU_WriteMem(4 bytes @ 0xE0001000)
+TA920 000:438.337   CoreSight components:
+TA920 000:438.373   ROMTbl[0] @ E00FF000
+TA920 000:438.417   CPU_ReadMem(64 bytes @ 0xE00FF000)
+TA920 000:439.768   CPU_ReadMem(32 bytes @ 0xE000EFE0)
+TA920 000:440.764   [0][0]: E000E000 CID B105E00D PID 000BB008 SCS
+TA920 000:440.780   CPU_ReadMem(32 bytes @ 0xE0001FE0)
+TA920 000:441.686   [0][1]: E0001000 CID B105E00D PID 000BB00A DWT
+TA920 000:441.723   CPU_ReadMem(32 bytes @ 0xE0002FE0)
+TA920 000:442.671   [0][2]: E0002000 CID B105E00D PID 000BB00B FPB
+TA920 000:443.062 - 26.184ms returns 0x00
+TA920 000:443.135 JLINK_GetIdData(pIdData)
+TA920 000:443.436   pIdData->ScanLen=4
+TA920 000:443.447   pIdData->NumDevices=1
+TA920 000:443.452   pIdData->aId[0]=0x0BC11477
+TA920 000:443.458   pIdData->aIrRead[0]=0
+TA920 000:443.462   pIdData->aScanLen[0]=0
+TA920 000:443.467   pIdData->aScanRead[0]=0
+TA920 000:443.472 - 0.336ms 
+TA920 000:443.485 JLINK_GetMemZones(...)
+TA920 000:443.491 - 0.006ms returns 1
+TA920 000:443.499 JLINK_HasError()
+TA920 000:443.506 JLINK_CORE_GetFound()
+TA920 000:443.514 - 0.007ms returns 0x60000FF
+TA920 000:443.523 JLINK_Halt()
+TA920 000:449.305 - 5.781ms returns 0x00
+TA920 000:449.329 JLINK_GetDeviceFamily
+TA920 000:449.333 - 0.003ms returns 6
+TA920 000:449.337 JLINK_CORE_GetFound()
+TA920 000:449.341 - 0.003ms returns 0x60000FF
+TA920 000:449.351 JLINK_GetDebugInfo(0x01 = Unknown)
+TA920 000:449.355   Value=0x00000000
+TA920 000:449.360 - 0.013ms returns 0
+TA920 000:449.368 JLINK_ReadRegs(NumRegs = 28)
+TA920 000:449.653   CPU_ReadMem(4 bytes @ 0xE0001004)
+TA920 000:450.170   
+  R0 (0)         = 0xB00700EE           R1 (1)         = 0x6C00               R2 (2)         = 0x20001FC0           R3 (3)         = 0x69C1            
+  R4 (4)         = 0x20000000           R5 (5)         = 0x8001800            R6 (6)         = 0x6C00               R7 (7)         = 0x800082F         
+  R8 (8)         = 0xFFFFFFFF           R9 (9)         = 0xFFFFFFFF           R10 (10)       = 0x8000840            R11 (11)       = 0x8000840         
+  R12 (12)       = 0xFFFFFFFF           R13 (SP) (13)  = 0x20000400           MSP (17)       = 0x20000400           PSP (18)       = 0xFFFFFFFC        
+  R14 (14)       = 0x80004F5            R15 (PC) (15)  = 0x800056C            XPSR (16)      = 0x81000000           APSR (21)      = 0x80000000        
+  EPSR (22)      = 0x1000000            IPSR (23)      = 0x00                 CFBP (20)      = 0x00                 CONTROL (27)   = 0x00              
+  FAULTMASK (26) = 0x00                 BASEPRI (25)   = 0x00                 PRIMASK (24)   = 0x00                 CycleCnt (65)  = 0x00              
+TA920 000:450.216 - 0.846ms returns 0x00
+TA920 000:450.268 JLINK_IsHalted()
+TA920 000:450.272 - 0.004ms returns TRUE
+TA920 000:450.276 JLINK_GetDeviceFamily
+TA920 000:450.279 - 0.003ms returns 6
+TA920 000:450.282 JLINK_CORE_GetFound()
+TA920 000:450.285 - 0.003ms returns 0x60000FF
+TA920 000:450.289 JLINK_GetDebugInfo(0x01 = Unknown)
+TA920 000:450.292   Value=0x00000000
+TA920 000:450.297 - 0.007ms returns 0
+TA920 000:450.301 JLINK_ReadRegs(NumRegs = 28)
+TA920 000:450.311   
+  R0 (0)         = 0xB00700EE           R1 (1)         = 0x6C00               R2 (2)         = 0x20001FC0           R3 (3)         = 0x69C1            
+  R4 (4)         = 0x20000000           R5 (5)         = 0x8001800            R6 (6)         = 0x6C00               R7 (7)         = 0x800082F         
+  R8 (8)         = 0xFFFFFFFF           R9 (9)         = 0xFFFFFFFF           R10 (10)       = 0x8000840            R11 (11)       = 0x8000840         
+  R12 (12)       = 0xFFFFFFFF           R13 (SP) (13)  = 0x20000400           MSP (17)       = 0x20000400           PSP (18)       = 0xFFFFFFFC        
+  R14 (14)       = 0x80004F5            R15 (PC) (15)  = 0x800056C            XPSR (16)      = 0x81000000           APSR (21)      = 0x80000000        
+  EPSR (22)      = 0x1000000            IPSR (23)      = 0x00                 CFBP (20)      = 0x00                 CONTROL (27)   = 0x00              
+  FAULTMASK (26) = 0x00                 BASEPRI (25)   = 0x00                 PRIMASK (24)   = 0x00                 CycleCnt (65)  = 0x00              
+TA920 000:450.316 - 0.015ms returns 0x00
+TA920 000:450.575 JLINK_ReadMemU32_64(0x08000000, 0x2 Items)
+TA920 000:450.588   CPU_ReadMem(64 bytes @ 0x08000000)
+TA920 000:451.917    -- Updating C cache (64 bytes @ 0x08000000)
+TA920 000:451.931    -- Read from C cache (8 bytes @ 0x08000000)
+TA920 000:451.937   Data:  00 04 00 20 51 01 00 08
+TA920 000:451.943 - 1.366ms returns 2 (0x2)
+TA920 000:451.949 JLINK_HasError()
+TA920 000:451.962 JLINK_ReadMemU32_64(0x08001800, 0x2 Items)
+TA920 000:451.968   CPU_ReadMem(64 bytes @ 0x08001800)
+TA920 000:453.245    -- Updating C cache (64 bytes @ 0x08001800)
+TA920 000:453.259    -- Read from C cache (8 bytes @ 0x08001800)
+TA920 000:453.264   Data:  98 15 00 20 91 19 00 08
+TA920 000:453.269 - 1.307ms returns 2 (0x2)
+TA920 000:453.274 JLINK_HasError()
+TA920 000:453.319 JLINK_ReadMemU32_64(0x20001FF0, 0x1 Items)
+TA920 000:453.326   CPU_ReadMem(64 bytes @ 0x20001FC0)
+TA920 000:454.613    -- Updating C cache (64 bytes @ 0x20001FC0)
+TA920 000:454.650    -- Read from C cache (4 bytes @ 0x20001FF0)
+TA920 000:454.689   Data:  EE 00 07 B0
+TA920 000:454.695 - 1.375ms returns 1 (0x1)
+TA920 000:454.699 JLINK_HasError()
+TA920 000:454.710 JLINK_IsOpen()
+TA920 000:454.713 - 0.003ms returns 0x01
+TA920 000:460.250 JLINK_Close()
+TA920 000:460.527   OnDisconnectTarget() start
+TA920 000:460.545    J-Link Script File: Executing OnDisconnectTarget()
+TA920 000:460.558   CPU_WriteMem(4 bytes @ 0x40015804)
+TA920 000:461.035   CPU_WriteMem(4 bytes @ 0x40015808)
+TA920 000:461.558   CPU_ReadMem(4 bytes @ 0x40021018)
+TA920 000:462.048   CPU_WriteMem(4 bytes @ 0x40021018)
+TA920 000:462.627   OnDisconnectTarget() end - Took 2.07ms
+TA920 000:462.657   CPU_ReadMem(4 bytes @ 0xE0001000)
+TA920 000:463.123   CPU_WriteMem(4 bytes @ 0xE0001000)
+TA920 000:495.972 - 35.720ms
+TA920 000:496.300   
+TA920 000:496.324   Closed

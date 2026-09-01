@@ -1,0 +1,10 @@
+﻿{
+    "format":  "mathis-dev-ota-v1",
+    "target_version":  101,
+    "application_size":  22896,
+    "signature_size":  384,
+    "artifact_size":  23280,
+    "crc32_iso_hdlc":  "0x9122C8AF",
+    "application_base":  "0x08001800",
+    "development_signature_placeholder":  true
+}

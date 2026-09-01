@@ -285,12 +285,12 @@ uint8_t U2_Data[2];
 void com_init(void)
 {
   __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
-  HAL_UART_Receive_DMA(&huart1, COM1.rxBuf, COM_RXSIZE);
+  HAL_UART_Receive_DMA(&huart1, COM1.dmaBuf, COM_RXSIZE);
 
   __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
 //  __HAL_DMA_ENABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
 //  __HAL_DMA_ENABLE_IT(&hdma_usart2_rx, DMA_IT_TC);
-  HAL_UART_Receive_DMA(&huart2, COM2.rxBuf, COM_RXSIZE);
+  HAL_UART_Receive_DMA(&huart2, COM2.dmaBuf, COM_RXSIZE);
 }
 
 void _usart_callback(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, TypeDefCOM *com)
@@ -300,13 +300,29 @@ void _usart_callback(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, Ty
   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_IDLE) != RESET)
   {
     __HAL_UART_CLEAR_IDLEFLAG(huart);
+    remain = __HAL_DMA_GET_COUNTER(hdma_uart);
     HAL_UART_DMAStop(huart);
 
-    remain = __HAL_DMA_GET_COUNTER(hdma_uart);
-    com->rxLen = (uint16_t)(COM_RXSIZE - remain);
-    com->rxFlag = 1u;
+    if (remain <= COM_RXSIZE)
+    {
+      uint16_t received = (uint16_t)(COM_RXSIZE - remain);
+      if (received != 0u)
+      {
+        if (com->rxFlag == 0u)
+        {
+          memcpy(com->rxBuf, com->dmaBuf, received);
+          com->rxLen = received;
+          __DMB();
+          com->rxFlag = 1u;
+        }
+        else
+        {
+          com->overrunCount++;
+        }
+      }
+    }
 
-    HAL_UART_Receive_DMA(huart, com->rxBuf, COM_RXSIZE);
+    HAL_UART_Receive_DMA(huart, com->dmaBuf, COM_RXSIZE);
   }
 }
 
@@ -327,14 +343,40 @@ void uart_dma_poll_check(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart
 
   current_pos = (uint16_t)(COM_RXSIZE - __HAL_DMA_GET_COUNTER(hdma_uart));
 
-  if ((current_pos == *last_pos) || (com->rxFlag == 1u))
+  if ((current_pos == *last_pos) || (com->rxFlag == 1u) || (current_pos > COM_RXSIZE))
   {
     return;
   }
 
+  memcpy(com->rxBuf, com->dmaBuf, current_pos);
   com->rxLen = current_pos;
+  __DMB();
   com->rxFlag = 1u;
   *last_pos = current_pos;
+}
+
+uint16_t COM_TakeRx(TypeDefCOM *com, uint8_t *dest, uint16_t capacity)
+{
+  uint16_t length = 0u;
+  uint32_t primask;
+
+  if ((com == NULL) || (dest == NULL) || (capacity == 0u))
+  {
+    return 0u;
+  }
+
+  primask = __get_PRIMASK();
+  __disable_irq();
+  if (com->rxFlag != 0u)
+  {
+    length = com->rxLen;
+    if (length > capacity) { length = capacity; }
+    memcpy(dest, com->rxBuf, length);
+    com->rxFlag = 0u;
+    com->rxLen = 0u;
+  }
+  if (primask == 0u) { __enable_irq(); }
+  return length;
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)

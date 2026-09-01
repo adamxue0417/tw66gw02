@@ -1,38 +1,56 @@
-/**
-  ******************************************************************************
-  * @file    wireless.h
-  * @author 
-  * @version V1.0
-  * @date
-  * @brief   Wireless protocol module interface definitions.
-  ******************************************************************************
-  */
+/** Mathis BLE application protocol over the pre-configured EMB1061 UART. */
 #ifndef __WIRELESS_H__
 #define __WIRELESS_H__
 
 #include "config.h"
 
-#define WL_HEAD                     0xFEu
-#define WL_TAIL                     0xFFu
-#define WL_TX_MAX                   64u
+#define MATHIS_START_BYTE          (0x5Au)
+#define MATHIS_MAX_PAYLOAD         (236u)
+#define MATHIS_MAX_FRAME           (244u)
+#define MATHIS_TYPE_CMD            (0x01u)
+#define MATHIS_TYPE_TELEMETRY      (0x81u)
+#define MATHIS_TYPE_OTA_STATUS     (0x90u)
 
-#define WL_CMD_POWER                0x01u
-#define WL_CMD_TEMP_UP              0x03u
-#define WL_CMD_TEMP_DOWN            0x04u
-#define WL_CMD_SET_TEMP             0x05u
-#define WL_CMD_JUMP_SET             0x06u
-#define WL_CMD_QUERY_PROBE          0x07u
-#define WL_CMD_UNIT                 0x09u
-#define WL_CMD_QUERY_STATUS         0x0Bu
-#define WL_CMD_QUERY_SET_ALL        0x0Du
-#define WL_CMD_QUERY_ACT_ALL        0x0Eu
-#define WL_CMD_BT_STATUS            0x24u
-#define WL_CMD_FW_INFO              0x5Fu
+#define MATHIS_CMD_SET_UNITS       (0x01u)
+#define MATHIS_CMD_POWER_OFF       (0x02u)
+#define MATHIS_CMD_COEFF_AB        (0x03u)
+#define MATHIS_CMD_FACTORY_RESET   (0x04u)
+#define MATHIS_CMD_COEFF_CD        (0x05u)
+#define MATHIS_CMD_COEFF_E         (0x06u)
 
-#define WL_TEMP_MIN                 175u
-#define WL_TEMP_MAX                 455u
+/* Framework-level telemetry control carried inside a valid CMD payload. */
+#define MATHIS_CMD_TELEMETRY_CTRL  (0xFFu)
+#define MATHIS_TELEMETRY_STOP      (0x00u)
+#define MATHIS_TELEMETRY_START     (0x01u)
+
+typedef struct {
+    volatile uint32_t uart_chunks;
+    volatile uint32_t uart_bytes;
+    volatile uint32_t frames_ok;
+    volatile uint32_t crc_errors;
+    volatile uint32_t length_errors;
+    volatile uint32_t cmd_frames;
+    volatile uint32_t start_frames;
+    volatile uint32_t stop_frames;
+    volatile uint32_t module_start_events;
+    volatile uint32_t module_stop_events;
+    volatile uint32_t telemetry_queued;
+    volatile uint32_t telemetry_tx_started;
+    volatile uint16_t last_uart_length;
+    volatile uint16_t last_payload_length;
+    volatile uint8_t last_type;
+    volatile uint8_t last_sequence;
+    volatile uint8_t last_command;
+    volatile uint8_t telemetry_enabled;
+} MathisBleDebug;
+
+extern MathisBleDebug g_mathis_ble_debug;
 
 void Wireless_Init(void);
 void WirelessTask(void);
+uint16_t Mathis_Crc16(const uint8_t *data, uint16_t length);
+uint8_t Wireless_QueueProtocolFrame(uint8_t type, const uint8_t *payload, uint8_t payload_length);
+uint8_t Wireless_ProtocolTxIdle(void);
+void Wireless_DiscardQueuedFrames(void);
 
 #endif

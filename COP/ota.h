@@ -10,8 +10,15 @@
 #ifndef __OTA_H__
 #define __OTA_H__
 #include "config.h"
-#define UPGRADEaddr1      0x08005000		// offset:20KB
-#define FLASH_BAK_ADDR		0x08024800
+#include "ota_layout.h"
+
+/*
+ * Deprecated YMODEM/DGUS OTA interface retained only for source compatibility.
+ * The active code path is ota_update.c plus the dedicated bootloader.  Keep
+ * these legacy aliases inside the valid STM32F030C8 64 KiB flash map.
+ */
+#define UPGRADEaddr1      OTA_APP_BASE
+#define FLASH_BAK_ADDR    OTA_STAGE_BASE
 typedef struct 
 {
   uint8_t McuVersionSucess;

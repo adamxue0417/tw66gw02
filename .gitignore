@@ -1,0 +1,24 @@
+# Keil build output
+MDK-ARM/tw66gw02/
+MDK-ARM/*.hex
+MDK-ARM/*.bin
+MDK-ARM/*.axf
+MDK-ARM/*.map
+MDK-ARM/*.htm
+MDK-ARM/*.log
+MDK-ARM/*.Bak
+
+# Keil/J-Link per-user and generated files
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvoptx
+MDK-ARM/JLinkLog.txt
+
+# Common embedded build intermediates
+*.o
+*.d
+*.crf
+*.dep
+*.lst
+*.lnp
+*.bak
+*.Bak

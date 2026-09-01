@@ -42,7 +42,6 @@
 .\tw66gw02\wireless.o: ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h
 .\tw66gw02\wireless.o: ../Core/Inc/adc.h
 .\tw66gw02\wireless.o: ../Core/Inc/dma.h
-.\tw66gw02\wireless.o: ../Core/Inc/tim.h
 .\tw66gw02\wireless.o: ../Core/Inc/usart.h
 .\tw66gw02\wireless.o: ../BSP/config.h
 .\tw66gw02\wireless.o: ..\BSP\buzz.h
@@ -56,3 +55,4 @@
 .\tw66gw02\wireless.o: ../COP/shutdown.h
 .\tw66gw02\wireless.o: ../COP/warning.h
 .\tw66gw02\wireless.o: ../OS/TaskScheduler.h
+.\tw66gw02\wireless.o: ../COP/ota_update.h

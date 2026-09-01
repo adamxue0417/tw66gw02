@@ -1,0 +1,15 @@
+r
+h
+mem32 0x08001800 2
+loadbin C:\Users\PC\Desktop\TW66GW02\11\tw66gw02\Bootloader\build\mathis_bootloader.bin, 0x08000000
+verifybin C:\Users\PC\Desktop\TW66GW02\11\tw66gw02\Bootloader\build\mathis_bootloader.bin, 0x08000000
+mem32 0x08000000 2
+mem32 0x08001800 2
+r
+g
+sleep 1000
+h
+regs
+mem32 0x20001FF0 1
+g
+qc

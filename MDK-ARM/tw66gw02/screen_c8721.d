@@ -44,7 +44,6 @@
 .\tw66gw02\screen_c8721.o: C:\Keil_v5\ARM\ARM_Compiler_5.06u7\Bin\..\include\stdlib.h
 .\tw66gw02\screen_c8721.o: ../Core/Inc/adc.h
 .\tw66gw02\screen_c8721.o: ../Core/Inc/dma.h
-.\tw66gw02\screen_c8721.o: ../Core/Inc/tim.h
 .\tw66gw02\screen_c8721.o: ../Core/Inc/usart.h
 .\tw66gw02\screen_c8721.o: ../BSP/config.h
 .\tw66gw02\screen_c8721.o: ..\BSP\buzz.h

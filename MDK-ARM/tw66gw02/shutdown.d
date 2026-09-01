@@ -42,7 +42,6 @@
 .\tw66gw02\shutdown.o: ../Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h
 .\tw66gw02\shutdown.o: ../Core/Inc/adc.h
 .\tw66gw02\shutdown.o: ../Core/Inc/dma.h
-.\tw66gw02\shutdown.o: ../Core/Inc/tim.h
 .\tw66gw02\shutdown.o: ../Core/Inc/usart.h
 .\tw66gw02\shutdown.o: ../BSP/config.h
 .\tw66gw02\shutdown.o: ../BSP/buzz.h

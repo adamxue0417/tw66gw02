@@ -20,13 +20,14 @@
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
-#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "config.h"
+#include "ota_boot.h"
+#include "ota_layout.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -67,6 +68,10 @@ void SystemClock_Config(void);
   */
 int main(void)
 {
+	/* Retain board power immediately after the C runtime has initialized. */
+	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+	GPIOB->BSRR = GPIO_BSRR_BS_3;
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_APP_MAIN;
 
   /* USER CODE BEGIN 1 */
 
@@ -76,6 +81,7 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_HAL_READY;
 
   /* USER CODE BEGIN Init */
 
@@ -83,6 +89,7 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_CLOCK_READY;
 
   /* USER CODE BEGIN SysInit */
 
@@ -92,22 +99,26 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_ADC_Init();
-  MX_TIM3_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_PERIPH_READY;
   /* USER CODE BEGIN 2 */
   
 	SysDataInit();
-	Screen_C8721_Init();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_DATA_READY;
+	if (OtaBoot_IsTrial() != 0u) { UI_RequestBluetoothPairing(); }
 	Temp_Get_Init();
+	Screen_C8721_Init();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_SCREEN_READY;
   com_init();
   Wireless_Init();
 	
  SCH_Add_Task(Key_Scan, 0, 10);
  SCH_Add_Task(DisplayTask, 0 , 10); 
- SCH_Add_Task(TempGetTask, 0 , 900);
+ SCH_Add_Task(TempGetTask, 0 , 500);
  SCH_Add_Task(MainControl, 0 , 100);
-// SCH_Add_Task(WirelessTask, 0, 20);
+ SCH_Add_Task(WirelessTask, 0, 20);
+ SCH_Add_Task(OtaBoot_ConfirmRunningImage, 10000, 0);
  
   /* USER CODE END 2 */
 
@@ -115,6 +126,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_LOOP_RUNNING;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -130,45 +142,52 @@ int main(void)
   */
 void SystemClock_Config(void)
 {
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  uint32_t timeout;
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI14;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSI14State = RCC_HSI14_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.HSI14CalibrationValue = 16;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL12;
-  RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV1;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  /* Fixed clock tree: HSI/2 * 12 = 48 MHz, AHB/APB1 undivided. Keeping this
+     board-specific path local avoids linking the generic RCC configuration
+     state machines into every application image. */
+  RCC->CR |= RCC_CR_HSION;
+  timeout = 0x10000u;
+  while (((RCC->CR & RCC_CR_HSIRDY) == 0u) && (--timeout != 0u)) {}
+  if (timeout == 0u) { Error_Handler(); }
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  /* A bootloader may enter the application while PLL is already SYSCLK. */
+  RCC->CFGR &= ~RCC_CFGR_SW;
+  timeout = 0x10000u;
+  while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) && (--timeout != 0u)) {}
+  if (timeout == 0u) { Error_Handler(); }
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
-  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  RCC->CR2 = (RCC->CR2 & ~RCC_CR2_HSI14TRIM) |
+             (16u << RCC_CR2_HSI14TRIM_Pos) | RCC_CR2_HSI14ON;
+  timeout = 0x10000u;
+  while (((RCC->CR2 & RCC_CR2_HSI14RDY) == 0u) && (--timeout != 0u)) {}
+  if (timeout == 0u) { Error_Handler(); }
+
+  RCC->CR &= ~RCC_CR_PLLON;
+  timeout = 0x10000u;
+  while (((RCC->CR & RCC_CR_PLLRDY) != 0u) && (--timeout != 0u)) {}
+  if (timeout == 0u) { Error_Handler(); }
+
+  RCC->CFGR = (RCC->CFGR & ~(RCC_CFGR_SW | RCC_CFGR_HPRE |
+                RCC_CFGR_PPRE | RCC_CFGR_PLLSRC | RCC_CFGR_PLLMUL)) |
+              RCC_CFGR_PLLSRC_HSI_DIV2 | RCC_CFGR_PLLMUL12;
+  RCC->CFGR2 &= ~RCC_CFGR2_PREDIV;
+  FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY;
+
+  RCC->CR |= RCC_CR_PLLON;
+  timeout = 0x10000u;
+  while (((RCC->CR & RCC_CR_PLLRDY) == 0u) && (--timeout != 0u)) {}
+  if (timeout == 0u) { Error_Handler(); }
+
+  RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | RCC_CFGR_SW_PLL;
+  timeout = 0x10000u;
+  while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) && (--timeout != 0u)) {}
+  if (timeout == 0u) { Error_Handler(); }
+
+  RCC->CFGR3 &= ~RCC_CFGR3_USART1SW;
+  SystemCoreClock = 48000000u;
+  if (HAL_InitTick(TICK_INT_PRIORITY) != HAL_OK) { Error_Handler(); }
 }
 
 /* USER CODE BEGIN 4 */
@@ -183,6 +202,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  *(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_APP_ERROR;
   __disable_irq();
   while (1)
   {

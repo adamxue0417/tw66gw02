@@ -1,474 +1,377 @@
-/**
-  ******************************************************************************
-  * @file    wireless.c
-  * @author 
-  * @version V1.0
-  * @date
-  * @brief   Wireless protocol receive, parse, dispatch and reply module.
-  ******************************************************************************
-  */
+/** Mathis BLE framed protocol, including the development OTA transport. */
 #include "config.h"
+#include "ota_update.h"
 
-/*
- * Wireless protocol compatible with TW15A01 AppTask style.
- * Transport: USART1 + COM1 DMA RX
- * Frame: [0]=0xFE, [1]=CMD, [...payload...], [last]=0xFF
- */
+#define TX_QUEUE_DEPTH              (4u)
+#define TELEMETRY_PERIOD_TICKS_20MS (50u)
+#define COEFF_TIMEOUT_TICKS_20MS    (3000u)
+#define FW_RELEASE_NUMBER           ((uint8_t)system_version)
 
+typedef struct {
+    uint8_t data[20];
+    uint8_t length;
+} TxEntry;
 
+typedef struct {
+    float coeff[TEMP_COEFF_TERM_COUNT];
+    uint8_t parts;
+    uint16_t age;
+} CoeffPending;
 
-static uint8_t s_tx[WL_TX_MAX];
-static uint8_t s_bt_status = 0u;
-/**
-  * @function wl_get_probe_temp()
-  * -------------------
-  * @brief    Get the current probe temperature for wireless reporting.
-  * @param    None
-  * @note     None
-  */
-static uint16_t wl_get_probe_temp(void)
+static uint8_t s_rx_frame[MATHIS_MAX_FRAME];
+static uint8_t s_uart_chunk[COM_RXSIZE];
+static uint16_t s_rx_count;
+static uint16_t s_rx_expected;
+static uint8_t s_connected;
+static uint8_t s_tx_sequence;
+static uint8_t s_telemetry_ticks;
+static TxEntry s_tx_queue[TX_QUEUE_DEPTH];
+static uint8_t s_tx_head;
+static uint8_t s_tx_tail;
+static uint8_t s_tx_count;
+static CoeffPending s_pending[TEMP_COEFF_CHANNEL_COUNT];
+MathisBleDebug g_mathis_ble_debug;
+
+static void SetConnection(uint8_t connected);
+static uint8_t QueueFrame(const uint8_t *data, uint8_t length);
+
+uint16_t Mathis_Crc16(const uint8_t *data, uint16_t length)
 {
-    if (g_probe_connected == 0u) {
-        return HaveTempErr;
+    uint16_t crc = 0xFFFFu;
+    uint16_t i;
+    uint8_t bit;
+    for (i = 0u; i < length; i++) {
+        crc ^= (uint16_t)data[i] << 8;
+        for (bit = 0u; bit < 8u; bit++) {
+            crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u) : (uint16_t)(crc << 1);
+        }
     }
-    return system_data.pt1000_temp[3];
+    return crc;
 }
 
-static uint8_t wl_is_special_temp(uint16_t t)
+static uint8_t Float32Valid(const uint8_t *bytes)
 {
-    return ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) ? 1u : 0u;
+    uint32_t raw;
+    memcpy(&raw, bytes, sizeof(raw));
+    return ((raw & 0x7F800000u) == 0x7F800000u) ? 0u : 1u;
 }
-/**
-  * @function wl_get_temp_by_channel()
-  * ------------------------
-  * @brief    Get a temperature value by wireless protocol channel.
-  * @param    ch - input parameter
-  * @note     None
-  */
-static uint16_t wl_get_temp_by_channel(uint8_t ch)
+
+static float ReadFloatLe(const uint8_t *bytes)
 {
-    if (ch == 0x01u) { return wl_get_probe_temp(); }        /* probe1 in legacy protocol */
-    if (ch == 0x02u) { return HaveTempErr; }                /* probe2 unsupported */
-    return HaveTempErr;
+    float value;
+    memcpy(&value, bytes, sizeof(value));
+    return value;
 }
-/**
-  * @function wl_get_display_main_temp()
-  * --------------------------
-  * @brief    Get the main display temperature for wireless reporting.
-  * @param    None
-  * @note     None
-  */
-static uint16_t wl_get_display_main_temp(void)
+
+static void ClearPending(void)
 {
-    if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return system_data.pt1000_temp[1]; }
-    if (DisplayMode == DISPLAY_MODE_D_SURFACE) { return system_data.pt1000_temp[0]; }
-    if (DisplayMode == DISPLAY_MODE_CAVITY)    { return system_data.pt1000_temp[2]; }
-    if (DisplayMode == DISPLAY_MODE_PROBE)     { return wl_get_probe_temp(); }
-    return system_data.pt1000_temp[0];
+    memset(s_pending, 0, sizeof(s_pending));
 }
-/**
-  * @function wl_split3()
-  * ------------
-  * @brief    Split a temperature value into three display digits.
-  * @param    v - input parameter
-  * @param    h - input parameter
-  * @param    t - input parameter
-  * @param    l - input parameter
-  * @note     None
-  */
-static void wl_split3(uint16_t v, uint8_t *h, uint8_t *t, uint8_t *l)
+
+static uint8_t ProtocolToInternalChannel(uint8_t channel)
 {
-    if (v > 999u) { v = 999u; }
-    *h = (uint8_t)(v / 100u);
-    *t = (uint8_t)((v / 10u) % 10u);
-    *l = (uint8_t)(v % 10u);
+    static const uint8_t map[3] = {2u, 1u, 0u};
+    return (channel < 3u) ? map[channel] : 0xFFu;
 }
-/**
-  * @function wl_send()
-  * ------------
-  * @brief    Send one wireless protocol frame.
-  * @param    buf - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_send(const uint8_t *buf, uint16_t len)
+
+static uint8_t HandleCoefficientPart(uint8_t subcmd, const uint8_t *payload, uint16_t length)
 {
-    if ((buf == NULL) || (len == 0u)) {
-        return;
+    uint8_t protocol_channel;
+    uint8_t internal_channel;
+    CoeffPending *pending;
+    if (((subcmd == MATHIS_CMD_COEFF_E) && (length != 7u)) ||
+        ((subcmd != MATHIS_CMD_COEFF_E) && (length != 11u))) { return 0u; }
+    if (payload[1] != MATHIS_MODEL_ID) { return 0u; }
+    protocol_channel = payload[2];
+    internal_channel = ProtocolToInternalChannel(protocol_channel);
+    if (internal_channel == 0xFFu) { return 0u; }
+    if ((Float32Valid(&payload[3]) == 0u) ||
+        ((subcmd != MATHIS_CMD_COEFF_E) && (Float32Valid(&payload[7]) == 0u))) { return 0u; }
+    pending = &s_pending[internal_channel];
+    pending->age = 0u;
+    if (subcmd == MATHIS_CMD_COEFF_AB) {
+        pending->coeff[0] = ReadFloatLe(&payload[3]); pending->coeff[1] = ReadFloatLe(&payload[7]); pending->parts |= 0x01u;
+    } else if (subcmd == MATHIS_CMD_COEFF_CD) {
+        pending->coeff[2] = ReadFloatLe(&payload[3]); pending->coeff[3] = ReadFloatLe(&payload[7]); pending->parts |= 0x02u;
+    } else {
+        pending->coeff[4] = ReadFloatLe(&payload[3]); pending->parts |= 0x04u;
     }
-    USART1_SendData((uint8_t *)buf, len);
-}
-/**
-  * @function wl_ack_cmd2()
-  * -------------
-  * @brief    Reply to a two-byte wireless command acknowledgement.
-  * @param    cmd - input parameter
-  * @param    p2 - input parameter
-  * @note     None
-  */
-static void wl_ack_cmd2(uint8_t cmd, uint8_t p2)
-{
-    s_tx[0] = WL_HEAD;
-    s_tx[1] = cmd;
-    s_tx[2] = p2;
-    s_tx[3] = WL_TAIL;
-    wl_send(s_tx, 4u);
-}
-/**
-  * @function wl_handle_power()
-  * -----------------
-  * @brief    Handle wireless power command.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_power(const uint8_t *rx, uint16_t len)
-{
-    (void)len;
-    if (rx[2] == 0x01u) {
-        if (work_process == idle) { work_process = start_up; }
-    } else if (rx[2] == 0x02u) {
-        if (work_process != idle) { work_process = shutdown; }
+    if (pending->parts == 0x07u) {
+        (void)UI_SetTempCoeff(internal_channel, pending->coeff);
+        memset(pending, 0, sizeof(*pending));
     }
-    UI_NotifyLocalInteraction();
-    wl_ack_cmd2(WL_CMD_POWER, rx[2]);
+    return 1u;
 }
-/**
-  * @function wl_handle_temp_up()
-  * -------------------
-  * @brief    Handle wireless temperature increment command.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_temp_up(const uint8_t *rx, uint16_t len)
+
+static void HandleCommand(const uint8_t *payload, uint16_t length)
 {
-    uint16_t step;
-    uint8_t h, t, l;
-
-    if ((len < 7u) || (rx[2] != 0x01u)) {
-        return;
-    }
-
-    step = rx[3];
-    system_data.InTempSet = (uint16_t)(system_data.InTempSet + step);
-    if (system_data.InTempSet > WL_TEMP_MAX) { system_data.InTempSet = WL_TEMP_MAX; }
-    if (system_data.InTempSet < WL_TEMP_MIN) { system_data.InTempSet = WL_TEMP_MIN; }
-
-    wl_split3(system_data.InTempSet, &h, &t, &l);
-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_TEMP_UP; s_tx[2] = 0x01u;
-    s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
-    wl_send(s_tx, 7u);
-}
-/**
-  * @function wl_handle_temp_down()
-  * ---------------------
-  * @brief    Handle wireless temperature decrement command.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_temp_down(const uint8_t *rx, uint16_t len)
-{
-    uint16_t step;
-    uint8_t h, t, l;
-
-    if ((len < 7u) || (rx[2] != 0x01u)) {
-        return;
-    }
-
-    step = rx[3];
-    if (system_data.InTempSet > step) { system_data.InTempSet = (uint16_t)(system_data.InTempSet - step); }
-    else { system_data.InTempSet = WL_TEMP_MIN; }
-    if (system_data.InTempSet > WL_TEMP_MAX) { system_data.InTempSet = WL_TEMP_MAX; }
-    if (system_data.InTempSet < WL_TEMP_MIN) { system_data.InTempSet = WL_TEMP_MIN; }
-
-    wl_split3(system_data.InTempSet, &h, &t, &l);
-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_TEMP_DOWN; s_tx[2] = 0x01u;
-    s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
-    wl_send(s_tx, 7u);
-}
-/**
-  * @function wl_handle_set_temp()
-  * --------------------
-  * @brief    Handle wireless set-temperature command.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_set_temp(const uint8_t *rx, uint16_t len)
-{
-    uint16_t v;
-
-    if (len < 7u) {
-        return;
-    }
-
-    if (rx[2] == 0x01u) {
-        v = (uint16_t)(rx[3] * 100u + rx[4] * 10u + rx[5]);
-        if (v > WL_TEMP_MAX) { v = WL_TEMP_MAX; }
-        if (v < WL_TEMP_MIN) { v = WL_TEMP_MIN; }
-        system_data.InTempSet = v;
-    }
-
-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_SET_TEMP;
-    s_tx[2] = rx[2]; s_tx[3] = rx[3]; s_tx[4] = rx[4]; s_tx[5] = rx[5]; s_tx[6] = WL_TAIL;
-    wl_send(s_tx, 7u);
-}
-/**
-  * @function wl_handle_jump_set()
-  * --------------------
-  * @brief    Handle wireless jump-to-set command.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_jump_set(const uint8_t *rx, uint16_t len)
-{
-    uint8_t h, t, l;
-    (void)len;
-
-    wl_split3(system_data.InTempSet, &h, &t, &l);
-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_JUMP_SET; s_tx[2] = rx[2];
-    s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
-    wl_send(s_tx, 7u);
-}
-/**
-  * @function wl_handle_query_probe()
-  * -----------------------
-  * @brief    Handle wireless probe temperature query.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_query_probe(const uint8_t *rx, uint16_t len)
-{
-    uint16_t p;
-    uint8_t h, t, l;
-    (void)len;
-
-    p = wl_get_temp_by_channel(rx[2]);
-    if (wl_is_special_temp(p) != 0u) { h = 0x09u; t = 0x06u; l = 0x00u; }
-    else { wl_split3(p, &h, &t, &l); }
-
-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_PROBE; s_tx[2] = rx[2];
-    s_tx[3] = 0x00u; s_tx[4] = 0x00u; s_tx[5] = 0x00u;
-    s_tx[6] = h; s_tx[7] = t; s_tx[8] = l; s_tx[9] = WL_TAIL;
-    wl_send(s_tx, 10u);
-}
-/**
-  * @function wl_handle_unit()
-  * ----------------
-  * @brief    Handle wireless unit switch command.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_unit(const uint8_t *rx, uint16_t len)
-{
-    (void)len;
-    if (rx[2] == 0x01u) { system_data.units = unitF; }
-    else if (rx[2] == 0x02u) { system_data.units = unitC; }
-    UI_NotifyLocalInteraction();
-    wl_ack_cmd2(WL_CMD_UNIT, rx[2]);
-}
-/**
-  * @function wl_handle_query_status()
-  * ------------------------
-  * @brief    Handle wireless status query command.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_query_status(const uint8_t *rx, uint16_t len)
-{
-    uint16_t in_t;
-    uint16_t p1;
-    uint8_t h, t, l;
-    (void)len;
-
-    if (rx[2] != 0x01u) {
-        return;
-    }
-
-    s_tx[0] = WL_HEAD; s_tx[1] = 0x1Bu;
-    s_tx[2] = (work_process == set) ? 0x01u : 0x02u;
-    s_tx[3] = ((work_process == idle) || (work_process == shutdown)) ? 0x02u : 0x01u;
-    s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u;
-    s_tx[7] = 0x00u; s_tx[8] = 0x00u; s_tx[9] = 0x00u; s_tx[10] = 0x00u; s_tx[11] = 0x00u;
-    wl_split3(system_data.InTempSet, &h, &t, &l);
-    s_tx[12] = h; s_tx[13] = t; s_tx[14] = l; s_tx[15] = WL_TAIL;
-    wl_send(s_tx, 16u);
-
-    in_t = wl_get_display_main_temp();
-    p1 = wl_get_probe_temp();
-    s_tx[0] = WL_HEAD; s_tx[1] = 0x2Bu;
-    s_tx[2] = 0x01u;
-    s_tx[3] = (system_data.units == unitF) ? 0x01u : 0x02u;
-    s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u;
-    if (wl_is_special_temp(in_t) != 0u) { s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u; }
-    else { wl_split3(in_t, &h, &t, &l); s_tx[8] = h; s_tx[9] = t; s_tx[10] = l; }
-    if (wl_is_special_temp(p1) != 0u) { s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u; s_tx[14] = 0x02u; }
-    else { wl_split3(p1, &h, &t, &l); s_tx[11] = h; s_tx[12] = t; s_tx[13] = l; s_tx[14] = 0x00u; }
-    s_tx[15] = WL_TAIL;
-    wl_send(s_tx, 16u);
-
-    s_tx[0] = WL_HEAD; s_tx[1] = 0x3Bu;
-    s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; /* probe2 unsupported */
-    s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u; s_tx[8] = 0x00u;
-    s_tx[9] = 0x00u; s_tx[10] = 0x00u; s_tx[11] = 0x00u;
-    s_tx[12] = 0x00u; s_tx[13] = 0x00u; s_tx[14] = 0x00u;
-    s_tx[15] = WL_TAIL;
-    wl_send(s_tx, 16u);
-}
-/**
-  * @function wl_handle_query_set_all()
-  * -------------------------
-  * @brief    Handle wireless query of all set temperatures.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_query_set_all(const uint8_t *rx, uint16_t len)
-{
-    uint8_t h, t, l;
-    (void)len;
-    if (rx[2] != 0x01u) { return; }
-
-    wl_split3(system_data.InTempSet, &h, &t, &l);
-    memset(s_tx, 0, 24u);
-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_SET_ALL;
-    s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; s_tx[23] = WL_TAIL;
-    wl_send(s_tx, 24u);
-}
-/**
-  * @function wl_handle_query_act_all()
-  * -------------------------
-  * @brief    Handle wireless query of all actual temperatures.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_query_act_all(const uint8_t *rx, uint16_t len)
-{
-    uint16_t in_t, p1;
-    uint8_t h, t, l;
-    (void)len;
-    if (rx[2] != 0x01u) { return; }
-
-    in_t = wl_get_display_main_temp();
-    p1 = wl_get_probe_temp();
-
-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_ACT_ALL;
-    if (wl_is_special_temp(p1) != 0u) { s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; }
-    else { wl_split3(p1, &h, &t, &l); s_tx[2] = h; s_tx[3] = t; s_tx[4] = l; }
-    s_tx[5] = 0x09u; s_tx[6] = 0x06u; s_tx[7] = 0x00u;
-    s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u;
-    s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u;
-    s_tx[14] = 0x09u; s_tx[15] = 0x06u; s_tx[16] = 0x00u;
-    s_tx[17] = 0x09u; s_tx[18] = 0x06u; s_tx[19] = 0x00u;
-    if (wl_is_special_temp(in_t) != 0u) { s_tx[20] = 0x09u; s_tx[21] = 0x06u; s_tx[22] = 0x00u; }
-    else { wl_split3(in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; }
-    s_tx[23] = WL_TAIL;
-    wl_send(s_tx, 24u);
-}
-/**
-  * @function wl_handle_fw_info()
-  * -------------------
-  * @brief    Handle wireless firmware information query.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_handle_fw_info(const uint8_t *rx, uint16_t len)
-{
-    (void)len;
-    if (rx[2] != 0x01u) { return; }
-
-    memset(s_tx, 0, 21u);
-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_FW_INFO; s_tx[2] = 0x01u;
-    s_tx[5] = 0x01u;  /* volume */
-    s_tx[6] = 0x01u;  /* type */
-    s_tx[7] = 0x01u;  /* probe count */
-    s_tx[10] = 0x01u; s_tx[11] = 0x07u; s_tx[12] = 0x05u; /* grill min 175 */
-    s_tx[13] = 0x04u; s_tx[14] = 0x05u; s_tx[15] = 0x05u; /* grill max 455 */
-    s_tx[20] = WL_TAIL;
-    wl_send(s_tx, 21u);
-}
-/**
-  * @function wl_dispatch()
-  * -------------
-  * @brief    Dispatch a received wireless command frame.
-  * @param    rx - input parameter
-  * @param    len - input parameter
-  * @note     None
-  */
-static void wl_dispatch(const uint8_t *rx, uint16_t len)
-{
-    switch (rx[1])
-    {
-        case WL_CMD_POWER:         wl_handle_power(rx, len); break;
-        case WL_CMD_TEMP_UP:       wl_handle_temp_up(rx, len); break;
-        case WL_CMD_TEMP_DOWN:     wl_handle_temp_down(rx, len); break;
-        case WL_CMD_SET_TEMP:      wl_handle_set_temp(rx, len); break;
-        case WL_CMD_JUMP_SET:      wl_handle_jump_set(rx, len); break;
-        case WL_CMD_QUERY_PROBE:   wl_handle_query_probe(rx, len); break;
-        case WL_CMD_UNIT:          wl_handle_unit(rx, len); break;
-        case WL_CMD_QUERY_STATUS:  wl_handle_query_status(rx, len); break;
-        case WL_CMD_QUERY_SET_ALL: wl_handle_query_set_all(rx, len); break;
-        case WL_CMD_QUERY_ACT_ALL: wl_handle_query_act_all(rx, len); break;
-        case WL_CMD_BT_STATUS:
-            s_bt_status = rx[2];
-            if (rx[2] == 0x01u) {
-                UI_SetBluetoothConnectionState(1u);
-            } else {
-                UI_SetBluetoothConnectionState(0u);
+    uint8_t command;
+    if (length == 0u) { return; }
+    command = payload[0];
+    g_mathis_ble_debug.cmd_frames++;
+    g_mathis_ble_debug.last_command = command;
+    switch (command) {
+        case MATHIS_CMD_SET_UNITS:
+            if ((length == 2u) && ((payload[1] == unitC) || (payload[1] == unitF))) {
+                (void)UI_SetUnits(payload[1], 1u); UI_NotifyLocalInteraction();
             }
             break;
-        case WL_CMD_FW_INFO:       wl_handle_fw_info(rx, len); break;
-        default:                   wl_ack_cmd2(rx[1], rx[2]); break;
+        case MATHIS_CMD_POWER_OFF:
+            if (length == 1u) { UI_NotifyLocalInteraction(); work_process = shutdown; }
+            break;
+        case MATHIS_CMD_FACTORY_RESET:
+            if (length == 1u) {
+                UI_FactoryReset(); ClearPending(); SetConnection(0u); UI_RequestBluetoothPowerOff();
+            }
+            break;
+        case MATHIS_CMD_COEFF_AB:
+        case MATHIS_CMD_COEFF_CD:
+        case MATHIS_CMD_COEFF_E:
+            if (HandleCoefficientPart(command, payload, length) != 0u) { UI_NotifyLocalInteraction(); }
+            break;
+        case MATHIS_CMD_TELEMETRY_CTRL:
+            if ((length == 2u) && (payload[1] == MATHIS_TELEMETRY_START)) {
+                g_mathis_ble_debug.start_frames++;
+                SetConnection(1u);
+            } else if ((length == 2u) && (payload[1] == MATHIS_TELEMETRY_STOP)) {
+                g_mathis_ble_debug.stop_frames++;
+                SetConnection(0u);
+            }
+            break;
+        default:
+            break;
     }
 }
-/**
-  * @function Wireless_Init()
-  * ---------------
-  * @brief    Initialize wireless module state.
-  * @param    None
-  * @note     None
-  */
+
+static uint8_t HandleFrame(const uint8_t *frame, uint16_t length)
+{
+    uint16_t payload_length = (uint16_t)frame[4] | ((uint16_t)frame[5] << 8);
+    uint16_t received_crc = (uint16_t)frame[6u + payload_length] | ((uint16_t)frame[7u + payload_length] << 8);
+    uint16_t calculated_crc;
+    g_mathis_ble_debug.last_type = frame[2];
+    g_mathis_ble_debug.last_sequence = frame[3];
+    g_mathis_ble_debug.last_payload_length = payload_length;
+    if (length != (uint16_t)(payload_length + 8u)) {
+        g_mathis_ble_debug.length_errors++;
+        return 0u;
+    }
+    calculated_crc = Mathis_Crc16(&frame[2], (uint16_t)(4u + payload_length));
+    if (received_crc != calculated_crc) {
+        g_mathis_ble_debug.crc_errors++;
+        return 0u;
+    }
+    g_mathis_ble_debug.frames_ok++;
+    if (frame[2] == MATHIS_TYPE_CMD) { HandleCommand(&frame[6], payload_length); }
+    else { (void)OtaUpdate_HandleFrame(frame[2], &frame[6], payload_length); }
+    return 1u;
+}
+
+static void ResyncBufferedFrame(void)
+{
+    uint16_t offset;
+    for (offset = 1u; (uint16_t)(offset + 1u) < s_rx_count; offset++) {
+        if ((s_rx_frame[offset] == MATHIS_START_BYTE) && (s_rx_frame[offset + 1u] == MATHIS_START_BYTE)) {
+            s_rx_count = (uint16_t)(s_rx_count - offset);
+            memmove(s_rx_frame, &s_rx_frame[offset], s_rx_count);
+            s_rx_expected = 0u;
+            if (s_rx_count >= 6u) {
+                uint16_t payload_length = (uint16_t)s_rx_frame[4] | ((uint16_t)s_rx_frame[5] << 8);
+                if (payload_length <= MATHIS_MAX_PAYLOAD) { s_rx_expected = (uint16_t)(payload_length + 8u); }
+                else { s_rx_count = 0u; }
+            }
+            if ((s_rx_expected != 0u) && (s_rx_count == s_rx_expected) &&
+                (HandleFrame(s_rx_frame, s_rx_count) != 0u)) {
+                s_rx_count = 0u; s_rx_expected = 0u;
+            }
+            return;
+        }
+    }
+    s_rx_count = 0u; s_rx_expected = 0u;
+}
+
+static void FeedProtocolByte(uint8_t byte)
+{
+    if (s_rx_count == 0u) {
+        if (byte == MATHIS_START_BYTE) { s_rx_frame[s_rx_count++] = byte; }
+        return;
+    }
+    if (s_rx_count == 1u) {
+        if (byte == MATHIS_START_BYTE) { s_rx_frame[s_rx_count++] = byte; }
+        else { s_rx_count = 0u; }
+        return;
+    }
+    s_rx_frame[s_rx_count++] = byte;
+    if (s_rx_count == 6u) {
+        uint16_t payload_length = (uint16_t)s_rx_frame[4] | ((uint16_t)s_rx_frame[5] << 8);
+        if (payload_length > MATHIS_MAX_PAYLOAD) { s_rx_count = 0u; s_rx_expected = 0u; return; }
+        s_rx_expected = (uint16_t)(payload_length + 8u);
+    }
+    if ((s_rx_expected != 0u) && (s_rx_count == s_rx_expected)) {
+        if (HandleFrame(s_rx_frame, s_rx_count) != 0u) { s_rx_count = 0u; s_rx_expected = 0u; }
+        else { ResyncBufferedFrame(); }
+    } else if (s_rx_count >= MATHIS_MAX_FRAME) {
+        s_rx_count = 0u; s_rx_expected = 0u;
+    }
+}
+
+static void SetConnection(uint8_t connected)
+{
+    connected = (connected != 0u) ? 1u : 0u;
+    if (s_connected != connected) {
+        s_connected = connected; UI_SetBluetoothConnectionState(connected);
+        g_mathis_ble_debug.telemetry_enabled = connected;
+        s_telemetry_ticks = 0u;
+        if (connected == 0u) {
+            ClearPending(); s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+            s_rx_count = 0u; s_rx_expected = 0u;
+            OtaUpdate_HandleDisconnect();
+        }
+    }
+}
+
+static void FeedIncomingByte(uint8_t byte)
+{
+    /* FF 01 / FF 00 are accepted only as payload of a CRC-valid Mathis CMD. */
+    FeedProtocolByte(byte);
+}
+
+static uint8_t HandleModuleTelemetryEvent(const uint8_t *data, uint16_t length)
+{
+    /*
+     * Some EMB1082 firmware revisions report TX-notify subscription state as
+     * a standalone two-byte UART event. This is a module-local transport event,
+     * not an App Mathis message. Only recognise the exact two-byte DMA chunk
+     * while the framed parser is idle, so FF 01/FF 00 inside a split Mathis
+     * payload cannot be mistaken for a connection event.
+     */
+    if ((s_rx_count != 0u) || (length != 2u) || (data[0] != MATHIS_CMD_TELEMETRY_CTRL)) {
+        return 0u;
+    }
+    if (data[1] == MATHIS_TELEMETRY_START) {
+        g_mathis_ble_debug.module_start_events++;
+        SetConnection(1u);
+        return 1u;
+    }
+    if (data[1] == MATHIS_TELEMETRY_STOP) {
+        g_mathis_ble_debug.module_stop_events++;
+        SetConnection(0u);
+        return 1u;
+    }
+    return 0u;
+}
+
+static uint8_t QueueFrame(const uint8_t *data, uint8_t length)
+{
+    if ((length > sizeof(s_tx_queue[0].data)) || (s_tx_count >= TX_QUEUE_DEPTH)) { return 0u; }
+    memcpy(s_tx_queue[s_tx_tail].data, data, length); s_tx_queue[s_tx_tail].length = length;
+    s_tx_tail = (uint8_t)((s_tx_tail + 1u) % TX_QUEUE_DEPTH); s_tx_count++;
+    return 1u;
+}
+
+uint8_t Wireless_QueueProtocolFrame(uint8_t type, const uint8_t *payload, uint8_t payload_length)
+{
+    uint8_t frame[20];
+    uint16_t crc;
+    uint8_t frame_length;
+    if (payload_length > 12u) { return 0u; }
+    frame[0] = MATHIS_START_BYTE; frame[1] = MATHIS_START_BYTE;
+    frame[2] = type; frame[3] = s_tx_sequence;
+    frame[4] = payload_length; frame[5] = 0u;
+    if ((payload_length != 0u) && (payload != 0)) { memcpy(&frame[6], payload, payload_length); }
+    crc = Mathis_Crc16(&frame[2], (uint16_t)(4u + payload_length));
+    frame[6u + payload_length] = (uint8_t)crc;
+    frame[7u + payload_length] = (uint8_t)(crc >> 8);
+    frame_length = (uint8_t)(payload_length + 8u);
+    if (QueueFrame(frame, frame_length) == 0u) { return 0u; }
+    s_tx_sequence++;
+    return 1u;
+}
+
+uint8_t Wireless_ProtocolTxIdle(void)
+{
+    return ((s_tx_count == 0u) && (huart1.gState == HAL_UART_STATE_READY)) ? 1u : 0u;
+}
+
+void Wireless_DiscardQueuedFrames(void)
+{
+    s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+}
+
+static int16_t EncodeTemperature(const MathisTelemetrySnapshot *snapshot, uint8_t channel)
+{
+    uint8_t mask = (uint8_t)(1u << channel);
+    if ((snapshot->high_mask & mask) != 0u) { return 2000; }
+    if ((snapshot->low_mask & mask) != 0u) { return 3000; }
+    if ((snapshot->valid_mask & mask) == 0u) { return 4000; }
+    /* Mathis telemetry is always encoded in whole degrees Celsius. */
+    return snapshot->temp_c[channel];
+}
+
+static void QueueTelemetry(void)
+{
+    MathisTelemetrySnapshot snapshot;
+    uint8_t frame[20];
+    uint8_t mode;
+    uint8_t channel;
+    uint16_t crc;
+    UI_GetTelemetrySnapshot(&snapshot);
+    frame[0] = 0x5Au; frame[1] = 0x5Au; frame[2] = MATHIS_TYPE_TELEMETRY; frame[3] = s_tx_sequence;
+    frame[4] = 12u; frame[5] = 0u;
+    mode = (uint8_t)(snapshot.valid_mask & 0x0Fu);
+    if (snapshot.units == unitC) { mode |= 0x10u; }
+    frame[6] = mode;
+    for (channel = 0u; channel < 4u; channel++) {
+        int16_t value = EncodeTemperature(&snapshot, channel);
+        frame[7u + channel * 2u] = (uint8_t)value;
+        frame[8u + channel * 2u] = (uint8_t)((uint16_t)value >> 8);
+    }
+    frame[15] = snapshot.battery_percent; frame[16] = FW_RELEASE_NUMBER; frame[17] = snapshot.error_code;
+    crc = Mathis_Crc16(&frame[2], 16u); frame[18] = (uint8_t)crc; frame[19] = (uint8_t)(crc >> 8);
+    if (QueueFrame(frame, sizeof(frame)) != 0u) {
+        s_tx_sequence++;
+        g_mathis_ble_debug.telemetry_queued++;
+    }
+}
+
+static void ServiceTransmit(void)
+{
+    if ((s_tx_count == 0u) || (huart1.gState != HAL_UART_STATE_READY)) { return; }
+    if (HAL_UART_Transmit_DMA(&huart1, s_tx_queue[s_tx_head].data, s_tx_queue[s_tx_head].length) == HAL_OK) {
+        s_tx_head = (uint8_t)((s_tx_head + 1u) % TX_QUEUE_DEPTH); s_tx_count--;
+        g_mathis_ble_debug.telemetry_tx_started++;
+    }
+}
+
 void Wireless_Init(void)
 {
-    COM1.rxFlag = 0u;
-    COM1.rxLen = 0u;
-    s_bt_status = 0u;
-	
+    s_rx_count = 0u; s_rx_expected = 0u; s_connected = 0u;
+    s_tx_sequence = 0u; s_telemetry_ticks = 0u; s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+    memset(&g_mathis_ble_debug, 0, sizeof(g_mathis_ble_debug));
+    ClearPending(); OtaUpdate_Init(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
 }
-/**
-  * @function WirelessTask()
-  * --------------
-  * @brief    Run the wireless receive and dispatch task.
-  * @param    None
-  * @note     None
-  */
+
 void WirelessTask(void)
 {
-    uint16_t len;
-    uint8_t *rx;
-
-    if (COM1.rxFlag == 0u) {
-        return;
+    uint16_t i;
+    uint16_t length;
+    uint8_t channel;
+    length = COM_TakeRx(&COM1, s_uart_chunk, sizeof(s_uart_chunk));
+    if (length != 0u) {
+        g_mathis_ble_debug.uart_chunks++;
+        g_mathis_ble_debug.uart_bytes += length;
+        g_mathis_ble_debug.last_uart_length = length;
+        if (HandleModuleTelemetryEvent(s_uart_chunk, length) == 0u) {
+            for (i = 0u; i < length; i++) { FeedIncomingByte(s_uart_chunk[i]); }
+        }
     }
-
-    COM1.rxFlag = 0u;
-    len = COM1.rxLen;
-    if ((len < 4u) || (len > COM_RXSIZE)) {
-        return;
+    for (channel = 0u; channel < TEMP_COEFF_CHANNEL_COUNT; channel++) {
+        if (s_pending[channel].parts != 0u) {
+            if (++s_pending[channel].age >= COEFF_TIMEOUT_TICKS_20MS) { memset(&s_pending[channel], 0, sizeof(s_pending[channel])); }
+        }
     }
-
-    rx = COM1.rxBuf;
-    if ((rx[0] != WL_HEAD) || (rx[len - 1u] != WL_TAIL)) {
-        return;
+    OtaUpdate_Task20ms();
+    if ((s_connected != 0u) && (OtaUpdate_IsActive() == 0u)) {
+        if (++s_telemetry_ticks >= TELEMETRY_PERIOD_TICKS_20MS) { s_telemetry_ticks = 0u; QueueTelemetry(); }
     }
-
-    wl_dispatch(rx, len);
+    ServiceTransmit();
 }

@@ -11,48 +11,6 @@
 
 _KeyState KeyState[KeyNumber];
 /**
-  * @function ConvertTempToUnit()
-  * -------------------
-  * @brief    Convert a temperature value between Celsius and Fahrenheit units.
-  * @param    value - input parameter
-  * @param    toUnit - input parameter
-  * @note     None
-  */
-static int16_t ConvertTempToUnit(int16_t value, uint8_t toUnit)
-{
-    int32_t t = (int32_t)value;
-
-    if ((value == HaveTempErr) || (value == TempDisconnected) || (value == TempHigh) || (value == TempLow)) {
-        return value;
-    }
-
-    if (toUnit == unitF) {
-        t = (t * 9) / 5 + 32;
-    } else {
-        t = (t - 32) * 5 / 9;
-    }
-
-    if (t > 999) { t = 999; }
-    if (t < -200) { t = -200; }
-    return (int16_t)t;
-}
-/**
-  * @function SyncTempsAfterUnitSwitch()
-  * --------------------------
-  * @brief    Synchronize cached temperatures after a unit switch.
-  * @param    toUnit - input parameter
-  * @note     None
-  */
-static void SyncTempsAfterUnitSwitch(uint8_t toUnit)
-{
-    uint8_t i;
-
-    for (i = 0u; i < 9u; i++)
-    {
-        system_data.pt1000_temp[i] = ConvertTempToUnit(system_data.pt1000_temp[i], toUnit);
-    }
-}
-/**
   * @function IsDisplayDashOnlyAlarm()
   * ------------------------
   * @brief    Check whether the main display should keep dash-only alarm state.
@@ -82,6 +40,7 @@ void Key_Scan(void)
     static uint16_t time_count[KeyNumber];
     static uint8_t quick_sent_on_down[KeyNumber];
     static uint8_t key0_shutdown_sent = 0u;
+    static uint8_t key0_press_started_idle = 0u;
     uint8_t key_now[KeyNumber];
 
     key_now[0] = key0;
@@ -92,6 +51,9 @@ void Key_Scan(void)
         if (key_now[i] == 0)
         {
             time_count[i]++;
+            if ((i == 0u) && (time_count[i] == 1u)) {
+                key0_press_started_idle = (work_process == idle) ? 1u : 0u;
+            }
             /* Power-on requirement: in idle state, KEY0 triggers on press (no release needed). */
             if ((i == 0u) &&
                 (work_process == idle) &&
@@ -102,19 +64,21 @@ void Key_Scan(void)
                 quick_sent_on_down[i] = 1u;
             }
             if (time_count[i] == 100u) {
-                KeyState[i] = LongPress;
-                if ((i == 0u) && (key0_shutdown_sent == 0u))
+                if (!((i == 0u) && (key0_press_started_idle != 0u))) {
+                    KeyState[i] = LongPress;
+                }
+                if ((i == 0u) && (key0_shutdown_sent == 0u) && (key0_press_started_idle == 0u))
                 {
                     /* Force shutdown immediately at >=1s while still pressed. */
                     work_process = shutdown;
                     UI_NotifyLocalInteraction();
                     key0_shutdown_sent = 1u;
                 }
-            } else if (time_count[i] == 300u) {
+            } else if ((time_count[i] == 1000u) && (i == 1u)) {
                 KeyState[i] = VeryLongPress;
             }
-            if (time_count[i] > 300u) {
-                time_count[i] = 300u;
+            if (time_count[i] > 1000u) {
+                time_count[i] = 1000u;
             }
         }
         else
@@ -126,6 +90,7 @@ void Key_Scan(void)
             quick_sent_on_down[i] = 0u;
             if (i == 0u) {
                 key0_shutdown_sent = 0u;
+                key0_press_started_idle = 0u;
             }
         }
     }
@@ -204,7 +169,7 @@ void Key0_short_press(void)
             break;
 
         default:
-            if (IsDisplayDashOnlyAlarm() == 0u) {
+            if ((IsDisplayDashOnlyAlarm() == 0u) || (UI_IsProbeConnected() != 0u)) {
                 UI_CycleDisplayMode();
             }
             UI_NotifyLocalInteraction();
@@ -232,13 +197,7 @@ void Key1_short_press(void)
                 UI_NotifyLocalInteraction();
                 break;
             }
-            if (system_data.units == unitC) {
-                system_data.units = unitF;
-                SyncTempsAfterUnitSwitch(unitF);
-            } else {
-                system_data.units = unitC;
-                SyncTempsAfterUnitSwitch(unitC);
-            }
+            (void)UI_SetUnits((system_data.units == unitC) ? unitF : unitC, 1u);
             UI_NotifyLocalInteraction();
             break;
     }
@@ -272,8 +231,8 @@ void Key1_long_press(void)
             break;
 
         default:
-            /* Bluetooth button >=1s: enter pairing (triggered while pressed). */
-            UI_RequestBluetoothPairing();
+            /* Bluetooth button >=1s: toggle pairing/power-off. */
+            UI_RequestBluetoothToggle();
             UI_NotifyLocalInteraction();
             break;
     }
@@ -298,16 +257,9 @@ void Key0_very_long_press(void)
   */
 void Key1_very_long_press(void)
 {
-    switch (work_process)
-    {
-        case idle:
-        case shutdown:
-            break;
-
-        default:
-            /* Bluetooth button >=3s: power off BT (triggered while pressed). */
-            UI_RequestBluetoothPowerOff();
-            UI_NotifyLocalInteraction();
-            break;
+    if ((work_process != idle) && (work_process != shutdown) &&
+        (UI_GetBluetoothState() == BT_CONNECTED)) {
+        UI_RequestBluetoothPowerOff();
+        UI_NotifyLocalInteraction();
     }
 }

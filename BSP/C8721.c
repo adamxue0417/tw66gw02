@@ -37,7 +37,7 @@ void		CF_TimeDlyUs(void)
 	 uint16_t i=0;
 		for(i=0;i<50;i++)
 		{
-				__NOP;
+				__NOP();
 	  }
 }
 /**
@@ -347,14 +347,12 @@ void CF_DisplayBufAutomatic(void)
 
 void  CF_DisplaySegment(uint8_t step)
 {
-	   uint8_t i,dataLength;
+	   uint8_t i;
 	   static uint8 checksum=0;
 	switch(step)
 	{
 		case 0:
 	
-    dataLength = CF_SEG_NUM * (tCmdConfig.emComScan + 1);
-
     CF_SendCommandPackage(CmdCommand);
     CF_SendSetPackage();
     CF_SendCommandPackage(CmdData);

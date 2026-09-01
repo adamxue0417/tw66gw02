@@ -1,0 +1,17 @@
+LR_BOOT 0x08000000 0x00001800 {
+  ER_BOOT 0x08000000 0x00001800 {
+    boot_image.o (BOOT_IMAGE, +First)
+  }
+}
+
+LR_APP 0x08001800 0x00006A80 {
+  ER_APP 0x08001800 0x00006A80 {
+    *.o (RESET, +First)
+    *(InRoot$$Sections)
+    .ANY (+RO)
+    .ANY (+XO)
+  }
+  RW_IRAM1 0x200000C0 0x00001F30 {
+    .ANY (+RW +ZI)
+  }
+}

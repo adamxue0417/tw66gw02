@@ -1,5 +1,6 @@
 --cpu Cortex-M0
 ".\tw66gw02\startup_stm32f030x8.o"
+"boot_image.o"
 ".\tw66gw02\main.o"
 ".\tw66gw02\gpio.o"
 ".\tw66gw02\adc.o"
@@ -36,11 +37,13 @@
 ".\tw66gw02\wireless.o"
 ".\tw66gw02\bh66f5242.o"
 ".\tw66gw02\main_control.o"
+".\tw66gw02\ota_boot.o"
+".\tw66gw02\ota_update.o"
 ".\tw66gw02\shutdown.o"
 ".\tw66gw02\start_up.o"
 ".\tw66gw02\test.o"
 ".\tw66gw02\warning.o"
---strict --scatter ".\tw66gw02\tw66gw02.sct"
+--strict --scatter ".\tw66gw02_factory.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
 --list "tw66gw02.map" -o .\tw66gw02\tw66gw02.axf

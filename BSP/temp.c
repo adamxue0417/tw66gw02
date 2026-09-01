@@ -15,6 +15,7 @@ Temp_GetTypeDef Temperature;
 ErrMessage SystemErrMessage;
 volatile uint8_t ADC_Start_DMA_OVER = 0u;
 volatile uint8_t g_battery_low = 0u;
+volatile uint16_t g_battery_mv = 0u;
 
 static int16_t s_comm_temp_c[3] = {0, 0, 0};
 static uint8_t s_comm_temp_valid = 0u;
@@ -38,7 +39,9 @@ static uint8_t s_comm_hi_release_cnt[3] = {0u, 0u, 0u};
 static uint8_t s_comm_lo_latched[3] = {0u, 0u, 0u};
 static uint8_t s_comm_lo_pending_cnt[3] = {0u, 0u, 0u};
 static uint8_t s_comm_lo_release_cnt[3] = {0u, 0u, 0u};
-#define PROBE_TEMP_C_LOW_LIMIT   (-20)
+static int16_t s_comm_raw_temp[3][10] = {{0}};
+static uint8_t s_comm_raw_temp_inited[3] = {0u, 0u, 0u};
+#define PROBE_TEMP_C_LOW_LIMIT   (0)
 #define PROBE_TEMP_C_HIGH_LIMIT  (500)
 #define PROBE_TEMP_C_HIGH_RELEASE (PROBE_TEMP_C_HIGH_LIMIT)
 #define PROBE_TEMP_HI_CONFIRM_COUNT (3u)
@@ -50,6 +53,13 @@ static uint8_t s_comm_lo_release_cnt[3] = {0u, 0u, 0u};
 #define BATTERY_LOW_MV_THRESHOLD   (1100u)
 #define BATTERY_RECOVER_MV_THRESHOLD (1200u)
 #define BATTERY_DEBOUNCE_COUNT     (20u)
+/* TempGetTask runs every 500 ms: 120 samples form a 60-second window. */
+#define BATTERY_ADC_AVERAGE_SAMPLES (120u)
+
+static uint16_t s_battery_adc_history[BATTERY_ADC_AVERAGE_SAMPLES] = {0u};
+static uint32_t s_battery_adc_sum = 0u;
+static uint16_t s_battery_adc_index = 0u;
+static uint16_t s_battery_adc_count = 0u;
 
 /* PT1000 lookup table: -25C..500C, step 5C, value scaled by 10 (10000 = 1000.0 ohm) */
 static const uint16_t RTD_TAB_PT1000[] =
@@ -301,14 +311,37 @@ uint16_t Temp_Handle(uint16_t arr[],uint8_t length, uint16_t temp)
 /**
   * @function Battery_Get_mV()
   * ----------------
-  * @brief    Convert ADC reading to battery voltage in millivolts.
+  * @brief    Average battery ADC over one minute, then convert it to millivolts.
   * @param    channel - input parameter
   * @note     None
   */
 static uint16_t Battery_Get_mV(uint8_t channel)
 {
-    uint32_t vol = (uint32_t)ch_env[channel].vol;
-    return (uint16_t)((vol * 3300u) / 4095u);
+    uint16_t adc = ch_env[channel].vol;
+    uint16_t average_adc;
+
+    if (s_battery_adc_count < BATTERY_ADC_AVERAGE_SAMPLES)
+    {
+        s_battery_adc_count++;
+    }
+    else
+    {
+        s_battery_adc_sum -= s_battery_adc_history[s_battery_adc_index];
+    }
+
+    s_battery_adc_history[s_battery_adc_index] = adc;
+    s_battery_adc_sum += adc;
+    s_battery_adc_index++;
+    if (s_battery_adc_index >= BATTERY_ADC_AVERAGE_SAMPLES)
+    {
+        s_battery_adc_index = 0u;
+    }
+
+    /* Round to the nearest ADC count. During startup, average all samples
+       collected so far instead of delaying battery display for 60 seconds. */
+    average_adc = (uint16_t)((s_battery_adc_sum + (s_battery_adc_count / 2u)) /
+                             s_battery_adc_count);
+    return (uint16_t)(((uint32_t)average_adc * 3300u) / 4095u);
 }
 
 /**
@@ -323,8 +356,10 @@ static void UpdateBatteryLevel(uint16_t batt_mV)
     static uint8_t low_cnt = 0u;
     static uint8_t high_cnt = 0u;
 
-    /* Requirement: low battery when voltage is continuously below ~1.1V */
-    if (batt_mV <= BATTERY_LOW_MV_THRESHOLD)
+    g_battery_mv = batt_mV;
+
+    /* Requirement: low battery only when voltage is below 1.1 V. */
+    if (batt_mV < BATTERY_LOW_MV_THRESHOLD)
     {
         if (low_cnt < BATTERY_DEBOUNCE_COUNT) { low_cnt++; }
         high_cnt = 0u;
@@ -376,10 +411,76 @@ static int16_t normalize_external_temp_c(int32_t raw)
     if (raw == TempDisconnected) {
         return TempDisconnected;
     }
-    if (raw >= PROBE_TEMP_C_HIGH_LIMIT) { return TempHigh; }
-    if (raw <= PROBE_TEMP_C_LOW_LIMIT) { return TempLow; }
+    if (raw > PROBE_TEMP_C_HIGH_LIMIT) { return TempHigh; }
+    if (raw < PROBE_TEMP_C_LOW_LIMIT) { return TempLow; }
 
     return (int16_t)raw;
+}
+
+static void raw_temp_sort_asc(int16_t temp_sort[], uint8_t len)
+{
+    uint8_t i;
+    uint8_t j;
+    int16_t t;
+
+    for (i = 0u; i < len; i++)
+    {
+        for (j = (uint8_t)(i + 1u); j < len; j++)
+        {
+            if (temp_sort[i] > temp_sort[j])
+            {
+                t = temp_sort[i];
+                temp_sort[i] = temp_sort[j];
+                temp_sort[j] = t;
+            }
+        }
+    }
+}
+
+static int16_t raw_temp_filter(uint8_t idx, int16_t temp)
+{
+    int16_t temp_sort[10];
+    int32_t sum;
+    uint8_t i;
+
+    if (idx >= 3u) {
+        return temp;
+    }
+
+    if ((temp == HaveTempErr) || (temp == TempDisconnected) || (temp == TempHigh) || (temp == TempLow))
+    {
+        s_comm_raw_temp_inited[idx] = 0u;
+        return temp;
+    }
+
+    if (s_comm_raw_temp_inited[idx] == 0u)
+    {
+        s_comm_raw_temp_inited[idx] = 1u;
+        for (i = 0u; i < 10u; i++)
+        {
+            s_comm_raw_temp[idx][i] = temp;
+        }
+        return temp;
+    }
+
+    for (i = 0u; i < 9u; i++)
+    {
+        s_comm_raw_temp[idx][i] = s_comm_raw_temp[idx][i + 1u];
+    }
+    s_comm_raw_temp[idx][9] = temp;
+
+    for (i = 0u; i < 10u; i++)
+    {
+        temp_sort[i] = s_comm_raw_temp[idx][i];
+    }
+
+    raw_temp_sort_asc(temp_sort, 10u);
+
+    sum = (int32_t)temp_sort[3] + (int32_t)temp_sort[4] + (int32_t)temp_sort[5] + (int32_t)temp_sort[6];
+    if (sum >= 0) {
+        return (int16_t)((sum + 2) / 4);
+    }
+    return (int16_t)((sum - 2) / 4);
 }
 
 static int16_t debounce_external_temp(uint8_t idx, int16_t sample)
@@ -462,6 +563,8 @@ static int16_t debounce_external_temp(uint8_t idx, int16_t sample)
   */
 static void update_three_temps_from_uart2(void)
 {
+    uint8_t rx[32];
+    uint16_t rx_len;
     uint8_t tx_req[8] = {0xAA, 0x55, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
     int32_t raw0;
     int32_t raw1;
@@ -472,18 +575,14 @@ static void update_three_temps_from_uart2(void)
 
     uart_dma_poll_check(&huart2, &hdma_usart2_rx, &COM2);
 
-    if (COM2.rxFlag == 0u) {
+    rx_len = COM_TakeRx(&COM2, rx, sizeof(rx));
+    if (rx_len < 15u) {
         return;
     }
 
-    COM2.rxFlag = 0u;
-    if (COM2.rxLen < 15u) {
-        return;
-    }
-
-    raw0 = parse_be32_raw_c(&COM2.rxBuf[3]);
-    raw1 = parse_be32_raw_c(&COM2.rxBuf[7]);
-    raw2 = parse_be32_raw_c(&COM2.rxBuf[11]);
+    raw0 = parse_be32_raw_c(&rx[3]);
+    raw1 = parse_be32_raw_c(&rx[7]);
+    raw2 = parse_be32_raw_c(&rx[11]);
 
     if ((raw0 == 0) && (raw1 == 0) && (raw2 == 0)) {
         s_comm_temp_c[0] = TempDisconnected;
@@ -532,6 +631,7 @@ void TempGetTask(void)
         for (i = 0u; i < 3u; i++)
         {
             t = debounce_external_temp(i, s_comm_temp_c[i]);
+            t = raw_temp_filter(i, (int16_t)t);
 
             if ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow))
             {
@@ -539,19 +639,9 @@ void TempGetTask(void)
                 continue;
             }
 
-            if (system_data.units == unitC)
-            {
-                if (t < PROBE_TEMP_C_LOW_LIMIT) { t = PROBE_TEMP_C_LOW_LIMIT; }
-                if (t > PROBE_TEMP_C_HIGH_LIMIT) { t = PROBE_TEMP_C_HIGH_LIMIT; }
-                system_data.pt1000_temp[i] = (int16_t)t;
-            }
-            else
-            {
-                t = (t * 9) / 5 + 32;
-                if (t < -4) { t = -4; }
-                if (t > 932) { t = 932; }
-                system_data.pt1000_temp[i] = (int16_t)t;
-            }
+            if (t < PROBE_TEMP_C_LOW_LIMIT) { t = PROBE_TEMP_C_LOW_LIMIT; }
+            if (t > PROBE_TEMP_C_HIGH_LIMIT) { t = PROBE_TEMP_C_HIGH_LIMIT; }
+            system_data.pt1000_temp[i] = (int16_t)t;
         }
     }
 
@@ -635,7 +725,7 @@ void TempGetTask(void)
         }
     }
     s_probe_reconnect_pending_cnt = 0u;
-    if ((probe_f == TempHigh) || (probe_f >= 932))
+    if ((probe_f == TempHigh) || (probe_f > 932))
     {
         if (s_probe_hi_pending_cnt < 255u) { s_probe_hi_pending_cnt++; }
         if (s_probe_hi_pending_cnt >= PROBE_TEMP_HI_CONFIRM_COUNT)
@@ -649,11 +739,7 @@ void TempGetTask(void)
             s_probe_lo_latched = 0u;
             s_probe_lo_pending_cnt = 0u;
             s_probe_lo_release_cnt = 0u;
-            if (system_data.units == unitC) {
-                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
-            } else {
-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
-            }
+            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
             return;
         }
     }
@@ -676,11 +762,7 @@ void TempGetTask(void)
             s_probe_hi_pending_cnt = 0u;
             s_probe_hi_release_cnt = 0u;
             s_probe_lo_release_cnt = 0u;
-            if (system_data.units == unitC) {
-                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
-            } else {
-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
-            }
+            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
         }
         return;
     }
@@ -693,16 +775,12 @@ void TempGetTask(void)
     /* HI hysteresis: keep -HI until temperature drops below release threshold. */
     if (s_probe_hi_latched != 0u)
     {
-        if (probe_c >= PROBE_TEMP_C_HIGH_RELEASE)
+        if (probe_c > PROBE_TEMP_C_HIGH_RELEASE)
         {
             g_probe_over_hi = 1u;
             g_probe_over_lo = 0u;
             s_probe_hi_release_cnt = 0u;
-            if (system_data.units == unitC) {
-                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
-            } else {
-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
-            }
+            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
             return;
         }
         if (s_probe_hi_release_cnt < 255u) { s_probe_hi_release_cnt++; }
@@ -710,11 +788,7 @@ void TempGetTask(void)
         {
             g_probe_over_hi = 1u;
             g_probe_over_lo = 0u;
-            if (system_data.units == unitC) {
-                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
-            } else {
-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
-            }
+            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
             return;
         }
         s_probe_hi_latched = 0u;
@@ -725,16 +799,12 @@ void TempGetTask(void)
     }
     if (s_probe_lo_latched != 0u)
     {
-        if (probe_c <= PROBE_TEMP_C_LOW_LIMIT)
+        if (probe_c < PROBE_TEMP_C_LOW_LIMIT)
         {
             g_probe_over_hi = 0u;
             g_probe_over_lo = 1u;
             s_probe_lo_release_cnt = 0u;
-            if (system_data.units == unitC) {
-                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
-            } else {
-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
-            }
+            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
             return;
         }
         if (s_probe_lo_release_cnt < 255u) { s_probe_lo_release_cnt++; }
@@ -742,11 +812,7 @@ void TempGetTask(void)
         {
             g_probe_over_hi = 0u;
             g_probe_over_lo = 1u;
-            if (system_data.units == unitC) {
-                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
-            } else {
-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
-            }
+            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
             return;
         }
         s_probe_lo_latched = 0u;
@@ -798,7 +864,7 @@ void TempGetTask(void)
         s_probe_c_filt = (int16_t)(((int32_t)s_probe_c_filt * num_old + (int32_t)probe_c * num_new) / den);
         probe_c = s_probe_c_filt;
     }
-    if (probe_c >= PROBE_TEMP_C_HIGH_LIMIT)
+    if (probe_c > PROBE_TEMP_C_HIGH_LIMIT)
     {
         if (s_probe_hi_pending_cnt < 255u) { s_probe_hi_pending_cnt++; }
         if (s_probe_hi_pending_cnt >= PROBE_TEMP_HI_CONFIRM_COUNT)
@@ -810,11 +876,7 @@ void TempGetTask(void)
             s_probe_lo_latched = 0u;
             s_probe_lo_pending_cnt = 0u;
             s_probe_lo_release_cnt = 0u;
-            if (system_data.units == unitC) {
-                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
-            } else {
-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
-            }
+            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
             return;
         }
     }
@@ -823,7 +885,7 @@ void TempGetTask(void)
         s_probe_hi_pending_cnt = 0u;
         g_probe_over_hi = 0u;
     }
-    if (probe_c <= PROBE_TEMP_C_LOW_LIMIT) {
+    if (probe_c < PROBE_TEMP_C_LOW_LIMIT) {
         if (s_probe_lo_pending_cnt < 255u) { s_probe_lo_pending_cnt++; }
         if (s_probe_lo_pending_cnt >= PROBE_TEMP_LO_CONFIRM_COUNT)
         {
@@ -831,11 +893,7 @@ void TempGetTask(void)
             s_probe_lo_release_cnt = 0u;
             g_probe_over_hi = 0u;
             g_probe_over_lo = 1u;
-            if (system_data.units == unitC) {
-                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
-            } else {
-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
-            }
+            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
             return;
         }
     } else {
@@ -843,14 +901,7 @@ void TempGetTask(void)
         g_probe_over_lo = 0u;
     }
 
-    if (system_data.units == unitC)
-    {
-        system_data.pt1000_temp[3] = probe_c;
-    }
-    else
-    {
-        system_data.pt1000_temp[3] = (int16_t)(((int32_t)probe_c * 9) / 5 + 32);
-    }
+    system_data.pt1000_temp[3] = probe_c;
 }
 
 /**

@@ -32,19 +32,46 @@ const uint8_t DigitalTubeDisplayTable[] = {
     0x06u   /* "I" */
 };
 
-/* C thresholds: first segment at 30 C, +40 C per segment, last at >350 C.
+/* Main temperature thresholds: first segment at 30 C, +40 C per segment, last at >=350 C.
  * F thresholds: converted from C values, rounded to nearest integer.
- * Gauge is hidden entirely when the displayed temperature is below 30 C / 86 F.
+ * Probe thresholds: first segment at 10 C, +10 C per segment, last at >=90 C.
 */
-static const uint16_t s_gaugeThreshC[GAUGE_SEG_COUNT] =
+static const uint16_t s_mainGaugeThreshC[GAUGE_SEG_COUNT] =
 {
     30u, 70u, 110u, 150u, 190u, 230u, 270u, 310u, 350u
 };
 
-static const uint16_t s_gaugeThreshF[GAUGE_SEG_COUNT] =
+static const uint16_t s_mainGaugeThreshF[GAUGE_SEG_COUNT] =
 {
     86u, 158u, 230u, 302u, 374u, 446u, 518u, 590u, 662u
 };
+
+static const uint16_t s_probeGaugeThreshC[GAUGE_SEG_COUNT] =
+{
+    10u, 20u, 30u, 40u, 50u, 60u, 70u, 80u, 90u
+};
+
+static const uint16_t s_probeGaugeThreshF[GAUGE_SEG_COUNT] =
+{
+    50u, 68u, 86u, 104u, 122u, 140u, 158u, 176u, 194u
+};
+
+static void SetGaugeSegment(uint8_t leftIndex, uint8_t value)
+{
+    switch (leftIndex)
+    {
+        case 0u: Screen_Data.DisplayMap.TempA = value; break;
+        case 1u: Screen_Data.DisplayMap.TempB = value; break;
+        case 2u: Screen_Data.DisplayMap.TempC = value; break;
+        case 3u: Screen_Data.DisplayMap.TempD = value; break;
+        case 4u: Screen_Data.DisplayMap.TempE = value; break;
+        case 5u: Screen_Data.DisplayMap.TempF = value; break;
+        case 6u: Screen_Data.DisplayMap.TempG = value; break;
+        case 7u: Screen_Data.DisplayMap.TempH = value; break;
+        case 8u: Screen_Data.DisplayMap.TempI = value; break;
+        default: break;
+    }
+}
 /**
   * @function SCL_Write()
   * ------------
@@ -217,9 +244,13 @@ static void ClearTempSourceIcons(void)
   * @param    None
   * @note     None
   */
-static void ApplySourceIcon(void)
+static void ApplySourceIcon(uint8_t special)
 {
     ClearTempSourceIcons();
+
+    if (special == 3u) {
+        return;
+    }
 
     switch(DisplayMode)
     {
@@ -260,9 +291,13 @@ static void UpdateGauge(uint16_t displayTemp)
     uint8_t segOn = 0u;
     uint8_t i;
 
-    thresh = (system_data.units ==unitC) ? s_gaugeThreshC : s_gaugeThreshF;
+    if (DisplayMode == DISPLAY_MODE_PROBE) {
+        thresh = (system_data.units == unitC) ? s_probeGaugeThreshC : s_probeGaugeThreshF;
+    } else {
+        thresh = (system_data.units == unitC) ? s_mainGaugeThreshC : s_mainGaugeThreshF;
+    }
 
-    /* Gauge is hidden when temperature is below the first threshold (30 C / 86 F) */
+    /* Gauge is hidden when temperature is below the first threshold for the active source. */
     if(displayTemp >= thresh[0])
     {
         for(i = 0u; i < GAUGE_SEG_COUNT; i++)
@@ -274,16 +309,10 @@ static void UpdateGauge(uint16_t displayTemp)
         }
     }
 
-    /* Write each 2-bit gauge segment field */
-    Screen_Data.DisplayMap.TempA = (segOn >= 1u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempB = (segOn >= 2u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempC = (segOn >= 3u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempD = (segOn >= 4u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempE = (segOn >= 5u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempF = (segOn >= 6u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempG = (segOn >= 7u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempH = (segOn >= 8u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempI = (segOn >= 9u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+    for(i = 0u; i < GAUGE_SEG_COUNT; i++)
+    {
+        SetGaugeSegment(i, (segOn > i) ? GAUGE_SEG_ON : GAUGE_SEG_OFF);
+    }
 }
 
 /**
@@ -295,15 +324,12 @@ static void UpdateGauge(uint16_t displayTemp)
   */
 static void ClearGauge(void)
 {
-    Screen_Data.DisplayMap.TempA = GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempB = GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempC = GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempD = GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempE = GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempF = GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempG = GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempH = GAUGE_SEG_OFF;
-    Screen_Data.DisplayMap.TempI = GAUGE_SEG_OFF;
+    uint8_t i;
+
+    for(i = 0u; i < GAUGE_SEG_COUNT; i++)
+    {
+        SetGaugeSegment(i, GAUGE_SEG_OFF);
+    }
 }
 
 
@@ -328,7 +354,7 @@ void DisplayTask(void)
     {
         CF_DisplayClearBuf();
 
-        if (work_process != shutdown)
+        if ((work_process != shutdown) && (work_process != idle))
         {
             displayTemp = UI_GetDisplayTemp();
             special = UI_GetDisplaySpecial();
@@ -348,7 +374,7 @@ void DisplayTask(void)
             }
 
             ApplyUnitIcons();
-            ApplySourceIcon();
+            ApplySourceIcon(special);
             if (UI_GetBluetoothIconState() != 0u) {
                 Screen_Data.DisplayMap.BlutoothIcon = 1u;
             } else {
@@ -369,6 +395,7 @@ void DisplayTask(void)
     {
         displaystep = 0u;
     }
+
 }
 
 

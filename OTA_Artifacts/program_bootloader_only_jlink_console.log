@@ -1,0 +1,116 @@
+SEGGER J-Link Commander V7.92m (Compiled Oct 26 2023 16:16:37)
+DLL version V9.68, compiled Aug 12 2026 15:23:53
+
+
+J-Link Command File read successfully.
+Processing script file...
+J-Link>r
+J-Link connection not established yet but required for command.
+Connecting to J-Link via USB...O.K.
+Firmware: J-Link V9 compiled Dec 13 2022 11:14:50
+Hardware version: V9.70
+J-Link uptime (since boot): N/A (Not supported by this model)
+S/N: 69736254
+License(s): RDI, GDB, FlashDL, FlashBP, JFlash
+VTref=3.285V
+Target connection not established yet but required for command.
+Device "STM32F030C8" selected.
+
+
+Connecting to target via SWD
+InitTarget() start
+SWD selected. Executing JTAG -> SWD switching sequence.
+DAP initialized successfully.
+InitTarget() end - Took 8.11ms
+Found SW-DP with ID 0x0BC11477
+DPv0 detected
+CoreSight SoC-400 or earlier
+Scanning AP map to find all available APs
+AP[1]: Stopped AP scan as end of AP map has been reached
+AP[0]: AHB-AP (IDR: 0x04770031, ADDR: 0x00000000)
+Iterating through AP map to find AHB-AP to use
+AP[0]: Core found
+AP[0]: AHB-AP ROM base: 0xE00FF000
+CPUID register: 0x410CC601. Implementer code: 0x41 (ARM)
+Found Cortex-M0 r0p1, Little endian.
+FPUnit: 4 code (BP) slots and 0 literal slots
+CoreSight components:
+ROMTbl[0] @ E00FF000
+[0][0]: E000E000 CID B105E00D PID 000BB008 SCS
+[0][1]: E0001000 CID B105E00D PID 000BB00A DWT
+[0][2]: E0002000 CID B105E00D PID 000BB00B FPB
+Memory zones:
+  Zone: "Default" Description: Default access mode
+Cortex-M0 identified.
+Reset delay: 0 ms
+Reset type NORMAL: Resets core & peripherals via SYSRESETREQ & VECTRESET bit.
+Reset type: NORMAL (https://kb.segger.com/J-Link_Reset_Strategies)
+Reset: Halt core after reset via DEMCR.VC_CORERESET.
+Reset: Reset device via AIRCR.SYSRESETREQ.
+J-Link>h
+PC = 08000150, CycleCnt = 00000000
+R0 = FFFFFFFF, R1 = FFFFFFFF, R2 = FFFFFFFF, R3 = FFFFFFFF
+R4 = FFFFFFFF, R5 = FFFFFFFF, R6 = FFFFFFFF, R7 = FFFFFFFF
+R8 = FFFFFFFF, R9 = FFFFFFFF, R10= FFFFFFFF, R11= FFFFFFFF
+R12= FFFFFFFF
+SP(R13)= 20000400, MSP= 20000400, PSP= FFFFFFFC, R14(LR) = FFFFFFFF
+XPSR = F1000000: APSR = NZCVq, EPSR = 01000000, IPSR = 000 (NoException)
+CFBP = 00000000, CONTROL = 00, FAULTMASK = 00, BASEPRI = 00, PRIMASK = 00
+FPU regs: FPU not enabled / not implemented on connected CPU.
+J-Link>mem32 0x08001800 2
+08001800 = 20001598 08001991 
+J-Link>loadbin C:\Users\PC\Desktop\TW66GW02\11\tw66gw02\Bootloader\build\mathis_bootloader.bin, 0x08000000
+'loadbin': Performing implicit reset & halt of MCU.
+Reset type: NORMAL (https://kb.segger.com/J-Link_Reset_Strategies)
+Reset: Halt core after reset via DEMCR.VC_CORERESET.
+Reset: Reset device via AIRCR.SYSRESETREQ.
+Downloading file [C:\Users\PC\Desktop\TW66GW02\11\tw66gw02\Bootloader\build\mathis_bootloader.bin]...
+J-Link: Flash download: Bank 0 @ 0x08000000: Skipped. Contents already match
+O.K.
+J-Link>verifybin C:\Users\PC\Desktop\TW66GW02\11\tw66gw02\Bootloader\build\mathis_bootloader.bin, 0x08000000
+Loading binary file C:\Users\PC\Desktop\TW66GW02\11\tw66gw02\Bootloader\build\mathis_bootloader.bin
+Reading 2168 bytes data from target memory @ 0x08000000.
+Verify successful.
+J-Link>mem32 0x08000000 2
+08000000 = 20000400 08000151 
+J-Link>mem32 0x08001800 2
+08001800 = 20001598 08001991 
+J-Link>r
+Reset delay: 0 ms
+Reset type NORMAL: Resets core & peripherals via SYSRESETREQ & VECTRESET bit.
+Reset type: NORMAL (https://kb.segger.com/J-Link_Reset_Strategies)
+Reset: Halt core after reset via DEMCR.VC_CORERESET.
+Reset: Reset device via AIRCR.SYSRESETREQ.
+J-Link>g
+Memory map 'after startup completion point' is active
+J-Link>sleep 1000
+Sleep(1000)
+J-Link>h
+PC = 0800514E, CycleCnt = 00000000
+R0 = 00000078, R1 = 00000000, R2 = 00000000, R3 = 00000000
+R4 = 0000000B, R5 = 20000900, R6 = 20000888, R7 = 00000000
+R8 = FFFFFFFF, R9 = FFFFFFFF, R10= 08007080, R11= 08007080
+R12= 00000000
+SP(R13)= 20001588, MSP= 20001588, PSP= FFFFFFFC, R14(LR) = 08006A67
+XPSR = 81000000: APSR = Nzcvq, EPSR = 01000000, IPSR = 000 (NoException)
+CFBP = 00000000, CONTROL = 00, FAULTMASK = 00, BASEPRI = 00, PRIMASK = 00
+FPU regs: FPU not enabled / not implemented on connected CPU.
+J-Link>regs
+PC = 0800514E, CycleCnt = 00000000
+R0 = 00000078, R1 = 00000000, R2 = 00000000, R3 = 00000000
+R4 = 0000000B, R5 = 20000900, R6 = 20000888, R7 = 00000000
+R8 = FFFFFFFF, R9 = FFFFFFFF, R10= 08007080, R11= 08007080
+R12= 00000000
+SP(R13)= 20001588, MSP= 20001588, PSP= FFFFFFFC, R14(LR) = 08006A67
+XPSR = 81000000: APSR = Nzcvq, EPSR = 01000000, IPSR = 000 (NoException)
+CFBP = 00000000, CONTROL = 00, FAULTMASK = 00, BASEPRI = 00, PRIMASK = 00
+FPU regs: FPU not enabled / not implemented on connected CPU.
+J-Link>mem32 0x20001FF0 1
+20001FF0 = A9900007 
+J-Link>g
+J-Link>qc
+
+Script processing completed.
+
+OnDisconnectTarget() start
+OnDisconnectTarget() end - Took 2.39ms

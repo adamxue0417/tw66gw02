@@ -125,6 +125,15 @@ const uint8_t APBPrescTable[8]  = {0, 0, 0, 0, 1, 2, 3, 4};
   */
 void SystemInit(void)
 {
+  /* PB3 is the board power-hold latch.  Assert it before the C runtime and
+     application initialization so a momentary power-button start cannot drop
+     out while the image is booting. */
+  RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+  (void)RCC->AHBENR;
+  GPIOB->BSRR = GPIO_BSRR_BS_3;
+  GPIOB->MODER = (GPIOB->MODER & ~(3u << (3u * 2u))) |
+                 (1u << (3u * 2u));
+  GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
   /* NOTE :SystemInit(): This function is called at startup just after reset and 
                          before branch to main program. This call is made inside
                          the "startup_stm32f0xx.s" file.
@@ -246,4 +255,3 @@ void SystemCoreClockUpdate (void)
 /**
   * @}
   */
-
