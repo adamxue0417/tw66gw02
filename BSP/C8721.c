@@ -213,7 +213,7 @@ static void CF_SendDataFrame(uint8 *pDataBuf)
 void CF_ConfigCommand()
 {
     tCmdConfig.emCmdType               = CmdCommand;              // command type 
-    tCmdConfig.emCurrentGain           = mA_10;                   // current value  
+    tCmdConfig.emCurrentGain           = mA_8_5;                  // v102 low-power profile
     tCmdConfig.emClockMode             = InternalClock;           // internal clock mode
     tCmdConfig.emComScan               = Com8;                    // number of com ports in use
     tCmdConfig.emWorkMode              = NormalMode;              // work mode
@@ -241,7 +241,7 @@ void CF_ConfigCommand()
 void CF_ReconfigCommand()
 {          
     tCmdConfig.emCmdType               = CmdCommand;           
-    tCmdConfig.emCurrentGain           = mA_10;                
+    tCmdConfig.emCurrentGain           = mA_8_5;
     tCmdConfig.emClockMode             = InternalClock;        
     tCmdConfig.emComScan               = Com8;                 
     tCmdConfig.emWorkMode              = NormalMode;           

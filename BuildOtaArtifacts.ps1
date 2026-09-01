@@ -1,6 +1,7 @@
 param(
     [ValidateRange(0,255)][int]$FactoryVersion = 100,
-    [ValidateRange(0,255)][int]$OtaVersion = 101,
+    [ValidateRange(0,255)][int]$OtaVersion = 102,
+    [switch]$OtaOnly,
     [string]$KeilRoot = 'C:\Keil_v5'
 )
 
@@ -19,6 +20,8 @@ function Invoke-AppBuild([int]$Version, [string]$Label) {
     $temporaryOutput = ".\tw66gw02_ota_$Label\"
     $template = $template.Replace('<OutputDirectory>.\tw66gw02\</OutputDirectory>',
                                   "<OutputDirectory>$temporaryOutput</OutputDirectory>")
+    $template = $template.Replace('<ListingPath></ListingPath>',
+                                  "<ListingPath>$temporaryOutput</ListingPath>")
     $template = $template.Replace(
         '<Define>USE_HAL_DRIVER,STM32F030x8</Define>',
         "<Define>USE_HAL_DRIVER,STM32F030x8,MATHIS_FW_VERSION=$Version</Define>")
@@ -31,11 +34,29 @@ function Invoke-AppBuild([int]$Version, [string]$Label) {
             </File>
 '@
     $template = $template.Replace($bootObjectEntry, '')
+    $disabledBeforeMake = @'
+          <BeforeMake>
+            <RunUserProg1>0</RunUserProg1>
+            <RunUserProg2>0</RunUserProg2>
+            <UserProg1Name></UserProg1Name>
+            <UserProg2Name></UserProg2Name>
+            <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
+            <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
+            <nStopB1X>0</nStopB1X>
+            <nStopB2X>0</nStopB2X>
+          </BeforeMake>
+'@
+    $template = [regex]::Replace($template, '(?s)          <BeforeMake>.*?          </BeforeMake>',
+                                 $disabledBeforeMake, 1)
+    $disabledAfterMake = $disabledBeforeMake.Replace('BeforeMake', 'AfterMake')
+    $template = [regex]::Replace($template, '(?s)          <AfterMake>.*?          </AfterMake>',
+                                 $disabledAfterMake, 1)
     [IO.File]::WriteAllText($generatedProject, $template, [Text.UTF8Encoding]::new($false))
     $log = Join-Path $outputDir "build_$Label.log"
     if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log -Force }
-    & $uv4 -r $generatedProject -t tw66gw02 -j0 -o $log
-    if ($LASTEXITCODE -ne 0) { throw "Application build $Label failed. See $log" }
+    $uvArguments = @('-r', ('"{0}"' -f $generatedProject), '-t', 'tw66gw02',
+                     '-j0', '-o', ('"{0}"' -f $log))
+    $uvProcess = Start-Process -FilePath $uv4 -ArgumentList $uvArguments -WindowStyle Hidden -Wait -PassThru
     $deadline = [DateTime]::UtcNow.AddSeconds(120)
     do {
         Start-Sleep -Milliseconds 250
@@ -45,7 +66,7 @@ function Invoke-AppBuild([int]$Version, [string]$Label) {
         }
     } while ([DateTime]::UtcNow -lt $deadline)
     if (!(Test-Path -LiteralPath $log) -or ($logText -notmatch 'Build Time Elapsed:')) {
-        throw "Timed out waiting for Keil to build $Label."
+        throw "Keil build $Label did not produce a completed log (exit $($uvProcess.ExitCode))."
     }
     if ($logText -notmatch '0 Error\(s\)') { throw "Application build $Label failed. See $log" }
     $temporaryOutputDir = Join-Path $mdkDir "tw66gw02_ota_$Label"
@@ -81,24 +102,27 @@ function Merge-IntelHex([string]$First, [string]$Second, [string]$Destination) {
 }
 
 try {
-    & (Join-Path $projectRoot 'Bootloader\build_bootloader.ps1') -KeilRoot $KeilRoot
-    if ($LASTEXITCODE -ne 0) { throw 'Bootloader build failed.' }
-    $factory = Invoke-AppBuild $FactoryVersion "v$FactoryVersion"
+    if (!$OtaOnly) {
+        & (Join-Path $projectRoot 'Bootloader\build_bootloader.ps1') -KeilRoot $KeilRoot
+        if ($LASTEXITCODE -ne 0) { throw 'Bootloader build failed.' }
+        $factory = Invoke-AppBuild $FactoryVersion "v$FactoryVersion"
+
+        $bootHex = Join-Path $projectRoot 'Bootloader\build\mathis_bootloader.hex'
+        $bootBin = Join-Path $projectRoot 'Bootloader\build\mathis_bootloader.bin'
+        $factoryHex = Join-Path $outputDir "mathis_factory_v$FactoryVersion.hex"
+        Merge-IntelHex $bootHex $factory.Hex $factoryHex
+
+        [byte[]]$bootBytes = [IO.File]::ReadAllBytes($bootBin)
+        [byte[]]$factoryAppBytes = [IO.File]::ReadAllBytes($factory.Bin)
+        [byte[]]$factoryBytes = New-Object byte[] (0x1800 + $factoryAppBytes.Length)
+        for ($index = 0; $index -lt $factoryBytes.Length; $index++) { $factoryBytes[$index] = 0xFF }
+        [Array]::Copy($bootBytes, 0, $factoryBytes, 0, $bootBytes.Length)
+        [Array]::Copy($factoryAppBytes, 0, $factoryBytes, 0x1800, $factoryAppBytes.Length)
+        $factoryBin = Join-Path $outputDir "mathis_factory_v$FactoryVersion.bin"
+        [IO.File]::WriteAllBytes($factoryBin, $factoryBytes)
+    }
+
     $ota = Invoke-AppBuild $OtaVersion "v$OtaVersion"
-
-    $bootHex = Join-Path $projectRoot 'Bootloader\build\mathis_bootloader.hex'
-    $bootBin = Join-Path $projectRoot 'Bootloader\build\mathis_bootloader.bin'
-    $factoryHex = Join-Path $outputDir "mathis_factory_v$FactoryVersion.hex"
-    Merge-IntelHex $bootHex $factory.Hex $factoryHex
-
-    [byte[]]$bootBytes = [IO.File]::ReadAllBytes($bootBin)
-    [byte[]]$factoryAppBytes = [IO.File]::ReadAllBytes($factory.Bin)
-    [byte[]]$factoryBytes = New-Object byte[] (0x1800 + $factoryAppBytes.Length)
-    for ($index = 0; $index -lt $factoryBytes.Length; $index++) { $factoryBytes[$index] = 0xFF }
-    [Array]::Copy($bootBytes, 0, $factoryBytes, 0, $bootBytes.Length)
-    [Array]::Copy($factoryAppBytes, 0, $factoryBytes, 0x1800, $factoryAppBytes.Length)
-    $factoryBin = Join-Path $outputDir "mathis_factory_v$FactoryVersion.bin"
-    [IO.File]::WriteAllBytes($factoryBin, $factoryBytes)
 
     [byte[]]$appBytes = [IO.File]::ReadAllBytes($ota.Bin)
     [byte[]]$artifact = New-Object byte[] ($appBytes.Length + 384)
@@ -118,8 +142,10 @@ try {
     }
     $manifest | ConvertTo-Json | Set-Content -Encoding UTF8 `
         (Join-Path $outputDir "mathis_ota_v$OtaVersion.manifest.json")
-    Write-Host "Factory image: $factoryHex"
-    Write-Host "Factory binary: $factoryBin (program at 0x08000000)"
+    if (!$OtaOnly) {
+        Write-Host "Factory image: $factoryHex"
+        Write-Host "Factory binary: $factoryBin (program at 0x08000000)"
+    }
     Write-Host "OTA artifact: $otaFile ($($artifact.Length) bytes, CRC $('0x{0:X8}' -f $crc))"
 }
 finally {

@@ -65,8 +65,8 @@ def main():
     assert "ImageVectorValid(OTA_APP_BASE, OTA_MAX_APPLICATION_SIZE)" in boot_source
     assert "ImageVectorValid(OTA_APP_BASE, OTA_APP_SLOT_SIZE)" not in boot_source
     app100 = (ARTIFACTS / "mathis_app_v100.bin").read_bytes()
-    app101 = (ARTIFACTS / "mathis_app_v101.bin").read_bytes()
-    artifact = (ARTIFACTS / "mathis_ota_v101.ota").read_bytes()
+    app102 = (ARTIFACTS / "mathis_app_v102.bin").read_bytes()
+    artifact = (ARTIFACTS / "mathis_ota_v102.ota").read_bytes()
     boot = (ROOT / "Bootloader" / "build" / "mathis_bootloader.bin").read_bytes()
     factory_bin = (ARTIFACTS / "mathis_factory_v100.bin").read_bytes()
     keil_factory_bin = (ARTIFACTS / "keil_factory_v100.bin").read_bytes()
@@ -74,15 +74,16 @@ def main():
     min_boot = (ROOT / "Bootloader" / "build_min" / "mathis_min_bootloader.bin").read_bytes()
     min_factory = (ARTIFACTS / "diagnostic_minboot_factory_v100.bin").read_bytes()
     gpio_alive = (ARTIFACTS / "diagnostic_gpio_alive.bin").read_bytes()
-    manifest = json.loads((ARTIFACTS / "mathis_ota_v101.manifest.json").read_text(encoding="utf-8-sig"))
+    manifest = json.loads((ARTIFACTS / "mathis_ota_v102.manifest.json").read_text(encoding="utf-8-sig"))
 
-    assert len(app100) <= APP_MAX and len(app101) <= APP_MAX
-    assert app100 != app101
-    stack, reset = struct.unpack_from("<II", app101)
+    assert len(app100) <= APP_MAX and len(app102) <= APP_MAX
+    assert app100 != app102
+    stack, reset = struct.unpack_from("<II", app102)
     assert 0x200000C0 <= stack <= 0x20001FF0
-    assert APP_BASE <= (reset & ~1) < APP_BASE + len(app101)
-    assert len(artifact) == len(app101) + 384
-    assert artifact[:-384] == app101 and artifact[-384:] == bytes(384)
+    assert APP_BASE <= (reset & ~1) < APP_BASE + len(app102)
+    assert len(artifact) == len(app102) + 384
+    assert artifact[:-384] == app102 and artifact[-384:] == bytes(384)
+    assert manifest["target_version"] == 102
     assert manifest["artifact_size"] == len(artifact)
     assert manifest["crc32_iso_hdlc"] == f"0x{zlib.crc32(artifact) & 0xFFFFFFFF:08X}"
 
@@ -115,10 +116,10 @@ def main():
 
     old_slot = bytearray(app100 + bytes([0xFF]) * (SLOT - len(app100)))
     new_stage = bytearray(artifact + bytes([0xFF]) * (SLOT - len(artifact)))
-    expected_new = bytearray(app101 + bytes([0xFF]) * (SLOT - len(app101)))
+    expected_new = bytearray(app102 + bytes([0xFF]) * (SLOT - len(app102)))
     total_phases = (SLOT // PAGE) * 3
     for cut in range(1, total_phases + 1):
-        installed, backup = run_swap(bytearray(old_slot), bytearray(new_stage), len(app101), True, cut)
+        installed, backup = run_swap(bytearray(old_slot), bytearray(new_stage), len(app102), True, cut)
         assert installed == expected_new, ("forward", cut)
         assert backup == old_slot, ("backup", cut)
         restored, failed_new = run_swap(installed, backup, SLOT, False, cut)

@@ -41,9 +41,10 @@ typedef          float  float32;
 #endif
 #define FALSE                   (0u)
 
-#define CF_LUMI_FULL            0xFF
-#define CF_LUMI_HALF            0x7F
-#define CF_LUMI_OFF             0
+#define CF_LUMI_FULL            0xFFu
+#define CF_LUMI_ACTIVE          0xD0u
+#define CF_LUMI_HALF            0x7Fu
+#define CF_LUMI_OFF             0u
 
 #define MARQUEE_NUM             19
 

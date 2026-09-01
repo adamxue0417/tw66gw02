@@ -1,0 +1,43 @@
+# v102 屏幕节电测试版验证记录
+
+## 自动验证结果
+
+- Keil ARMCC 5.06u7：`0 Error(s), 0 Warning(s)`。
+- OTA 目标版本：102。
+- 应用大小：22892 字节；OTA artifact：23276 字节。
+- CRC-32/ISO-HDLC：`0x1227E5DA`。
+- OTA 内容为完整应用BIN加384字节全零开发签名占位。
+- 内存布局、CRC及162个断电位置的升级/回滚模拟全部通过。
+- C8721初始化和重新配置均使用8.5 mA恒流档，点亮段PWM为`0xD0`。
+- 理论LED导通电流比例：`8.5 / 10 * 208 / 255 = 69.3%`，理论降幅约30.7%。
+
+## 隔离构建验证
+
+`BuildOtaArtifacts.ps1 -OtaOnly -OtaVersion 102` 未执行Keil Before Build或After Build命令，以下受保护文件构建前后SHA-256一致：
+
+| 文件 | SHA-256 |
+| --- | --- |
+| `OTA_Artifacts/mathis_factory_v100.bin` | `55DF837097652CD8C04CC0E8902BEC5D2A74F1683AACDFA0F23011F3E20AD05F` |
+| `OTA_Artifacts/mathis_factory_v100.hex` | `AF6C7A75F91833B2EEB4A9BD67E3A01C9100BF4C2950D57E1AB4D4D63CA48FB2` |
+| `Bootloader/build/mathis_bootloader.bin` | `EA727F03AF6C89408C97CEDE7ACF97115DD70354F0C8BA0F2081883EA2D7A497` |
+| `Bootloader/build/mathis_bootloader.axf` | `2EEA577E7EF3484F3AC6A09358D94559181DE035FB8187D04DEA3BB30497F416` |
+| `tw66gw02.hex` | `35D21BCC2C6B4D73DA77CAA813BF37765E4BA9CA6F4C79E0DA0D9E5A8EFC6639` |
+
+目录11前后均为1440个文件，清单SHA-256均为 `A8450CD61B18FBEBE8A75116AEA37682DA59DA6D6898EE32A8241077153E3CF2`，差异数为0。
+
+## v102交付文件
+
+| 文件 | 大小 | SHA-256 |
+| --- | ---: | --- |
+| `mathis_app_v102.bin` | 22892 | `B53D96FC67AFECCF52F83FDCD15DB31D5E4EDA2611CACD496DCB0D61D3194F46` |
+| `mathis_app_v102.hex` | 64438 | `F2638BDBAF34C18ABF4686A0D6B0CFB255A97E4882E29E0BC2E49806C163053D` |
+| `mathis_ota_v102.ota` | 23276 | `2B8EAEAD07795A314AE270D7531F2699CE003EDD2EB8E2684875B96E485A2977` |
+| `mathis_ota_v102.manifest.json` | 293 | `704B2DEE2BB9A6903E93578245ADD85711D3A8BA1D0F0680B6031B791B43411C` |
+| `build_v102.log` | 1609 | `599469708871FFEE99AF79D19E9F73AB4A10A1FF9D47E3FC9C8C9723300B398B` |
+
+## 仍需实机完成
+
+- 在相同供电、温度、单位、蓝牙状态和显示内容下，对比v100与v102各60秒平均功耗。
+- 检查D/O/Probe/Cavity、摄氏/华氏、温度条、蓝牙/低电图标及异常字符。
+- 确认无肉眼可见闪烁、重影、缺段，且OTA重启并稳定运行10秒后亮度正常。
+- 若屏幕支路实测降幅不足25%，仅将PWM由`0xD0`下调至`0xC0`后重新构建。

@@ -1,5 +1,6 @@
 # Keil build output
 MDK-ARM/tw66gw02/
+MDK-ARM/tw66gw02_ota_v*/
 MDK-ARM/*.hex
 MDK-ARM/*.bin
 MDK-ARM/*.axf

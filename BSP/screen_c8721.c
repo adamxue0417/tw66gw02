@@ -114,7 +114,7 @@ static void Screen_MapToDisplayBuf(void)
     for (s = 0u; s < 8u; s++) {
         for (g = 0u; g < 16u; g++) {
             CF_DisplayBuf[g + s * CF_SEG_NUM] =
-                (Screen_Data.DisplayMapTable[g] & (1u << s)) ? CF_LUMI_FULL : CF_LUMI_OFF;
+                (Screen_Data.DisplayMapTable[g] & (1u << s)) ? CF_LUMI_ACTIVE : CF_LUMI_OFF;
 					
         }
     }

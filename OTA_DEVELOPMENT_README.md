@@ -10,15 +10,16 @@ are intentionally not enabled.
 Run from PowerShell:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\BuildOtaArtifacts.ps1 -FactoryVersion 100 -OtaVersion 101
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\BuildOtaArtifacts.ps1 -OtaOnly -OtaVersion 102
 ```
 
 The script produces:
 
-- `OTA_Artifacts/mathis_factory_v100.hex`: bootloader plus relocated v100 app;
-  program this once with SWD before OTA testing.
-- `OTA_Artifacts/mathis_ota_v101.ota`: file to bundle in the app.
-- `OTA_Artifacts/mathis_ota_v101.manifest.json`: exact artifact size, CRC-32 and
+- Existing `OTA_Artifacts/mathis_factory_v100.hex`: bootloader plus relocated
+  baseline v100 app; program this once with SWD before OTA testing. `-OtaOnly`
+  deliberately leaves this file unchanged.
+- `OTA_Artifacts/mathis_ota_v102.ota`: file to bundle in the app.
+- `OTA_Artifacts/mathis_ota_v102.manifest.json`: exact artifact size, CRC-32 and
   target version for `OTA_BEGIN`.
 
 The app engineer must replace the current 4096-byte dummy artifact with the `.ota`
@@ -57,7 +58,7 @@ Build outputs are isolated so an OTA packaging run cannot replace the Keil
 factory AXF:
 
 - `MDK-ARM/tw66gw02/`: complete factory AXF used by the checked-in Keil target;
-- `MDK-ARM/tw66gw02_ota_v100/` and `_v101/`: relocated app-only OTA builds;
+- `MDK-ARM/tw66gw02_ota_v100/`, `_v101/`, and `_v102/`: relocated app-only OTA builds;
 - `MDK-ARM/tw66gw02_direct/`: direct-start diagnostic build.
 
 With J-Link connected, the deterministic factory-programming command is:
