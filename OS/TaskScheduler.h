@@ -2,9 +2,9 @@
 #define  __TASKSCHEDULER_H
 #include "stdint.h"
 
-#define SCH_MAX_TASKS 32   //×î´óÈÎÎñÊıÁ¿
+#define SCH_MAX_TASKS 8   /* Six tasks are registered; retain two spare slots. */
 
-//ÒÔÏÂÊÇ´íÎó´úÂë
+//ä»¥ä¸‹æ˜¯é”™è¯¯ä»£ç 
 typedef enum
 {
 	NOT_ERROR = 0,
@@ -18,7 +18,7 @@ typedef enum
 	ERROR_I2C_WRITE_BYTE_AT34C64
 }SCH_Error_TypeDef;
 
-typedef struct //Ã¿¸öÈÎÎñµÄÊı¾İ½á¹¹
+typedef struct //æ¯ä¸ªä»»åŠ¡çš„æ•°æ®ç»“æ„
 {
 	void (*pTask)(void);
 	uint16_t Delay;

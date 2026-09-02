@@ -1,3 +1,4 @@
+import hashlib
 import json
 import pathlib
 import struct
@@ -7,9 +8,10 @@ import zlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "OTA_Artifacts"
 PAGE = 0x400
-SLOT = 0x6C00
-APP_MAX = 0x6A80
-APP_BASE = 0x08001800
+SLOT = 0x6400
+APP_MAX = 0x6280
+APP_BASE = 0x08002000
+BOOT_API_OFFSET = 0x1FC0
 
 
 def parse_hex(path):
@@ -33,7 +35,6 @@ def parse_hex(path):
 
 
 def run_swap(main, stage, incoming_size, trim, interrupted_after=None):
-    """Model the bootloader's journaled three-phase page swap."""
     scratch = bytearray(PAGE)
     completed = 0
     interruptions = 0
@@ -54,7 +55,6 @@ def run_swap(main, stage, incoming_size, trim, interrupted_after=None):
             stage[start:end] = scratch
         interruptions += 1
         if interrupted_after == interruptions:
-            # Power failed before journal append: repeat the same phase.
             continue
         completed += 1
     return main, stage
@@ -62,71 +62,65 @@ def run_swap(main, stage, incoming_size, trim, interrupted_after=None):
 
 def main():
     boot_source = (ROOT / "Bootloader" / "boot_main.c").read_text(encoding="utf-8")
-    assert "ImageVectorValid(OTA_APP_BASE, OTA_MAX_APPLICATION_SIZE)" in boot_source
-    assert "ImageVectorValid(OTA_APP_BASE, OTA_APP_SLOT_SIZE)" not in boot_source
-    app100 = (ARTIFACTS / "mathis_app_v100.bin").read_bytes()
-    app102 = (ARTIFACTS / "mathis_app_v102.bin").read_bytes()
-    artifact = (ARTIFACTS / "mathis_ota_v102.ota").read_bytes()
-    boot = (ROOT / "Bootloader" / "build" / "mathis_bootloader.bin").read_bytes()
-    factory_bin = (ARTIFACTS / "mathis_factory_v100.bin").read_bytes()
-    keil_factory_bin = (ARTIFACTS / "keil_factory_v100.bin").read_bytes()
-    direct = (ARTIFACTS / "diagnostic_direct_v100.bin").read_bytes()
-    min_boot = (ROOT / "Bootloader" / "build_min" / "mathis_min_bootloader.bin").read_bytes()
-    min_factory = (ARTIFACTS / "diagnostic_minboot_factory_v100.bin").read_bytes()
-    gpio_alive = (ARTIFACTS / "diagnostic_gpio_alive.bin").read_bytes()
-    manifest = json.loads((ARTIFACTS / "mathis_ota_v102.manifest.json").read_text(encoding="utf-8-sig"))
+    update_source = (ROOT / "COP" / "ota_update.c").read_text(encoding="utf-8")
+    assert "BootSecurity_VerifyArtifact(OTA_STAGE_BASE" in boot_source
+    assert "SecurityAdvance(header->target_version)" in boot_source
+    assert "api->verify_artifact(OTA_STAGE_BASE" in update_source
+    assert "OTA_REASON_ROLLBACK" in update_source
 
-    assert len(app100) <= APP_MAX and len(app102) <= APP_MAX
-    assert app100 != app102
-    stack, reset = struct.unpack_from("<II", app102)
-    assert 0x200000C0 <= stack <= 0x20001FF0
-    assert APP_BASE <= (reset & ~1) < APP_BASE + len(app102)
-    assert len(artifact) == len(app102) + 384
-    assert artifact[:-384] == app102 and artifact[-384:] == bytes(384)
-    assert manifest["target_version"] == 102
+    boot = (ARTIFACTS / "mathis_secure_bootloader_dev_v1.bin").read_bytes()
+    app102 = (ARTIFACTS / "mathis_secure_app_v102.bin").read_bytes()
+    app103 = (ARTIFACTS / "mathis_app_v103.bin").read_bytes()
+    artifact = (ARTIFACTS / "mathis_ota_v103_dev_signed.ota").read_bytes()
+    factory = (ARTIFACTS / "mathis_secure_factory_v102_dev.bin").read_bytes()
+    manifest = json.loads(
+        (ARTIFACTS / "mathis_ota_v103_dev_signed.manifest.json").read_text(encoding="utf-8-sig")
+    )
+
+    assert len(boot) <= 0x2000
+    assert struct.unpack_from("<I", boot, BOOT_API_OFFSET)[0] == 0x4950414D
+    assert len(app102) <= APP_MAX and len(app103) <= APP_MAX
+    for app in (app102, app103):
+        stack, reset = struct.unpack_from("<II", app)
+        assert 0x200000C0 <= stack <= 0x20001FF0
+        assert APP_BASE <= (reset & ~1) < APP_BASE + len(app)
+
+    assert len(factory) == 0x2000 + len(app102)
+    assert factory[: len(boot)] == boot
+    assert factory[len(boot) : 0x2000] == bytes([0xFF]) * (0x2000 - len(boot))
+    assert factory[0x2000:] == app102
+
+    assert artifact[:-384] == app103
+    assert artifact[-384:] != bytes(384)
+    assert manifest["format"] == "mathis-signed-ota-v1"
+    assert manifest["target_version"] == manifest["security_version"] == 103
+    assert manifest["application_size"] == len(app103)
     assert manifest["artifact_size"] == len(artifact)
     assert manifest["crc32_iso_hdlc"] == f"0x{zlib.crc32(artifact) & 0xFFFFFFFF:08X}"
+    assert manifest["application_sha256"] == hashlib.sha256(app103).hexdigest().upper()
+    assert manifest["artifact_sha256"] == hashlib.sha256(artifact).hexdigest().upper()
+    assert manifest["development_signature_placeholder"] is False
+    assert manifest["signature_algorithm"] == "RSA-3072-PKCS1-v1_5-SHA256"
 
-    boot_stack, boot_reset = struct.unpack_from("<II", boot)
-    assert 0x20000000 < boot_stack <= 0x20002000
-    assert 0x08000000 <= (boot_reset & ~1) < 0x08000000 + len(boot)
-    assert len(factory_bin) == 0x1800 + len(app100)
-    assert factory_bin[: len(boot)] == boot
-    assert factory_bin[len(boot) : 0x1800] == bytes([0xFF]) * (0x1800 - len(boot))
-    assert factory_bin[0x1800:] == app100
-    assert keil_factory_bin == factory_bin
-    direct_stack, direct_reset = struct.unpack_from("<II", direct)
-    assert 0x20000000 < direct_stack <= 0x20001FF0
-    assert 0x08000000 <= (direct_reset & ~1) < 0x08000000 + len(direct)
-    min_stack, min_reset = struct.unpack_from("<II", min_boot)
-    assert 0x20000000 < min_stack <= 0x20002000
-    assert 0x08000000 <= (min_reset & ~1) < 0x08000000 + len(min_boot)
-    assert min_factory[: len(min_boot)] == min_boot
-    assert min_factory[len(min_boot) : 0x1800] == bytes([0xFF]) * (0x1800 - len(min_boot))
-    assert min_factory[0x1800:] == app100
-    gpio_stack, gpio_reset = struct.unpack_from("<II", gpio_alive)
-    assert 0x20000000 < gpio_stack <= 0x20002000
-    assert 0x08000000 <= (gpio_reset & ~1) < 0x08000000 + len(gpio_alive)
+    factory_hex = parse_hex(ARTIFACTS / "mathis_secure_factory_v102_dev.hex")
+    assert min(factory_hex) == 0x08000000
+    assert max(factory_hex) < 0x08008400
+    assert any(address < APP_BASE for address in factory_hex)
+    assert any(APP_BASE <= address < 0x08008400 for address in factory_hex)
 
-    factory = parse_hex(ARTIFACTS / "mathis_factory_v100.hex")
-    assert min(factory) == 0x08000000
-    assert max(factory) < 0x08008400
-    assert any(address < APP_BASE for address in factory)
-    assert any(APP_BASE <= address < 0x08008400 for address in factory)
-
-    old_slot = bytearray(app100 + bytes([0xFF]) * (SLOT - len(app100)))
+    old_slot = bytearray(app102 + bytes([0xFF]) * (SLOT - len(app102)))
     new_stage = bytearray(artifact + bytes([0xFF]) * (SLOT - len(artifact)))
-    expected_new = bytearray(app102 + bytes([0xFF]) * (SLOT - len(app102)))
+    expected_new = bytearray(app103 + bytes([0xFF]) * (SLOT - len(app103)))
     total_phases = (SLOT // PAGE) * 3
     for cut in range(1, total_phases + 1):
-        installed, backup = run_swap(bytearray(old_slot), bytearray(new_stage), len(app102), True, cut)
+        installed, backup = run_swap(bytearray(old_slot), bytearray(new_stage), len(app103), True, cut)
         assert installed == expected_new, ("forward", cut)
         assert backup == old_slot, ("backup", cut)
         restored, failed_new = run_swap(installed, backup, SLOT, False, cut)
         assert restored == old_slot, ("rollback", cut)
         assert failed_new == expected_new, ("rollback-backup", cut)
 
-    print("OTA artifact, memory map, CRC, and 162 interrupted swap/rollback cases passed")
+    print("secure OTA layout, CRC, manifest, and 150 interrupted swap/rollback cases passed")
 
 
 if __name__ == "__main__":

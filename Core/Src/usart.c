@@ -275,27 +275,31 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 
 /* USER CODE BEGIN 1 */
 
-/* Communication structures for each UART */
-TypeDefCOM COM1, COM2;  /* COM1: BT, COM2: Temp sensor 1 */
+/* Port-specific storage avoids reserving two 256-byte buffers for UART2. */
+static uint8_t s_com1_dma[COM1_RX_CAPACITY];
+static uint8_t s_com1_rx[COM1_RX_CAPACITY];
+static uint8_t s_com2_dma[COM2_RX_CAPACITY];
+static uint8_t s_com2_rx[COM2_RX_CAPACITY];
+TypeDefCOM COM1 = {s_com1_dma, s_com1_rx, COM1_RX_CAPACITY, 0u, 0u, 0u, 0u};
+TypeDefCOM COM2 = {s_com2_dma, s_com2_rx, COM2_RX_CAPACITY, 0u, 0u, 0u, 0u};
 
 volatile uint8_t usart2_tx_busy = 0u;
-uint8_t U1_Data[2];
-uint8_t U2_Data[2];
 
 void com_init(void)
 {
   __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
-  HAL_UART_Receive_DMA(&huart1, COM1.dmaBuf, COM_RXSIZE);
+  HAL_UART_Receive_DMA(&huart1, COM1.dmaBuf, COM1.capacity);
 
   __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
 //  __HAL_DMA_ENABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
 //  __HAL_DMA_ENABLE_IT(&hdma_usart2_rx, DMA_IT_TC);
-  HAL_UART_Receive_DMA(&huart2, COM2.dmaBuf, COM_RXSIZE);
+  HAL_UART_Receive_DMA(&huart2, COM2.dmaBuf, COM2.capacity);
 }
 
 void _usart_callback(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, TypeDefCOM *com)
 {
   uint32_t remain;
+  uint8_t *completed;
 
   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_IDLE) != RESET)
   {
@@ -303,14 +307,16 @@ void _usart_callback(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, Ty
     remain = __HAL_DMA_GET_COUNTER(hdma_uart);
     HAL_UART_DMAStop(huart);
 
-    if (remain <= COM_RXSIZE)
+    if (remain <= com->capacity)
     {
-      uint16_t received = (uint16_t)(COM_RXSIZE - remain);
+      uint16_t received = (uint16_t)(com->capacity - remain);
       if (received != 0u)
       {
         if (com->rxFlag == 0u)
         {
-          memcpy(com->rxBuf, com->dmaBuf, received);
+          completed = com->dmaBuf;
+          com->dmaBuf = com->rxBuf;
+          com->rxBuf = completed;
           com->rxLen = received;
           __DMB();
           com->rxFlag = 1u;
@@ -322,37 +328,53 @@ void _usart_callback(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, Ty
       }
     }
 
-    HAL_UART_Receive_DMA(huart, com->dmaBuf, COM_RXSIZE);
+    com->pollPos = 0u;
+    HAL_UART_Receive_DMA(huart, com->dmaBuf, com->capacity);
   }
 }
 
 void uart_dma_poll_check(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, TypeDefCOM *com)
 {
-  static uint16_t last_pos2 = 0u;
-  uint16_t *last_pos;
   uint16_t current_pos;
+  uint8_t *completed;
+  uint32_t primask;
 
   if (huart->Instance == USART2)
   {
-    last_pos = &last_pos2;
+    /* USART2 also has a polling fallback for modules that omit IDLE. */
   }
   else
   {
     return;
   }
 
-  current_pos = (uint16_t)(COM_RXSIZE - __HAL_DMA_GET_COUNTER(hdma_uart));
+  current_pos = (uint16_t)(com->capacity - __HAL_DMA_GET_COUNTER(hdma_uart));
 
-  if ((current_pos == *last_pos) || (com->rxFlag == 1u) || (current_pos > COM_RXSIZE))
+  if ((current_pos == 0u) || (current_pos == com->pollPos) ||
+      (com->rxFlag == 1u) || (current_pos > com->capacity))
   {
     return;
   }
 
-  memcpy(com->rxBuf, com->dmaBuf, current_pos);
+  primask = __get_PRIMASK();
+  __disable_irq();
+  HAL_UART_DMAStop(huart);
+  if (com->rxFlag != 0u)
+  {
+    com->overrunCount++;
+    HAL_UART_Receive_DMA(huart, com->dmaBuf, com->capacity);
+    if (primask == 0u) { __enable_irq(); }
+    return;
+  }
+  completed = com->dmaBuf;
+  com->dmaBuf = com->rxBuf;
+  com->rxBuf = completed;
   com->rxLen = current_pos;
   __DMB();
   com->rxFlag = 1u;
-  *last_pos = current_pos;
+  com->pollPos = 0u;
+  HAL_UART_Receive_DMA(huart, com->dmaBuf, com->capacity);
+  if (primask == 0u) { __enable_irq(); }
 }
 
 uint16_t COM_TakeRx(TypeDefCOM *com, uint8_t *dest, uint16_t capacity)
@@ -377,6 +399,34 @@ uint16_t COM_TakeRx(TypeDefCOM *com, uint8_t *dest, uint16_t capacity)
   }
   if (primask == 0u) { __enable_irq(); }
   return length;
+}
+
+const uint8_t *COM_BorrowRx(TypeDefCOM *com, uint16_t *length)
+{
+  const uint8_t *data = NULL;
+  uint32_t primask;
+  if ((com == NULL) || (length == NULL)) { return NULL; }
+  *length = 0u;
+  primask = __get_PRIMASK();
+  __disable_irq();
+  if (com->rxFlag != 0u)
+  {
+    data = com->rxBuf;
+    *length = com->rxLen;
+  }
+  if (primask == 0u) { __enable_irq(); }
+  return data;
+}
+
+void COM_ReleaseRx(TypeDefCOM *com)
+{
+  uint32_t primask;
+  if (com == NULL) { return; }
+  primask = __get_PRIMASK();
+  __disable_irq();
+  com->rxFlag = 0u;
+  com->rxLen = 0u;
+  if (primask == 0u) { __enable_irq(); }
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)

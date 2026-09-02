@@ -1,30 +1,30 @@
 #include "TaskScheduler.h"
 /**
  * @file    TaskScheduler.c
- * @brief   ÏµÍ³ÈÎÎñµ÷¶ÈÎÄ¼þ
+ * @brief   ç³»ç»Ÿä»»åŠ¡è°ƒåº¦æ–‡ä»¶
  * @author  niu
  * @date    2026.02.24
  * @version 1.0
  * 
- * ÏêÏ¸ÃèÊö:¸ÃÎÄ¼þÓÃÓÚÏµÍ³µÄÈÎÎñµ÷¶È¡£
-   Í¨¹ý½«SCH_Updateº¯Êý·ÅÈë¶¨Ê±ÖÐ¶Ï1msµÄÊ±»ùÖÐ£¬SCH_Dispatch_Tasksº¯Êý·ÅÈëÖ÷º¯ÊýµÄwhile(1)Ñ­»·ÖÐ£¬
-	 ÀûÓÃSCH_Add_Task½«ÈÎÎñº¯Êý¼ÓÈëµ½Ïß³ÌÖÐ£¬±ã¿ÉÒÔÊµÏÖÈÎÎñµÄ¶¨Ê±µ÷¶È¹¦ÄÜ¡£
+ * è¯¦ç»†æè¿°:è¯¥æ–‡ä»¶ç”¨äºŽç³»ç»Ÿçš„ä»»åŠ¡è°ƒåº¦ã€‚
+   é€šè¿‡å°†SCH_Updateå‡½æ•°æ”¾å…¥å®šæ—¶ä¸­æ–­1msçš„æ—¶åŸºä¸­ï¼ŒSCH_Dispatch_Taskså‡½æ•°æ”¾å…¥ä¸»å‡½æ•°çš„while(1)å¾ªçŽ¯ä¸­ï¼Œ
+	 åˆ©ç”¨SCH_Add_Taskå°†ä»»åŠ¡å‡½æ•°åŠ å…¥åˆ°çº¿ç¨‹ä¸­ï¼Œä¾¿å¯ä»¥å®žçŽ°ä»»åŠ¡çš„å®šæ—¶è°ƒåº¦åŠŸèƒ½ã€‚
  */
 /***************************************************************************************************************************************************************/
 #define RETURN_ERROR  1
 #define RETURN_NORMAL 0
-#define SCH_REPORT_ERRORS 1 			 //¿ªÆô´íÎó¼ì²â
-sTask SCH_tasks_G[SCH_MAX_TASKS];  //ÈÎÎñ¶ÓÁÐ
+#define SCH_REPORT_ERRORS 1 			 //å¼€å¯é”™è¯¯æ£€æµ‹
+sTask SCH_tasks_G[SCH_MAX_TASKS];  //ä»»åŠ¡é˜Ÿåˆ—
 SCH_Error_TypeDef Error_Code_G = NOT_ERROR;
-static uint16_t Error_tick_count_G;//¸ú×ÙÉÏ´Î¼ÇÂ¼´íÎóÒÔÀ´µÄÊ±¼ä
-static uint8_t Last_error_code_G = NOT_ERROR;//ÉÏ´ÎµÄ´íÎó´úÂë£¨ÔÚ1 ·ÖÖÓÖ®ºó¸´Î»£©
+static uint16_t Error_tick_count_G;//è·Ÿè¸ªä¸Šæ¬¡è®°å½•é”™è¯¯ä»¥æ¥çš„æ—¶é—´
+static uint8_t Last_error_code_G = NOT_ERROR;//ä¸Šæ¬¡çš„é”™è¯¯ä»£ç ï¼ˆåœ¨1 åˆ†é’Ÿä¹‹åŽå¤ä½ï¼‰
 /**
- * @brief   SCH_Initº¯Êý¹¦ÄÜ¼òÊö
+ * @brief   SCH_Initå‡½æ•°åŠŸèƒ½ç®€è¿°
  * @param   none    
  * @return  none
  * @note    none
  * 
- * ÏêÏ¸ËµÃ÷£º´Ëº¯ÊýÎªÈÎÎñµ÷¶È³õÊ¼»¯º¯Êý£¬Í¨¹ýÈÃµ÷¶È»ú»Ö¸´µ½³õÊ¼»¯µÄ½ø³ÌÀ´£¬Îª½ÓÏÂÀ´µÄÈÎÎñµ÷¶È×ö×¼±¸¡£
+ * è¯¦ç»†è¯´æ˜Žï¼šæ­¤å‡½æ•°ä¸ºä»»åŠ¡è°ƒåº¦åˆå§‹åŒ–å‡½æ•°ï¼Œé€šè¿‡è®©è°ƒåº¦æœºæ¢å¤åˆ°åˆå§‹åŒ–çš„è¿›ç¨‹æ¥ï¼Œä¸ºæŽ¥ä¸‹æ¥çš„ä»»åŠ¡è°ƒåº¦åšå‡†å¤‡ã€‚
  */
 void SCH_Init(void)
 {
@@ -34,19 +34,19 @@ void SCH_Init(void)
         SCH_Delete_Task(i);
     }
     Error_Code_G = NOT_ERROR;
-    //systick¶¨Ê±Æ÷³õÊ¼»¯
+    //systickå®šæ—¶å™¨åˆå§‹åŒ–
 }
 /**
- * @brief   SCH_Updateº¯Êý¹¦ÄÜ¼òÊö
+ * @brief   SCH_Updateå‡½æ•°åŠŸèƒ½ç®€è¿°
  * @param   none    
  * @return  none
  * @note    none
  * 
- * ÏêÏ¸ËµÃ÷£º´Ëº¯ÊýÎªÈÎÎñµ÷¶È¸üÐÂº¯Êý£¬ÐèÒª·ÅÈëµ½¶¨Ê±Æ÷ÖÐ¶ÏÖÐ£¬×÷ÎªÊ±»ù´¥·¢£¬¶¨Ê±Ë¢ÐÂ´Ëº¯Êý¡£
-   ËùÓÐµÄÈÎÎñµ÷¶È£¬¶¼ÊÇÔÚÕâ¸öº¯ÊýµÄ»ù´¡ÉÏË¢ÐÂµ÷¶È£¬Õâ¸öº¯ÊýµÄµ÷¶ÈÊ±¼äÊÇËùÓÐº¯Êýµ÷¶ÈµÄ×îÐ¡Ê±»ùµ¥Ôª¡£
-   ´Ëº¯ÊýÍ¨³£Éè¶¨ÔÚ1msµÄ¶¨Ê±Æ÷ÖÐ¶ÏÖÐ½øÐÐµ÷¶È¡£
+ * è¯¦ç»†è¯´æ˜Žï¼šæ­¤å‡½æ•°ä¸ºä»»åŠ¡è°ƒåº¦æ›´æ–°å‡½æ•°ï¼Œéœ€è¦æ”¾å…¥åˆ°å®šæ—¶å™¨ä¸­æ–­ä¸­ï¼Œä½œä¸ºæ—¶åŸºè§¦å‘ï¼Œå®šæ—¶åˆ·æ–°æ­¤å‡½æ•°ã€‚
+   æ‰€æœ‰çš„ä»»åŠ¡è°ƒåº¦ï¼Œéƒ½æ˜¯åœ¨è¿™ä¸ªå‡½æ•°çš„åŸºç¡€ä¸Šåˆ·æ–°è°ƒåº¦ï¼Œè¿™ä¸ªå‡½æ•°çš„è°ƒåº¦æ—¶é—´æ˜¯æ‰€æœ‰å‡½æ•°è°ƒåº¦çš„æœ€å°æ—¶åŸºå•å…ƒã€‚
+   æ­¤å‡½æ•°é€šå¸¸è®¾å®šåœ¨1msçš„å®šæ—¶å™¨ä¸­æ–­ä¸­è¿›è¡Œè°ƒåº¦ã€‚
  */
-void SCH_Update(void) //¸Ãº¯ÊýÓÉ¶¨Ê±Æ÷ÖÐ¶Ï´¥·¢£¬½¨Òé·ÅÈë1ms¶¨Ê±Æ÷ÖÐ¶ÏµÄÊ±»ùÖÐ½øÐÐ´¥·¢
+void SCH_Update(void) //è¯¥å‡½æ•°ç”±å®šæ—¶å™¨ä¸­æ–­è§¦å‘ï¼Œå»ºè®®æ”¾å…¥1mså®šæ—¶å™¨ä¸­æ–­çš„æ—¶åŸºä¸­è¿›è¡Œè§¦å‘
 {
 	uint16_t Index;
 	for(Index = 0; Index < SCH_MAX_TASKS; Index++)
@@ -55,47 +55,47 @@ void SCH_Update(void) //¸Ãº¯ÊýÓÉ¶¨Ê±Æ÷ÖÐ¶Ï´¥·¢£¬½¨Òé·ÅÈë1ms¶¨Ê±Æ÷ÖÐ¶ÏµÄÊ±»ùÖÐ½øÐ
 		{
 			if(SCH_tasks_G[Index].Delay == 0)
 			{
-				//ÈÎÎñÐèÒªÔËÐÐ
+				//ä»»åŠ¡éœ€è¦è¿è¡Œ
 				SCH_tasks_G[Index].RunMe += 1;
 				if(SCH_tasks_G[Index].Preiod)
 				{
-					//µ÷¶ÈÖÜÆÚÐÔµÄÈÎÎñÔÙ´ÎÔËÐÐ
+					//è°ƒåº¦å‘¨æœŸæ€§çš„ä»»åŠ¡å†æ¬¡è¿è¡Œ
 					SCH_tasks_G[Index].Delay = SCH_tasks_G[Index].Preiod;
 				}
 			}
 			else
 			{
-				//»¹Ã»×¼±¸ºÃÔËÐÐ£¬ÑÓ³Ù¼õÈ¥1
+				//è¿˜æ²¡å‡†å¤‡å¥½è¿è¡Œï¼Œå»¶è¿Ÿå‡åŽ»1
 				SCH_tasks_G[Index].Delay -= 1;
 			}
 		}
 	}
 }
 /**
- * @brief   SCH_Updateº¯Êý¹¦ÄÜ¼òÊö
- * @param   pFunction:Ìí¼ÓµÄÈÎÎñº¯Êý  Delay:³õÊ¼µÚÒ»´ÎÑÓ³ÙÊ±¼ä   Period:ÖÜÆÚÑÓ³ÙÊ±¼ä
- * @return  ·µ»ØÈÎÎñµÄÎ»ÖÃ£¨ÒÔ±ãÒÔºóÉ¾³ý£©  
+ * @brief   SCH_Updateå‡½æ•°åŠŸèƒ½ç®€è¿°
+ * @param   pFunction:æ·»åŠ çš„ä»»åŠ¡å‡½æ•°  Delay:åˆå§‹ç¬¬ä¸€æ¬¡å»¶è¿Ÿæ—¶é—´   Period:å‘¨æœŸå»¶è¿Ÿæ—¶é—´
+ * @return  è¿”å›žä»»åŠ¡çš„ä½ç½®ï¼ˆä»¥ä¾¿ä»¥åŽåˆ é™¤ï¼‰
  * @note    none
  * 
- * ÏêÏ¸ËµÃ÷£º´Ëº¯ÊýÎªÈÎÎñÌí¼Óº¯Êý£¬ÔÚmainº¯ÊýÖÐ£¬while(1)Ö®Ç°·ÅÖÃ£¬Í¨³£ÉÏµçÖ»Ö´ÐÐÒ»´Î£¬ÓÃÓÚ½«ÈÎÎñÌí¼Óµ½½ø³ÌÖÐ¡£
+ * è¯¦ç»†è¯´æ˜Žï¼šæ­¤å‡½æ•°ä¸ºä»»åŠ¡æ·»åŠ å‡½æ•°ï¼Œåœ¨mainå‡½æ•°ä¸­ï¼Œwhile(1)ä¹‹å‰æ”¾ç½®ï¼Œé€šå¸¸ä¸Šç”µåªæ‰§è¡Œä¸€æ¬¡ï¼Œç”¨äºŽå°†ä»»åŠ¡æ·»åŠ åˆ°è¿›ç¨‹ä¸­ã€‚
  */
 uint16_t SCH_Add_Task(void(*pFunction)(void), const uint16_t Delay, const uint16_t Period)
 {
 	uint16_t Index = 0;
-	   while((SCH_tasks_G[Index].pTask != 0) && (Index < SCH_MAX_TASKS))
+	while((Index < SCH_MAX_TASKS) && (SCH_tasks_G[Index].pTask != 0))
 	{
 		Index++;
 	}
-	//ÊÇ·ñµ½´ï¶ÓÁÐ½áÎ²£¿
+	//æ˜¯å¦åˆ°è¾¾é˜Ÿåˆ—ç»“å°¾ï¼Ÿ
 	if(Index == SCH_MAX_TASKS)
 	{
-		//ÈÎÎñ¶ÓÁÐÒÑÂú
+		//ä»»åŠ¡é˜Ÿåˆ—å·²æ»¡
 		//
-		//ÉèÖÃÈ«¾Ö´íÎó±äÁ¿
+		//è®¾ç½®å…¨å±€é”™è¯¯å˜é‡
 		Error_Code_G = ERROR_SCH_TOO_MANY_TASKS;
 		return SCH_MAX_TASKS;
 	}
-	//Èç¹ûÔËÐÐµ½ÕâÀïËµÃ÷ÈÎÎñ¶ÓÁÐÖÐÓÐ¿Õ¼ä
+	//å¦‚æžœè¿è¡Œåˆ°è¿™é‡Œè¯´æ˜Žä»»åŠ¡é˜Ÿåˆ—ä¸­æœ‰ç©ºé—´
 	SCH_tasks_G[Index].pTask = pFunction;
 	SCH_tasks_G[Index].Delay = Delay;
 	SCH_tasks_G[Index].Preiod = Period;
@@ -103,25 +103,25 @@ uint16_t SCH_Add_Task(void(*pFunction)(void), const uint16_t Delay, const uint16
 	return Index; 
 }
 /**
- * @brief   SCH_Dispatch_Tasksº¯Êý¹¦ÄÜ¼òÊö
+ * @brief   SCH_Dispatch_Taskså‡½æ•°åŠŸèƒ½ç®€è¿°
  * @param   none
  * @return  none 
  * @note    none
  * 
- * ÏêÏ¸ËµÃ÷£º´Ëº¯ÊýÎªÈÎÎñË¢ÐÂÖ´ÐÐº¯Êý£¬ÔÚmainº¯ÊýÖÐ£¬while(1)ÖÐ·ÅÖÃ£¬»á±»³ÖÐøÖØ¸´Ö´ÐÐ£¬ÓÃÓÚ¶ÔÈÎÎñµÄ³ÖÐøÖÜÆÚÐÔµ÷¶ÈÖ´ÐÐ¡£
+ * è¯¦ç»†è¯´æ˜Žï¼šæ­¤å‡½æ•°ä¸ºä»»åŠ¡åˆ·æ–°æ‰§è¡Œå‡½æ•°ï¼Œåœ¨mainå‡½æ•°ä¸­ï¼Œwhile(1)ä¸­æ”¾ç½®ï¼Œä¼šè¢«æŒç»­é‡å¤æ‰§è¡Œï¼Œç”¨äºŽå¯¹ä»»åŠ¡çš„æŒç»­å‘¨æœŸæ€§è°ƒåº¦æ‰§è¡Œã€‚
  */
 void SCH_Dispatch_Tasks(void)
 {
 	uint16_t Index;
-	//µ÷¶È£¨ÔËÐÐ£©ÏÂÒ»¸öÈÎÎñ£¨Èç¹ûÓÐÈÎÎñ¾ÍÐ÷£©
+	//è°ƒåº¦ï¼ˆè¿è¡Œï¼‰ä¸‹ä¸€ä¸ªä»»åŠ¡ï¼ˆå¦‚æžœæœ‰ä»»åŠ¡å°±ç»ªï¼‰
 	for(Index = 0; Index < SCH_MAX_TASKS; Index++)
 	{
 		if(SCH_tasks_G[Index].RunMe > 0)
 		{
 			(*SCH_tasks_G[Index].pTask)();
 			SCH_tasks_G[Index].RunMe -= 1;
-			//ÖÜÆÚÐÔµÄÈÎÎñ½«×Ô¶¯ÔÙ´ÎÖ´ÐÐ
-			//Èç¹ûÕâÊÇ¸öµ¥´ÎÖ´ÐÐµÄÈÎÎñ£¬½«Ëü´ÓÁÐ±íÖÐÉ¾³ý
+			//å‘¨æœŸæ€§çš„ä»»åŠ¡å°†è‡ªåŠ¨å†æ¬¡æ‰§è¡Œ
+			//å¦‚æžœè¿™æ˜¯ä¸ªå•æ¬¡æ‰§è¡Œçš„ä»»åŠ¡ï¼Œå°†å®ƒä»Žåˆ—è¡¨ä¸­åˆ é™¤
 			if(SCH_tasks_G[Index].Preiod == 0)
 			{
 				SCH_Delete_Task(Index);
@@ -129,27 +129,32 @@ void SCH_Dispatch_Tasks(void)
 		}
 	}
 	SCH_Report_Status();
-	//µ÷¶ÈÆ÷¿ªÊ¼¿ÕÏÐ
+	//è°ƒåº¦å™¨å¼€å§‹ç©ºé—²
 	SCH_Go_To_Sleep();
 }
 /**
- * @brief   SCH_Delete_Taskº¯Êý¹¦ÄÜ¼òÊö
- * @param   Task_Index:ÈÎÎñË÷ÒýºÅ,ÓÃÓÚ¶¨Î»ÊÇÄÄ¸öÈÎÎñ
- * @return  ´íÎó´úÂë:0 Õý³£  1 ´íÎó
+ * @brief   SCH_Delete_Taskå‡½æ•°åŠŸèƒ½ç®€è¿°
+ * @param   Task_Index:ä»»åŠ¡ç´¢å¼•å·,ç”¨äºŽå®šä½æ˜¯å“ªä¸ªä»»åŠ¡
+ * @return  é”™è¯¯ä»£ç :0 æ­£å¸¸  1 é”™è¯¯
  * @note    none
  * 
- * ÏêÏ¸ËµÃ÷£º´Ëº¯ÊýÎªÈÎÎñÉ¾³ýº¯Êý£¬ÓÃÓÚ¶Ô½ø³ÌÖÐµÄÈÎÎñ½øÐÐÉ¾³ý¡£
+ * è¯¦ç»†è¯´æ˜Žï¼šæ­¤å‡½æ•°ä¸ºä»»åŠ¡åˆ é™¤å‡½æ•°ï¼Œç”¨äºŽå¯¹è¿›ç¨‹ä¸­çš„ä»»åŠ¡è¿›è¡Œåˆ é™¤ã€‚
  */
 uint8_t SCH_Delete_Task(const uint16_t Task_Index)
 {
 	uint8_t Return_code;
+	if(Task_Index >= SCH_MAX_TASKS)
+	{
+		Error_Code_G = ERROR_SCH_CANOT_DELETE_TASK;
+		return RETURN_ERROR;
+	}
 	if(SCH_tasks_G[Task_Index].pTask == 0)
 	{
-		//ÕâÀïÃ»ÓÐÈÎÎñ...
+		//è¿™é‡Œæ²¡æœ‰ä»»åŠ¡...
 		//
-		//ÉèÖÃÈ«¾Ö´íÎó±äÁ¿
+		//è®¾ç½®å…¨å±€é”™è¯¯å˜é‡
 		Error_Code_G = ERROR_SCH_CANOT_DELETE_TASK;
-		//Í¬Ê±·µ»Ø´íÎó´úÂë
+		//åŒæ—¶è¿”å›žé”™è¯¯ä»£ç 
 		Return_code = RETURN_ERROR;
 	}
 	else
@@ -163,21 +168,21 @@ uint8_t SCH_Delete_Task(const uint16_t Task_Index)
 	return Return_code;
 }
 /**
- * @brief   SCH_Report_Statusº¯Êý¹¦ÄÜ¼òÊö
+ * @brief   SCH_Report_Statuså‡½æ•°åŠŸèƒ½ç®€è¿°
  * @param   none
  * @return  none
  * @note    none
  * 
- * ÏêÏ¸ËµÃ÷£º´Ëº¯ÊýÎªÈÎÎñµ÷¶È±¨¸æ×´Ì¬º¯Êý£¬ÓÃÓÚ¶Ô½ø³ÌÖÐµÄÈÎÎñ½øÐÐ×´Ì¬±¨¸æ¡£
+ * è¯¦ç»†è¯´æ˜Žï¼šæ­¤å‡½æ•°ä¸ºä»»åŠ¡è°ƒåº¦æŠ¥å‘ŠçŠ¶æ€å‡½æ•°ï¼Œç”¨äºŽå¯¹è¿›ç¨‹ä¸­çš„ä»»åŠ¡è¿›è¡ŒçŠ¶æ€æŠ¥å‘Šã€‚
  */
 void SCH_Report_Status(void)
 {
 	#ifdef SCH_REPORT_ERRORS
-	//Ö»ÔÚÐèÒª±¨¸æ´íÎóÊ±ÊÊÓÃ
-	//¼ì²éÐÂµÄ´íÎó´úÂë
+	//åªåœ¨éœ€è¦æŠ¥å‘Šé”™è¯¯æ—¶é€‚ç”¨
+	//æ£€æŸ¥æ–°çš„é”™è¯¯ä»£ç 
 	if(Error_Code_G != Last_error_code_G)
 	{
-		//LED´íÎóÊä³ö
+		//LEDé”™è¯¯è¾“å‡º
 		Last_error_code_G = Error_Code_G;
 		
 		if(Error_Code_G != 0)
@@ -195,19 +200,19 @@ void SCH_Report_Status(void)
 		{
 			if(--Error_tick_count_G == 0)
 			{
-				Error_Code_G = NOT_ERROR;//¸´Î»´íÎó
+				Error_Code_G = NOT_ERROR;//å¤ä½é”™è¯¯
 			}
 		}
 	}
 	#endif
 }
 /**
- * @brief   SCH_Go_To_Sleepº¯Êý¹¦ÄÜ¼òÊö
+ * @brief   SCH_Go_To_Sleepå‡½æ•°åŠŸèƒ½ç®€è¿°
  * @param   none
  * @return  none
  * @note    none
  * 
- * ÏêÏ¸ËµÃ÷£º´Ëº¯ÊýÎªÈÎÎñµ÷¶ÈÆ÷½øÈëÐÝÃßº¯Êý£¬ÓÃÓÚ¶Ô½ø³ÌÖÐµÄÈÎÎñ¿ÕÏÐÊ±£¬¶ÔÈÎÎñµ÷¶ÈÆ÷½øÐÐÐÝÃß´¦Àí¡£
+ * è¯¦ç»†è¯´æ˜Žï¼šæ­¤å‡½æ•°ä¸ºä»»åŠ¡è°ƒåº¦å™¨è¿›å…¥ä¼‘çœ å‡½æ•°ï¼Œç”¨äºŽå¯¹è¿›ç¨‹ä¸­çš„ä»»åŠ¡ç©ºé—²æ—¶ï¼Œå¯¹ä»»åŠ¡è°ƒåº¦å™¨è¿›è¡Œä¼‘çœ å¤„ç†ã€‚
  */
 static void SCH_Go_To_Sleep(void)
 {

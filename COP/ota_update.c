@@ -1,4 +1,5 @@
 #include "config.h"
+#include "boot_api.h"
 #include "ota_layout.h"
 #include "ota_boot.h"
 #include "ota_update.h"
@@ -21,8 +22,10 @@
 #define OTA_STATUS_BAD_OFFSET      (0x0Bu)
 
 #define OTA_REASON_CRC             (0x01u)
+#define OTA_REASON_SIGNATURE       (0x02u)
 #define OTA_REASON_SIZE            (0x03u)
 #define OTA_REASON_TIMEOUT         (0x04u)
+#define OTA_REASON_ROLLBACK        (0x05u)
 #define OTA_REASON_UNKNOWN         (0xFFu)
 #define OTA_TIMEOUT_TICKS_20MS     (3000u)
 #define OTA_RESET_DELAY_TICKS      (25u)
@@ -45,6 +48,7 @@ typedef struct
     uint16_t timeout_ticks;
     uint16_t reset_ticks;
     uint8_t target_version;
+    uint8_t verified_key;
     uint8_t state;
 } OtaSession;
 
@@ -151,7 +155,7 @@ static uint8_t WriteMetadata(void)
     header.application_size = s_ota.artifact_size - OTA_SIGNATURE_SIZE;
     header.artifact_crc32 = s_ota.expected_crc;
     header.target_version = s_ota.target_version;
-    header.flags = 0u;
+    header.flags = s_ota.verified_key;
     header.reserved0 = 0xFFFFu;
     header.header_crc32 = Crc32Update(0xFFFFFFFFu, (const uint8_t *)&header, 24u) ^ 0xFFFFFFFFu;
     header.commit = OTA_METADATA_COMMIT;
@@ -185,6 +189,7 @@ static void AbortSession(uint8_t reason)
 
 static void HandleBegin(const uint8_t *payload, uint16_t length)
 {
+    const MathisBootApi *api;
     MathisTelemetrySnapshot snapshot;
     uint8_t ready[2];
     uint32_t size;
@@ -193,6 +198,12 @@ static void HandleBegin(const uint8_t *payload, uint16_t length)
     size = ReadU32Le(payload);
     if ((size <= OTA_SIGNATURE_SIZE) || (size > OTA_MAX_ARTIFACT_SIZE)) {
         QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_SIZE); return;
+    }
+    api = MathisBootApi_Get();
+    if (api == 0) { QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_SIGNATURE); return; }
+    if ((api->read_security_floor() == 0xFFFFFFFFu) ||
+        ((uint32_t)payload[8] < api->read_security_floor())) {
+        QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_ROLLBACK); return;
     }
     if (OtaBoot_CanStartUpdate() == 0u) { (void)QueueStatus(OTA_STATUS_BUSY, 0, 0u); return; }
     UI_GetTelemetrySnapshot(&snapshot);
@@ -250,6 +261,7 @@ static void HandleChunk(const uint8_t *payload, uint16_t length)
 
 static void HandleCommit(const uint8_t *payload, uint16_t length)
 {
+    const MathisBootApi *api;
     uint32_t commit_crc;
     if ((s_ota.state != OTA_STATE_TRANSFERRING) || (length != 4u)) {
         (void)QueueStatus(OTA_STATUS_BUSY, 0, 0u); return;
@@ -262,6 +274,16 @@ static void HandleCommit(const uint8_t *payload, uint16_t length)
     }
     if (ApplicationVectorValid(s_ota.artifact_size - OTA_SIGNATURE_SIZE) == 0u) {
         QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_UNKNOWN); ReturnIdle(); return;
+    }
+    api = MathisBootApi_Get();
+    if (api == 0) {
+        QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_SIGNATURE); ReturnIdle(); return;
+    }
+    s_ota.verified_key = (uint8_t)api->verify_artifact(OTA_STAGE_BASE,
+                                                       s_ota.artifact_size - OTA_SIGNATURE_SIZE,
+                                                       s_ota.artifact_size);
+    if (s_ota.verified_key == 0u) {
+        QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_SIGNATURE); ReturnIdle(); return;
     }
     if (WriteMetadata() == 0u) {
         (void)QueueStatus(OTA_STATUS_STORAGE, 0, 0u); ReturnIdle(); return;

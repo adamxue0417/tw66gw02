@@ -2,7 +2,7 @@
 #include "config.h"
 #include "ota_update.h"
 
-#define TX_QUEUE_DEPTH              (4u)
+#define TX_QUEUE_DEPTH              (3u) /* Verify OK + Applying + one response headroom. */
 #define TELEMETRY_PERIOD_TICKS_20MS (50u)
 #define COEFF_TIMEOUT_TICKS_20MS    (3000u)
 #define FW_RELEASE_NUMBER           ((uint8_t)system_version)
@@ -19,7 +19,6 @@ typedef struct {
 } CoeffPending;
 
 static uint8_t s_rx_frame[MATHIS_MAX_FRAME];
-static uint8_t s_uart_chunk[COM_RXSIZE];
 static uint16_t s_rx_count;
 static uint16_t s_rx_expected;
 static uint8_t s_connected;
@@ -352,17 +351,19 @@ void Wireless_Init(void)
 
 void WirelessTask(void)
 {
+    const uint8_t *uart_chunk;
     uint16_t i;
     uint16_t length;
     uint8_t channel;
-    length = COM_TakeRx(&COM1, s_uart_chunk, sizeof(s_uart_chunk));
+    uart_chunk = COM_BorrowRx(&COM1, &length);
     if (length != 0u) {
         g_mathis_ble_debug.uart_chunks++;
         g_mathis_ble_debug.uart_bytes += length;
         g_mathis_ble_debug.last_uart_length = length;
-        if (HandleModuleTelemetryEvent(s_uart_chunk, length) == 0u) {
-            for (i = 0u; i < length; i++) { FeedIncomingByte(s_uart_chunk[i]); }
+        if (HandleModuleTelemetryEvent(uart_chunk, length) == 0u) {
+            for (i = 0u; i < length; i++) { FeedIncomingByte(uart_chunk[i]); }
         }
+        COM_ReleaseRx(&COM1);
     }
     for (channel = 0u; channel < TEMP_COEFF_CHANNEL_COUNT; channel++) {
         if (s_pending[channel].parts != 0u) {

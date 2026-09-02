@@ -9,11 +9,14 @@
 #define OTA_PAGE_SIZE                (0x00000400u)
 
 #define OTA_BOOT_BASE                (0x08000000u)
-#define OTA_BOOT_SIZE                (0x00001800u) /* 6 KiB */
-#define OTA_APP_BASE                 (0x08001800u)
-#define OTA_APP_SLOT_SIZE            (0x00006C00u) /* 27 KiB */
+#define OTA_BOOT_SIZE                (0x00002000u) /* 8 KiB, WRP pages 0..7 */
+#define OTA_APP_BASE                 (0x08002000u)
+#define OTA_APP_SLOT_SIZE            (0x00006400u) /* 25 KiB */
 #define OTA_STAGE_BASE               (0x08008400u)
-#define OTA_STAGE_SIZE               (0x00006C00u) /* 27 KiB */
+#define OTA_STAGE_SIZE               (0x00006400u) /* 25 KiB */
+#define OTA_SECURITY_BASE            (0x0800E800u)
+#define OTA_SECURITY_SIZE            (0x00000400u)
+#define OTA_RESERVED_BASE            (0x0800EC00u)
 #define OTA_SCRATCH_BASE             (0x0800F000u)
 #define OTA_METADATA_BASE            (0x0800F400u)
 #define OTA_CONFIG_A_BASE            (0x0800F800u)
@@ -38,6 +41,15 @@
 #define OTA_BOOT_TRACE_SCREEN_READY  (0xA9900006u)
 #define OTA_BOOT_TRACE_LOOP_RUNNING  (0xA9900007u)
 #define OTA_BOOT_TRACE_APP_ERROR     (0xA99000EEu)
+
+#define OTA_SECURITY_MAGIC           (0x31564E53u) /* "SNV1" little-endian */
+#define OTA_SECURITY_MAGIC_INV       (0xCEA9B1ACu)
+#define OTA_SECURITY_FORMAT          (1u)
+#define OTA_SECURITY_BASELINE        (102u)
+#define OTA_SECURITY_MAX_VERSION     (255u)
+#define OTA_SECURITY_ENTRY_COUNT     (OTA_SECURITY_MAX_VERSION - OTA_SECURITY_BASELINE + 1u)
+#define OTA_SECURITY_COPY_A_OFFSET   (32u)
+#define OTA_SECURITY_COPY_B_OFFSET   (OTA_SECURITY_COPY_A_OFFSET + OTA_SECURITY_ENTRY_COUNT * 2u)
 
 #define OTA_METADATA_MAGIC           (0x4F544131u) /* "OTA1" */
 #define OTA_METADATA_FORMAT          (1u)

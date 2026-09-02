@@ -1,4 +1,5 @@
 #include "stm32f030x8.h"
+#include "boot_security.h"
 #include "ota_layout.h"
 
 #define BOOT_ERROR_MASK       (FLASH_SR_PGERR | FLASH_SR_WRPERR)
@@ -105,9 +106,19 @@ static uint8_t FlashUnlock(void)
     return ((FLASH->CR & FLASH_CR_LOCK) == 0u) ? 1u : 0u;
 }
 
+static uint8_t AddressInSwapStorage(uint32_t address)
+{
+    return ((address >= OTA_APP_BASE) && (address < OTA_SECURITY_BASE)) ? 1u : 0u;
+}
+
+static uint8_t AddressInBootMetadata(uint32_t address)
+{
+    return (((address >= OTA_SCRATCH_BASE) && (address < (OTA_METADATA_BASE + OTA_PAGE_SIZE)))) ? 1u : 0u;
+}
+
 static uint8_t FlashErasePage(uint32_t address)
 {
-    if ((address < OTA_APP_BASE) || (address >= OTA_CONFIG_A_BASE) ||
+    if (((AddressInSwapStorage(address) == 0u) && (AddressInBootMetadata(address) == 0u)) ||
         ((address & (OTA_PAGE_SIZE - 1u)) != 0u)) { return 0u; }
     if (FlashWait() == 0u) { return 0u; }
     FLASH->CR |= FLASH_CR_PER; FLASH->AR = address; FLASH->CR |= FLASH_CR_STRT;
@@ -116,17 +127,65 @@ static uint8_t FlashErasePage(uint32_t address)
     return 1u;
 }
 
-static uint8_t FlashProgramHalfword(uint32_t address, uint16_t value)
+static uint8_t FlashProgramHalfwordRaw(uint32_t address, uint16_t value)
 {
-    if ((address < OTA_APP_BASE) || (address >= OTA_CONFIG_A_BASE) || ((address & 1u) != 0u)) { return 0u; }
-    if (*(const uint16_t *)address == value) { return 1u; }
-    if (*(const uint16_t *)address != 0xFFFFu) { return 0u; }
+    uint16_t current;
+    if ((address & 1u) != 0u) { return 0u; }
+    current = *(const uint16_t *)address;
+    if (current == value) { return 1u; }
+    if (current != 0xFFFFu) { return 0u; }
     if (FlashWait() == 0u) { return 0u; }
     FLASH->CR |= FLASH_CR_PG;
     *(volatile uint16_t *)address = value;
     if (FlashWait() == 0u) { FLASH->CR &= ~FLASH_CR_PG; return 0u; }
     FLASH->CR &= ~FLASH_CR_PG;
     return (*(const uint16_t *)address == value) ? 1u : 0u;
+}
+
+static uint8_t FlashProgramHalfword(uint32_t address, uint16_t value)
+{
+    if ((AddressInSwapStorage(address) == 0u) && (AddressInBootMetadata(address) == 0u)) { return 0u; }
+    return FlashProgramHalfwordRaw(address, value);
+}
+
+static uint16_t SecurityToken(uint8_t version)
+{
+    return (uint16_t)(0xA500u | version);
+}
+
+static uint8_t SecurityProgramVersion(uint8_t version)
+{
+    uint32_t index = (uint32_t)version - OTA_SECURITY_BASELINE;
+    uint32_t a = OTA_SECURITY_BASE + OTA_SECURITY_COPY_A_OFFSET + index * 2u;
+    uint32_t b = OTA_SECURITY_BASE + OTA_SECURITY_COPY_B_OFFSET + index * 2u;
+    uint16_t token = SecurityToken(version);
+    if ((index >= OTA_SECURITY_ENTRY_COUNT) || (FlashProgramHalfwordRaw(a, token) == 0u)) { return 0u; }
+    return FlashProgramHalfwordRaw(b, token);
+}
+
+static uint8_t SecurityEnsureInitialized(void)
+{
+    uint32_t floor = BootSecurity_ReadFloor();
+    if (floor != 0xFFFFFFFFu) { return 1u; }
+    if (SecurityProgramVersion(OTA_SECURITY_BASELINE) == 0u) { return 0u; }
+    if (FlashProgramHalfwordRaw(OTA_SECURITY_BASE + 8u, OTA_SECURITY_FORMAT) == 0u) { return 0u; }
+    if (FlashProgramHalfwordRaw(OTA_SECURITY_BASE + 4u, (uint16_t)OTA_SECURITY_MAGIC_INV) == 0u) { return 0u; }
+    if (FlashProgramHalfwordRaw(OTA_SECURITY_BASE + 6u, (uint16_t)(OTA_SECURITY_MAGIC_INV >> 16)) == 0u) { return 0u; }
+    if (FlashProgramHalfwordRaw(OTA_SECURITY_BASE, (uint16_t)OTA_SECURITY_MAGIC) == 0u) { return 0u; }
+    if (FlashProgramHalfwordRaw(OTA_SECURITY_BASE + 2u, (uint16_t)(OTA_SECURITY_MAGIC >> 16)) == 0u) { return 0u; }
+    return (BootSecurity_ReadFloor() == OTA_SECURITY_BASELINE) ? 1u : 0u;
+}
+
+static uint8_t SecurityAdvance(uint8_t target)
+{
+    uint32_t floor = BootSecurity_ReadFloor();
+    uint32_t version;
+    if ((floor == 0xFFFFFFFFu) || (target < OTA_SECURITY_BASELINE)) { return 0u; }
+    if (target <= floor) { return 1u; }
+    for (version = floor + 1u; version <= target; version++) {
+        if (SecurityProgramVersion((uint8_t)version) == 0u) { return 0u; }
+    }
+    return (BootSecurity_ReadFloor() >= target) ? 1u : 0u;
 }
 
 static uint8_t CopyPage(uint32_t destination, uint32_t source, uint32_t valid_bytes)
@@ -245,6 +304,10 @@ int main(void)
     BOOT_TRACE(OTA_BOOT_TRACE_ENTERED);
     valid = HeaderValid(header);
     if (FlashUnlock() == 0u) { JumpToApplication(); }
+    if (SecurityEnsureInitialized() == 0u) {
+        BOOT_TRACE(0xB00700E1u);
+        while (1) {}
+    }
     if (valid != 0u) {
         uint8_t trial = MarkerValid(OTA_META_TRIAL_OFFSET, OTA_MARKER_TRIAL, OTA_MARKER_TRIAL_INV);
         uint8_t confirmed = MarkerValid(OTA_META_CONFIRMED_OFFSET, OTA_MARKER_CONFIRMED, OTA_MARKER_CONFIRMED_INV);
@@ -256,7 +319,10 @@ int main(void)
                 uint32_t crc = Crc32Update(0xFFFFFFFFu, (const uint8_t *)OTA_STAGE_BASE,
                                            header->artifact_size) ^ 0xFFFFFFFFu;
                 staged_valid = ((crc == header->artifact_crc32) &&
-                                (ImageVectorValid(OTA_STAGE_BASE, header->application_size) != 0u)) ? 1u : 0u;
+                                (header->target_version >= BootSecurity_ReadFloor()) &&
+                                (ImageVectorValid(OTA_STAGE_BASE, header->application_size) != 0u) &&
+                                (BootSecurity_VerifyArtifact(OTA_STAGE_BASE, header->application_size,
+                                                             header->artifact_size) != 0u)) ? 1u : 0u;
             }
             if ((staged_valid != 0u) &&
                 (RunSwap(OTA_META_FORWARD_LOG_OFFSET, header->application_size, 1u) != 0u)) {
@@ -279,6 +345,12 @@ int main(void)
             NVIC_SystemReset();
         } else if (rollback_done != 0u) {
             (void)FlashErasePage(OTA_METADATA_BASE);
+            JumpToApplication();
+        } else if ((trial != 0u) && (confirmed != 0u)) {
+            if (SecurityAdvance(header->target_version) == 0u) {
+                BOOT_TRACE(0xB00700E2u);
+                while (1) {}
+            }
             JumpToApplication();
         } else {
             JumpToApplication();

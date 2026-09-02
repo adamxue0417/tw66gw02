@@ -44,7 +44,8 @@ void MX_USART1_UART_Init(void);
 void MX_USART2_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-#define COM_RXSIZE  256
+#define COM1_RX_CAPACITY  256u
+#define COM2_RX_CAPACITY   32u
 
 
 /* DMA buffer length definitions */
@@ -60,9 +61,11 @@ void MX_USART2_UART_Init(void);
   */
 typedef struct
 {
-	uint8_t  dmaBuf[COM_RXSIZE]; /* Buffer currently owned by RX DMA */
-	uint8_t  rxBuf[COM_RXSIZE];  /* Stable snapshot consumed by a task */
+	uint8_t *dmaBuf;             /* Buffer currently owned by RX DMA */
+	uint8_t *rxBuf;              /* Stable snapshot consumed by a task */
+	uint16_t capacity;
 	volatile uint16_t rxLen;
+	volatile uint16_t pollPos;
 	volatile uint8_t  rxFlag;
 	volatile uint32_t overrunCount;
 } TypeDefCOM;
@@ -70,9 +73,6 @@ typedef struct
 /* External communication structures for each UART */
 extern TypeDefCOM COM1, COM2;
 
-/* External single-byte data buffers */
-extern uint8_t U1_Data[2];  /* Single byte data buffer for USART1 */
-extern uint8_t U2_Data[2];  /* Single byte data buffer for USART5 */
 extern volatile uint8_t usart2_tx_busy;
 extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart1_rx;
@@ -82,6 +82,8 @@ void com_init(void);
 void _usart_callback(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, TypeDefCOM *com);
 void uart_dma_poll_check(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, TypeDefCOM *com);
 uint16_t COM_TakeRx(TypeDefCOM *com, uint8_t *dest, uint16_t capacity);
+const uint8_t *COM_BorrowRx(TypeDefCOM *com, uint16_t *length);
+void COM_ReleaseRx(TypeDefCOM *com);
 void USART1_SendData(uint8_t *data, uint16_t num);
 void USART2_SendData(uint8_t *data, uint16_t num);
 HAL_StatusTypeDef USART2_SendData_DMA(uint8_t *data, uint16_t num);

@@ -47,4 +47,7 @@ void OtaBoot_ConfirmRunningImage(void)
         (void)HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, address + 2u, OTA_MARKER_CONFIRMED_INV);
     }
     (void)HAL_FLASH_Lock();
+    if (MarkerValid(address, OTA_MARKER_CONFIRMED, OTA_MARKER_CONFIRMED_INV) != 0u) {
+        NVIC_SystemReset();
+    }
 }

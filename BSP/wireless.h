@@ -30,10 +30,10 @@ typedef struct {
     volatile uint32_t crc_errors;
     volatile uint32_t length_errors;
     volatile uint32_t cmd_frames;
-    volatile uint32_t start_frames;
-    volatile uint32_t stop_frames;
-    volatile uint32_t module_start_events;
-    volatile uint32_t module_stop_events;
+    volatile uint16_t start_frames;
+    volatile uint16_t stop_frames;
+    volatile uint16_t module_start_events;
+    volatile uint16_t module_stop_events;
     volatile uint32_t telemetry_queued;
     volatile uint32_t telemetry_tx_started;
     volatile uint16_t last_uart_length;
