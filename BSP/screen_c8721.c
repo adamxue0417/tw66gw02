@@ -338,6 +338,15 @@ static void ClearGauge(void)
  * Call periodically (e.g. every 10 ms) from the scheduler .
  */
 uint8_t  displaystep=0;
+static volatile uint8_t s_display_shutdown = 0u;
+
+void Screen_C8721_PrepareShutdown(void)
+{
+    if (s_display_shutdown == 0u) {
+        CF_DisplayIntoSleep();
+        s_display_shutdown = 1u;
+    }
+}
 /**
   * @function DisplayTask()
   * -------------
@@ -349,6 +358,8 @@ void DisplayTask(void)
 {
     int16_t displayTemp;
     uint8_t special;
+
+    if (s_display_shutdown != 0u) { return; }
 
     if (displaystep == 0u)
     {

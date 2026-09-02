@@ -625,6 +625,7 @@ void TempGetTask(void)
     int16_t probe_c;
     uint16_t battery_mV;
 
+    if (work_process == shutdown) { return; }
     update_three_temps_from_uart2();
     if (s_comm_temp_valid != 0u)
     {

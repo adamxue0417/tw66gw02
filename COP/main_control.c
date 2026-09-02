@@ -9,6 +9,7 @@
   */
 #include "config.h"
 #include "ota_layout.h"
+#include "power_latch.h"
 #include <stddef.h>
 
 _work_process work_process,work_process_backups;
@@ -46,6 +47,7 @@ static uint8_t s_display_special = 3u;
 static _work_process s_last_work_process = idle;
 static uint8_t s_probe_connected_last = 0u;
 static uint8_t s_probe_absent_ticks_100ms = 0u;
+static uint8_t s_shutdown_prepared = 0u;
 static float s_temp_coeff[TEMP_COEFF_CHANNEL_COUNT][TEMP_COEFF_TERM_COUNT] =
 {
     {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}, /* D surface: y = x by default */
@@ -70,6 +72,47 @@ static uint32_t s_config_active_page = 0u;
 
 static void BluetoothHwPowerOn(void);
 static void BluetoothHwPowerOff(void);
+
+static void ShutdownPrepareOnce(void)
+{
+    if (s_shutdown_prepared != 0u) { return; }
+    s_shutdown_prepared = 1u;
+
+    /* This order is deliberate: put C8721 to sleep while its bus is alive,
+       then stop BLE traffic/power and finally stop every DMA producer. */
+    Screen_C8721_PrepareShutdown();
+    Wireless_Shutdown();
+    s_bt_state = BT_OFF;
+    s_bt_icon_on = 0u;
+    s_bt_pairing_req = 0u;
+    s_bt_poweroff_req = 0u;
+    s_bt_connected_input = 0u;
+    BluetoothHwPowerOff();
+
+    __HAL_UART_DISABLE_IT(&huart2, UART_IT_IDLE);
+    (void)HAL_UART_DMAStop(&huart2);
+    COM2.rxFlag = 0u; COM2.rxLen = 0u; COM2.pollPos = 0u;
+    (void)HAL_ADC_Stop_DMA(&hadc);
+    HAL_NVIC_DisableIRQ(USART1_IRQn);
+    HAL_NVIC_DisableIRQ(USART2_IRQn);
+    HAL_NVIC_DisableIRQ(DMA1_Channel1_IRQn);
+    HAL_NVIC_DisableIRQ(DMA1_Channel2_3_IRQn);
+    HAL_NVIC_DisableIRQ(DMA1_Channel4_5_IRQn);
+    HAL_NVIC_DisableIRQ(ADC1_IRQn);
+}
+
+static void ShutdownCutPower(void)
+{
+    __disable_irq();
+    SysTick->CTRL = 0u;
+    SysTick->LOAD = 0u;
+    SysTick->VAL = 0u;
+    NVIC->ICER[0] = 0xFFFFFFFFu;
+    NVIC->ICPR[0] = 0xFFFFFFFFu;
+    PowerLatch_WriteState(POWER_STATE_SHUTDOWN_REQUESTED);
+    PowerLatch_DriveLow();
+    while (1) { __WFI(); }
+}
 
 static uint16_t ConfigCrc16(const uint8_t *data, uint16_t length)
 {
@@ -738,11 +781,9 @@ static void BluetoothHwPowerOn(void)
   */
 static void BluetoothHwPowerOff(void)
 {
-    if (s_bt_hw_on != 0u) {
-        BT_Off;
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
-        s_bt_hw_on = 0u;
-    }
+    BT_Off;
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+    s_bt_hw_on = 0u;
 }
 
 /**
@@ -915,6 +956,14 @@ void MainControl(void)
 
     KeyRespose(Key0_short_press, Key1_short_press, Key0_long_press, Key1_long_press, Key0_very_long_press, Key1_very_long_press);
 
+    if (work_process == shutdown) {
+        ShutdownPrepareOnce();
+        /* Remote power-off arrives with KEY0 released; a local long press waits
+           for release so the button cannot feed the latch while PB3 falls. */
+        if (key0 != 0u) { ShutdownCutPower(); }
+        return;
+    }
+
     probe_was_absent_long = (s_probe_absent_ticks_100ms >= PROBE_REINSERT_MIN_OFF_TICKS_100MS) ? 1u : 0u;
 
     if ((work_process != idle) && (work_process != shutdown)) {
@@ -946,13 +995,6 @@ void MainControl(void)
             s_idle_ticks_100ms = 0u;
         }
 
-        if (work_process == shutdown) {
-            s_bt_state = BT_OFF;
-            s_bt_icon_on = 0u;
-            BluetoothHwPowerOff();
-            Power_Off;
-        }
-
         s_last_work_process = work_process;
     }
 
@@ -966,15 +1008,6 @@ void MainControl(void)
         s_idle_ticks_100ms = 0u;
     }
 
-        /* Two-step power-off:
-         * 1) enter shutdown immediately (screen off),
-         * 2) wait KEY0 release, then cut PB3 power latch. */
-    if (work_process == shutdown) {
-        if (key0 != 0u) {
-            Power_Off;
-            work_process = idle;
-        }
-    }
 }
 
 

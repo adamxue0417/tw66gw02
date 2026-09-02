@@ -44,6 +44,7 @@
   */
 
 #include "stm32f0xx.h"
+#include "power_latch.h"
 
 /**
   * @}
@@ -125,15 +126,47 @@ const uint8_t APBPrescTable[8]  = {0, 0, 0, 0, 1, 2, 3, 4};
   */
 void SystemInit(void)
 {
-  /* PB3 is the board power-hold latch.  Assert it before the C runtime and
-     application initialization so a momentary power-button start cannot drop
-     out while the image is booting. */
-  RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-  (void)RCC->AHBENR;
-  GPIOB->BSRR = GPIO_BSRR_BS_3;
-  GPIOB->MODER = (GPIOB->MODER & ~(3u << (3u * 2u))) |
-                 (1u << (3u * 2u));
-  GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
+  uint32_t reset_flags;
+  uint32_t state = 0u;
+  uint8_t state_valid;
+
+  PowerLatch_PreparePins();
+  reset_flags = RCC->CSR;
+  state_valid = PowerLatch_ReadState(&state);
+
+  /* Normal secure hand-off: the bootloader already owns PB3. */
+  if (PowerLatch_IsAlreadyHeld() != 0u) {
+    PowerLatch_WriteState(POWER_STATE_RUNNING);
+    RCC->CSR |= RCC_CSR_RMVF;
+    return;
+  }
+  /* Stand-alone application builds still require a physical key or a trusted
+     reset record; they never assert PB3 merely because reset occurred. */
+  if (PowerLatch_KeyPressed() != 0u) {
+    PowerLatch_ClearState();
+    PowerLatch_WriteState(POWER_STATE_RUNNING);
+    PowerLatch_DriveHigh();
+    RCC->CSR |= RCC_CSR_RMVF;
+    return;
+  }
+  if ((state_valid != 0u) && (state == POWER_STATE_RESTART_ALLOWED) &&
+      ((reset_flags & RCC_CSR_SFTRSTF) != 0u)) {
+    PowerLatch_WriteState(POWER_STATE_RUNNING);
+    PowerLatch_DriveHigh();
+    RCC->CSR |= RCC_CSR_RMVF;
+    return;
+  }
+  if ((state_valid != 0u) && (state == POWER_STATE_RUNNING) &&
+      ((reset_flags & RCC_CSR_PINRSTF) != 0u) &&
+      (PowerLatch_IsPowerReset(reset_flags) == 0u)) {
+    PowerLatch_DriveHigh();
+    RCC->CSR |= RCC_CSR_RMVF;
+    return;
+  }
+  PowerLatch_DriveLow();
+  RCC->CSR |= RCC_CSR_RMVF;
+  __disable_irq();
+  while (1) { __WFI(); }
   /* NOTE :SystemInit(): This function is called at startup just after reset and 
                          before branch to main program. This call is made inside
                          the "startup_stm32f0xx.s" file.

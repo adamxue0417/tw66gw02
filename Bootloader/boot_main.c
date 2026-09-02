@@ -1,29 +1,71 @@
 #include "stm32f030x8.h"
 #include "boot_security.h"
 #include "ota_layout.h"
+#include "power_latch.h"
 
 #define BOOT_ERROR_MASK       (FLASH_SR_PGERR | FLASH_SR_WRPERR)
 #define BOOT_LOG_TOKEN_BASE   (0x5A00u)
 
 #define BOOT_TRACE(value)     (*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = (value))
 
-/* PB3 drives the board power-hold latch.  A push button only supplies the
- * initial pulse, so the bootloader must take ownership before doing any flash
- * recovery or jumping to the application. */
-static void HoldBoardPower(void)
+static uint32_t Crc32Update(uint32_t crc, const uint8_t *data, uint32_t length);
+static uint8_t HeaderValid(const OtaMetadataHeader *header);
+
+static void PowerDeniedWait(void)
 {
-    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-    (void)RCC->AHBENR;
-    GPIOB->BSRR = GPIO_BSRR_BS_3;
-    GPIOB->MODER = (GPIOB->MODER & ~(3u << (3u * 2u))) |
-                   (1u << (3u * 2u));
-    GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
+    PowerLatch_DriveLow();
+    RCC->CSR |= RCC_CSR_RMVF;
+    __disable_irq();
+    while (1) { __WFI(); }
 }
 
 /* Called directly by Reset_Handler, before the C runtime initializes RAM. */
 void SystemInit(void)
 {
-    HoldBoardPower();
+    const OtaMetadataHeader *header = (const OtaMetadataHeader *)OTA_METADATA_BASE;
+    uint32_t reset_flags;
+    uint32_t state = 0u;
+    uint8_t state_valid;
+    uint8_t recovery_reset;
+
+    PowerLatch_PreparePins();
+    reset_flags = RCC->CSR;
+    state_valid = PowerLatch_ReadState(&state);
+
+    /* Physical KEY0 always has highest priority and clears a stale shutdown. */
+    if (PowerLatch_KeyPressed() != 0u) {
+        PowerLatch_ClearState();
+        PowerLatch_WriteState(POWER_STATE_RUNNING);
+        PowerLatch_DriveHigh();
+        RCC->CSR |= RCC_CSR_RMVF;
+        return;
+    }
+    if ((state_valid != 0u) && (state == POWER_STATE_SHUTDOWN_REQUESTED)) {
+        PowerDeniedWait();
+    }
+    if ((state_valid != 0u) && (state == POWER_STATE_RESTART_ALLOWED) &&
+        ((reset_flags & RCC_CSR_SFTRSTF) != 0u)) {
+        PowerLatch_WriteState(POWER_STATE_RUNNING); /* consume one-shot grant */
+        PowerLatch_DriveHigh();
+        RCC->CSR |= RCC_CSR_RMVF;
+        return;
+    }
+    recovery_reset = ((reset_flags & (RCC_CSR_SFTRSTF | RCC_CSR_IWDGRSTF |
+                                      RCC_CSR_WWDGRSTF | RCC_CSR_PINRSTF)) != 0u) ? 1u : 0u;
+    if ((recovery_reset != 0u) && (HeaderValid(header) != 0u)) {
+        PowerLatch_WriteState(POWER_STATE_RUNNING);
+        PowerLatch_DriveHigh();
+        RCC->CSR |= RCC_CSR_RMVF;
+        return;
+    }
+    if ((state_valid != 0u) && (state == POWER_STATE_RUNNING) &&
+        ((reset_flags & RCC_CSR_PINRSTF) != 0u) &&
+        (PowerLatch_IsPowerReset(reset_flags) == 0u)) {
+        PowerLatch_DriveHigh();
+        RCC->CSR |= RCC_CSR_RMVF;
+        return;
+    }
+    PowerDeniedWait();
 }
 
 /* Change MSP and branch without allowing the C compiler to emit a stack
@@ -291,6 +333,7 @@ static void JumpToApplication(void)
         BOOT_TRACE(0xB00700EFu);
         while (1) {}
     }
+    PowerLatch_WriteState(POWER_STATE_RUNNING);
     BOOT_TRACE(OTA_BOOT_TRACE_REMAP_OK);
     BranchToApplication(stack, reset);
     while (1) {}
@@ -300,7 +343,7 @@ int main(void)
 {
     const OtaMetadataHeader *header = (const OtaMetadataHeader *)OTA_METADATA_BASE;
     uint8_t valid;
-    HoldBoardPower();
+    if (PowerLatch_IsAlreadyHeld() == 0u) { PowerDeniedWait(); }
     BOOT_TRACE(OTA_BOOT_TRACE_ENTERED);
     valid = HeaderValid(header);
     if (FlashUnlock() == 0u) { JumpToApplication(); }
@@ -329,10 +372,10 @@ int main(void)
                 if (WriteMarker(OTA_META_TRIAL_OFFSET, OTA_MARKER_TRIAL, OTA_MARKER_TRIAL_INV) != 0u) {
                     JumpToApplication();
                 }
-                NVIC_SystemReset();
+                PowerLatch_SoftwareReset();
             }
             completed = CompletedSteps(OTA_META_FORWARD_LOG_OFFSET);
-            if (completed != 0u) { NVIC_SystemReset(); }
+            if (completed != 0u) { PowerLatch_SoftwareReset(); }
             (void)FlashErasePage(OTA_METADATA_BASE);
         } else if ((trial != 0u) && (confirmed == 0u) && (rollback_done == 0u)) {
             if (RunSwap(OTA_META_ROLLBACK_LOG_OFFSET, OTA_APP_SLOT_SIZE, 0u) != 0u) {
@@ -342,7 +385,7 @@ int main(void)
                     JumpToApplication();
                 }
             }
-            NVIC_SystemReset();
+            PowerLatch_SoftwareReset();
         } else if (rollback_done != 0u) {
             (void)FlashErasePage(OTA_METADATA_BASE);
             JumpToApplication();

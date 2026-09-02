@@ -1,6 +1,7 @@
 #include "config.h"
 #include "ota_layout.h"
 #include "ota_boot.h"
+#include "power_latch.h"
 
 static uint8_t MarkerValid(uint32_t address, uint16_t marker, uint16_t inverse)
 {
@@ -48,6 +49,6 @@ void OtaBoot_ConfirmRunningImage(void)
     }
     (void)HAL_FLASH_Lock();
     if (MarkerValid(address, OTA_MARKER_CONFIRMED, OTA_MARKER_CONFIRMED_INV) != 0u) {
-        NVIC_SystemReset();
+        PowerLatch_SoftwareReset();
     }
 }

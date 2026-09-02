@@ -28,6 +28,7 @@ static TxEntry s_tx_queue[TX_QUEUE_DEPTH];
 static uint8_t s_tx_head;
 static uint8_t s_tx_tail;
 static uint8_t s_tx_count;
+static uint8_t s_shutdown;
 static CoeffPending s_pending[TEMP_COEFF_CHANNEL_COUNT];
 MathisBleDebug g_mathis_ble_debug;
 
@@ -261,6 +262,7 @@ static uint8_t HandleModuleTelemetryEvent(const uint8_t *data, uint16_t length)
 
 static uint8_t QueueFrame(const uint8_t *data, uint8_t length)
 {
+    if (s_shutdown != 0u) { return 0u; }
     if ((length > sizeof(s_tx_queue[0].data)) || (s_tx_count >= TX_QUEUE_DEPTH)) { return 0u; }
     memcpy(s_tx_queue[s_tx_tail].data, data, length); s_tx_queue[s_tx_tail].length = length;
     s_tx_tail = (uint8_t)((s_tx_tail + 1u) % TX_QUEUE_DEPTH); s_tx_count++;
@@ -294,6 +296,18 @@ uint8_t Wireless_ProtocolTxIdle(void)
 void Wireless_DiscardQueuedFrames(void)
 {
     s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+}
+
+void Wireless_Shutdown(void)
+{
+    s_shutdown = 1u;
+    s_connected = 0u;
+    s_rx_count = 0u; s_rx_expected = 0u;
+    s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+    ClearPending();
+    COM1.rxFlag = 0u; COM1.rxLen = 0u; COM1.pollPos = 0u;
+    __HAL_UART_DISABLE_IT(&huart1, UART_IT_IDLE);
+    (void)HAL_UART_DMAStop(&huart1);
 }
 
 static int16_t EncodeTemperature(const MathisTelemetrySnapshot *snapshot, uint8_t channel)
@@ -345,6 +359,7 @@ void Wireless_Init(void)
 {
     s_rx_count = 0u; s_rx_expected = 0u; s_connected = 0u;
     s_tx_sequence = 0u; s_telemetry_ticks = 0u; s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+    s_shutdown = 0u;
     memset(&g_mathis_ble_debug, 0, sizeof(g_mathis_ble_debug));
     ClearPending(); OtaUpdate_Init(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
 }
@@ -355,6 +370,7 @@ void WirelessTask(void)
     uint16_t i;
     uint16_t length;
     uint8_t channel;
+    if (s_shutdown != 0u) { return; }
     uart_chunk = COM_BorrowRx(&COM1, &length);
     if (length != 0u) {
         g_mathis_ble_debug.uart_chunks++;

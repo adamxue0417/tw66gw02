@@ -3,6 +3,7 @@
 #include "ota_layout.h"
 #include "ota_boot.h"
 #include "ota_update.h"
+#include "power_latch.h"
 
 #define OTA_TYPE_BEGIN             (0x10u)
 #define OTA_TYPE_CHUNK             (0x11u)
@@ -325,7 +326,7 @@ void OtaUpdate_Task20ms(void)
     } else if (s_ota.state == OTA_STATE_APPLYING) {
         if (s_ota.reset_ticks < OTA_RESET_DELAY_TICKS) { s_ota.reset_ticks++; }
         if ((s_ota.reset_ticks >= OTA_RESET_DELAY_TICKS) && (Wireless_ProtocolTxIdle() != 0u)) {
-            NVIC_SystemReset();
+            PowerLatch_SoftwareReset();
         }
     }
 }

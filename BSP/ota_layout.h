@@ -28,7 +28,8 @@
 #define OTA_ACCEPTED_CHUNK_SIZE      (232u)
 #define OTA_VECTOR_BYTES             (192u)
 #define OTA_APP_RAM_BASE             (0x200000C0u)
-#define OTA_APP_RAM_END              (0x20001FF0u)
+#define OTA_APP_RAM_END              (0x20001FE0u)
+#define OTA_POWER_STATE_ADDRESS      (0x20001FE0u) /* 16-byte retained power intent */
 #define OTA_BOOT_TRACE_ADDRESS       (0x20001FF0u) /* 16-byte development trace */
 #define OTA_BOOT_TRACE_ENTERED       (0xB0070001u)
 #define OTA_BOOT_TRACE_VECTOR_OK     (0xB0070002u)

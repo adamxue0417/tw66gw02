@@ -28,6 +28,7 @@
 #include "config.h"
 #include "ota_boot.h"
 #include "ota_layout.h"
+#include "power_latch.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,9 +69,8 @@ void SystemClock_Config(void);
   */
 int main(void)
 {
-	/* Retain board power immediately after the C runtime has initialized. */
-	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-	GPIOB->BSRR = GPIO_BSRR_BS_3;
+	/* SystemInit/Bootloader has already authorized and retained board power. */
+	PowerLatch_WriteState(POWER_STATE_RUNNING);
 	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_APP_MAIN;
 
   /* USER CODE BEGIN 1 */

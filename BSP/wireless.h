@@ -52,5 +52,6 @@ uint16_t Mathis_Crc16(const uint8_t *data, uint16_t length);
 uint8_t Wireless_QueueProtocolFrame(uint8_t type, const uint8_t *payload, uint8_t payload_length);
 uint8_t Wireless_ProtocolTxIdle(void);
 void Wireless_DiscardQueuedFrames(void);
+void Wireless_Shutdown(void);
 
 #endif

@@ -122,6 +122,7 @@ void SDA_Write(uint8_t x);
 
 void Screen_C8721_Init(void);
 void DisplayTask(void);
+void Screen_C8721_PrepareShutdown(void);
 
 #endif /* __SCREEN_C8721_H__ */
 
