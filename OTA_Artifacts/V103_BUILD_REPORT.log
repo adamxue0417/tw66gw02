@@ -1,0 +1,43 @@
+V103 SECURE BUILD REPORT - 2026-09-02
+
+Toolchain: Keil ARMCC 5.06u7 (build 960), OpenSSL from Git for Windows
+Branch base: 87c1d0e
+
+SECURE BOOTLOADER
+ER_BOOT: base 0x08000000, used 0x1B48 (6984), limit 0x1FC0
+BOOT_API: base 0x08001FC0, used 0x3C (60), limit 0x40
+exported BIN: 8188 bytes (fixed API placement extends image to 0x1FFC)
+RSA maximum static stack: 0x698 (1688)
+result: 0 errors, 0 warnings
+
+SECURE APP V102 / APP V103
+Code=22336 RO-data=624 RW-data=280 ZI-data=4832
+RW+ZI=5112 bytes; stack=2304; heap=0
+BIN=23240 bytes; application maximum=25216; Flash margin=1976
+result: 0 errors, 0 warnings
+
+FLASH LAYOUT
+Bootloader  0x08000000..0x08001FFF  8192 bytes, WRP pages 0..7
+Application 0x08002000..0x080083FF  25600-byte slot, max app 25216
+OTA stage   0x08008400..0x0800E7FF  25600 bytes
+Security    0x0800E800..0x0800EBFF  1024 bytes
+Reserved    0x0800EC00..0x0800EFFF  1024 bytes
+Scratch/Metadata/Config A/B remain in final 4096 bytes
+
+SIGNED OTA V103
+application size=23240
+signature size=384
+artifact size=23624
+CRC-32/ISO-HDLC=0xF05462D8
+application SHA-256=C3AD66C2302ACA9CFCC19BFD8E77197EB7204CA1FE13DB7CFA4FE37F7869ACAE
+artifact SHA-256=739AF7EB48C16C5FF847B4701DADADE87E45F3D8EFA782A567323BE902A40423
+algorithm=RSA-3072-PKCS1-v1_5-SHA256
+key class=DEV
+DEV public key DER SHA-256=3FCCDCB727514F80A264FEC76933C305262D3CE92F91F8A9711E4EEC1A84C0D4
+host verification=PASS
+development_signature_placeholder=false
+
+LEGACY FACTORY PROTECTION
+mathis_factory_v100.bin size=29040
+SHA-256=55DF837097652CD8C04CC0E8902BEC5D2A74F1683AACDFA0F23011F3E20AD05F
+unchanged by secure build=PASS

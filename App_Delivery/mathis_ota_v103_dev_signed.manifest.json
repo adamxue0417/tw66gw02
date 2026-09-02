@@ -1,0 +1,17 @@
+﻿{
+    "format":  "mathis-signed-ota-v1",
+    "target_version":  103,
+    "security_version":  103,
+    "application_size":  23240,
+    "signature_size":  384,
+    "artifact_size":  23624,
+    "crc32_iso_hdlc":  "0xF05462D8",
+    "application_sha256":  "C3AD66C2302ACA9CFCC19BFD8E77197EB7204CA1FE13DB7CFA4FE37F7869ACAE",
+    "artifact_sha256":  "739AF7EB48C16C5FF847B4701DADADE87E45F3D8EFA782A567323BE902A40423",
+    "signature_algorithm":  "RSA-3072-PKCS1-v1_5-SHA256",
+    "signing_key_class":  "DEV",
+    "signing_key_fingerprint_sha256":  "3FCCDCB727514F80A264FEC76933C305262D3CE92F91F8A9711E4EEC1A84C0D4",
+    "application_base":  "0x08002000",
+    "boot_api_version":  1,
+    "development_signature_placeholder":  false
+}

@@ -1,0 +1,402 @@
+Component: ARM Compiler 5.06 update 7 (build 960) Tool: armlink [4d3601]
+
+==============================================================================
+
+Image Stack Usage Information.
+
+Maximum stack usage for Image.
+
+Maximum Stack Usage for BootSecurity_VerifyArtifact 0x698 bytes.
+Call chain for maximum stack usage:
+BootSecurity_VerifyArtifact => DevRsaPkcs1Verify => br_i15_modpow_opt => br_i15_to_monty => br_i15_muladd_small => divrem16
+
+Maximum stack usage per global function.
+
+Maximum Stack Usage for BootSecurity_ReadFloor 0x18 bytes.
+Call chain for maximum stack usage:
+BootSecurity_ReadFloor => ReadCopyFloor
+
+Maximum Stack Usage for BootSecurity_VerifyArtifact 0x698 bytes.
+Call chain for maximum stack usage:
+BootSecurity_VerifyArtifact => DevRsaPkcs1Verify => br_i15_modpow_opt => br_i15_to_monty => br_i15_muladd_small => divrem16
+
+Maximum Stack Usage for SystemInit 0x8 bytes.
+Call chain for maximum stack usage:
+SystemInit
+
+Maximum Stack Usage for br_ccopy 0xc bytes.
+Call chain for maximum stack usage:
+br_ccopy
+
+Maximum Stack Usage for br_i15_add 0x14 bytes.
+Call chain for maximum stack usage:
+br_i15_add
+
+Maximum Stack Usage for br_i15_decode_mod 0x58 bytes.
+Call chain for maximum stack usage:
+br_i15_decode_mod
+
+Maximum Stack Usage for br_i15_encode 0x18 bytes.
+Call chain for maximum stack usage:
+br_i15_encode
+
+Maximum Stack Usage for br_i15_from_monty 0x34 bytes.
+Call chain for maximum stack usage:
+br_i15_from_monty => br_i15_sub
+
+Maximum Stack Usage for br_i15_modpow_opt 0xd8 bytes.
+Call chain for maximum stack usage:
+br_i15_modpow_opt => br_i15_to_monty => br_i15_muladd_small => divrem16
+
+Maximum Stack Usage for br_i15_montymul 0x6c bytes.
+Call chain for maximum stack usage:
+br_i15_montymul => br_i15_sub
+
+Maximum Stack Usage for br_i15_muladd_small 0x68 bytes.
+Call chain for maximum stack usage:
+br_i15_muladd_small => divrem16
+
+Maximum Stack Usage for br_i15_sub 0x14 bytes.
+Call chain for maximum stack usage:
+br_i15_sub
+
+Maximum Stack Usage for br_i15_to_monty 0x78 bytes.
+Call chain for maximum stack usage:
+br_i15_to_monty => br_i15_muladd_small => divrem16
+
+Maximum Stack Usage for br_range_dec32be 0x8 bytes.
+Call chain for maximum stack usage:
+br_range_dec32be
+
+Maximum Stack Usage for br_range_enc32be 0x8 bytes.
+Call chain for maximum stack usage:
+br_range_enc32be
+
+Maximum Stack Usage for br_rsa_pkcs1_sig_unpad 0x5c bytes.
+Call chain for maximum stack usage:
+br_rsa_pkcs1_sig_unpad => memcmp
+
+Maximum Stack Usage for br_sha224_init 0x10 bytes.
+Call chain for maximum stack usage:
+br_sha224_init => __aeabi_memcpy4
+
+Maximum Stack Usage for br_sha224_out 0x1e0 bytes.
+Call chain for maximum stack usage:
+br_sha224_out => sha2small_out => br_sha2small_round => br_range_dec32be
+
+Maximum Stack Usage for br_sha224_set_state 0x18 bytes.
+Call chain for maximum stack usage:
+br_sha224_set_state => br_range_dec32be
+
+Maximum Stack Usage for br_sha224_state 0x10 bytes.
+Call chain for maximum stack usage:
+br_sha224_state => br_range_enc32be
+
+Maximum Stack Usage for br_sha224_update 0x180 bytes.
+Call chain for maximum stack usage:
+br_sha224_update => br_sha2small_round => br_range_dec32be
+
+Maximum Stack Usage for br_sha256_init 0x10 bytes.
+Call chain for maximum stack usage:
+br_sha256_init => __aeabi_memcpy4
+
+Maximum Stack Usage for br_sha256_out 0x1e0 bytes.
+Call chain for maximum stack usage:
+br_sha256_out => sha2small_out => br_sha2small_round => br_range_dec32be
+
+Maximum Stack Usage for br_sha2small_round 0x160 bytes.
+Call chain for maximum stack usage:
+br_sha2small_round => br_range_dec32be
+
+Maximum Stack Usage for main 0x698 bytes.
+Call chain for maximum stack usage:
+main => BootSecurity_VerifyArtifact => DevRsaPkcs1Verify => br_i15_modpow_opt => br_i15_to_monty => br_i15_muladd_small => divrem16
+
+Stack Usage for functions.
+
+Stack Usage for __main unknown bytes.
+Stack Usage for _main_stk unknown bytes.
+Stack Usage for _main_scatterload unknown bytes.
+Stack Usage for __main_after_scatterload unknown bytes.
+Stack Usage for _main_clock unknown bytes.
+Stack Usage for _main_cpp_init unknown bytes.
+Stack Usage for _main_init unknown bytes.
+Stack Usage for __rt_lib_shutdown_fini unknown bytes.
+Stack Usage for __rt_final_cpp unknown bytes.
+Stack Usage for __rt_final_exit unknown bytes.
+Stack Usage for __asm___11_boot_main_c_a9c8fbbb__BranchToApplication 0x0 bytes.
+Stack Usage for Reset_Handler 0x0 bytes.
+Stack Usage for NMI_Handler 0x0 bytes.
+Stack Usage for HardFault_Handler 0x0 bytes.
+Stack Usage for SVC_Handler 0x0 bytes.
+Stack Usage for PendSV_Handler 0x0 bytes.
+Stack Usage for SysTick_Handler 0x0 bytes.
+Stack Usage for ADC1_IRQHandler 0x0 bytes.
+Stack Usage for DMA1_Channel1_IRQHandler 0x0 bytes.
+Stack Usage for DMA1_Channel2_3_IRQHandler 0x0 bytes.
+Stack Usage for DMA1_Channel4_5_IRQHandler 0x0 bytes.
+Stack Usage for EXTI0_1_IRQHandler 0x0 bytes.
+Stack Usage for EXTI2_3_IRQHandler 0x0 bytes.
+Stack Usage for EXTI4_15_IRQHandler 0x0 bytes.
+Stack Usage for FLASH_IRQHandler 0x0 bytes.
+Stack Usage for I2C1_IRQHandler 0x0 bytes.
+Stack Usage for I2C2_IRQHandler 0x0 bytes.
+Stack Usage for RCC_IRQHandler 0x0 bytes.
+Stack Usage for RTC_IRQHandler 0x0 bytes.
+Stack Usage for SPI1_IRQHandler 0x0 bytes.
+Stack Usage for SPI2_IRQHandler 0x0 bytes.
+Stack Usage for TIM14_IRQHandler 0x0 bytes.
+Stack Usage for TIM15_IRQHandler 0x0 bytes.
+Stack Usage for TIM16_IRQHandler 0x0 bytes.
+Stack Usage for TIM17_IRQHandler 0x0 bytes.
+Stack Usage for TIM1_BRK_UP_TRG_COM_IRQHandler 0x0 bytes.
+Stack Usage for TIM1_CC_IRQHandler 0x0 bytes.
+Stack Usage for TIM3_IRQHandler 0x0 bytes.
+Stack Usage for TIM6_IRQHandler 0x0 bytes.
+Stack Usage for USART1_IRQHandler 0x0 bytes.
+Stack Usage for USART2_IRQHandler 0x0 bytes.
+Stack Usage for WWDG_IRQHandler 0x0 bytes.
+Stack Usage for __aeabi_uidiv 0xc bytes.
+Stack Usage for __aeabi_uidivmod 0xc bytes.
+Stack Usage for ___aeabi_memcpy8$move 0x8 bytes.
+Stack Usage for __aeabi_memcpy 0x8 bytes.
+Stack Usage for __aeabi_memcpy4 0x8 bytes.
+Stack Usage for __aeabi_memmove 0x8 bytes.
+Stack Usage for __aeabi_memmove4 0x8 bytes.
+Stack Usage for __aeabi_memmove8 0x8 bytes.
+Stack Usage for __aeabi_memset 0x0 bytes.
+Stack Usage for __aeabi_memset4 0x0 bytes.
+Stack Usage for __aeabi_memset8 0x0 bytes.
+Stack Usage for __aeabi_memclr 0x0 bytes.
+Stack Usage for __aeabi_memclr4 0x0 bytes.
+Stack Usage for __aeabi_memclr8 0x0 bytes.
+Stack Usage for _memset$wrapper 0x8 bytes.
+Stack Usage for memcmp 0xc bytes.
+Stack Usage for __scatterload 0x0 bytes.
+Stack Usage for __scatterload_rt2 0x0 bytes.
+Stack Usage for BootSecurity_ReadFloor 0x8 bytes.
+Stack Usage for BootSecurity_VerifyArtifact 0xc0 bytes.
+Stack Usage for SystemInit 0x8 bytes.
+Stack Usage for __scatterload_copy unknown bytes.
+Stack Usage for __scatterload_null unknown bytes.
+Stack Usage for __scatterload_zeroinit unknown bytes.
+Stack Usage for br_ccopy 0xc bytes.
+Stack Usage for br_i15_add 0x14 bytes.
+Stack Usage for br_i15_decode_mod 0x58 bytes.
+Stack Usage for br_i15_encode 0x18 bytes.
+Stack Usage for br_i15_from_monty 0x20 bytes.
+Stack Usage for br_i15_modpow_opt 0x60 bytes.
+Stack Usage for br_i15_montymul 0x58 bytes.
+Stack Usage for br_i15_muladd_small 0x48 bytes.
+Stack Usage for br_i15_sub 0x14 bytes.
+Stack Usage for br_i15_to_monty 0x10 bytes.
+Stack Usage for br_range_dec32be 0x8 bytes.
+Stack Usage for br_range_enc32be 0x8 bytes.
+Stack Usage for br_rsa_pkcs1_sig_unpad 0x50 bytes.
+Stack Usage for br_sha224_init 0x8 bytes.
+Stack Usage for br_sha224_out 0x8 bytes.
+Stack Usage for br_sha224_set_state 0x10 bytes.
+Stack Usage for br_sha224_state 0x8 bytes.
+Stack Usage for br_sha224_update 0x20 bytes.
+Stack Usage for br_sha256_init 0x8 bytes.
+Stack Usage for br_sha256_out 0x8 bytes.
+Stack Usage for br_sha2small_round 0x158 bytes.
+Stack Usage for main 0x0 bytes.
+Stack Usage for AddressInBootMetadata 0x0 bytes.
+Stack Usage for AddressInSwapStorage 0x0 bytes.
+Stack Usage for CompletedSteps 0x10 bytes.
+Stack Usage for CopyPage 0x18 bytes.
+Stack Usage for Crc32Update 0x10 bytes.
+Stack Usage for FlashErasePage 0x10 bytes.
+Stack Usage for FlashProgramHalfword 0x10 bytes.
+Stack Usage for FlashProgramHalfwordRaw 0x10 bytes.
+Stack Usage for FlashWait 0x0 bytes.
+Stack Usage for HoldBoardPower 0x0 bytes.
+Stack Usage for ImageVectorValid 0x8 bytes.
+Stack Usage for JumpToApplication 0x0 bytes.
+Stack Usage for MarkerValid 0x0 bytes.
+Stack Usage for RunSwap 0x30 bytes.
+Stack Usage for SecurityEnsureInitialized 0x8 bytes.
+Stack Usage for SecurityProgramVersion 0x10 bytes.
+Stack Usage for WriteMarker 0x10 bytes.
+Stack Usage for __NVIC_SystemReset 0x0 bytes.
+Stack Usage for DevRsaPkcs1Verify 0x500 bytes.
+Stack Usage for ReadCopyFloor 0x10 bytes.
+Stack Usage for EQ 0x0 bytes.
+Stack Usage for GT 0x0 bytes.
+Stack Usage for br_i15_zero 0x8 bytes.
+Stack Usage for EQ 0x0 bytes.
+Stack Usage for GT 0x0 bytes.
+Stack Usage for divrem16 0x20 bytes.
+Stack Usage for br_enc32be 0x0 bytes.
+Stack Usage for sha2small_out 0x78 bytes.
+
+Potential Stack Usage Inaccuracies.
+
+Mutually recursive functions.
+
+ * NMI_Handler => NMI_Handler
+ * HardFault_Handler => HardFault_Handler
+ * SVC_Handler => SVC_Handler
+ * PendSV_Handler => PendSV_Handler
+ * SysTick_Handler => SysTick_Handler
+ * ADC1_IRQHandler => ADC1_IRQHandler
+
+Untraceable function pointers.
+
+ * ADC1_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * BootSecurity_ReadFloor from boot_security.o(i.BootSecurity_ReadFloor) referenced from boot_security.o(BOOT_API)
+ * BootSecurity_VerifyArtifact from boot_security.o(i.BootSecurity_VerifyArtifact) referenced from boot_security.o(BOOT_API)
+ * DMA1_Channel1_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * DMA1_Channel2_3_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * DMA1_Channel4_5_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * EXTI0_1_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * EXTI2_3_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * EXTI4_15_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * FLASH_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * HardFault_Handler from startup.o(.text) referenced from startup.o(RESET)
+ * I2C1_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * I2C2_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * NMI_Handler from startup.o(.text) referenced from startup.o(RESET)
+ * PendSV_Handler from startup.o(.text) referenced from startup.o(RESET)
+ * RCC_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * RTC_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * Reset_Handler from startup.o(.text) referenced from startup.o(RESET)
+ * SPI1_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * SPI2_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * SVC_Handler from startup.o(.text) referenced from startup.o(RESET)
+ * SysTick_Handler from startup.o(.text) referenced from startup.o(RESET)
+ * SystemInit from boot_main.o(i.SystemInit) referenced from startup.o(.text)
+ * TIM14_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * TIM15_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * TIM16_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * TIM17_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * TIM1_BRK_UP_TRG_COM_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * TIM1_CC_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * TIM3_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * TIM6_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * USART1_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * USART2_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * WWDG_IRQHandler from startup.o(.text) referenced from startup.o(RESET)
+ * __main from entry.o(.ARM.Collect$$$$00000000) referenced from startup.o(.text)
+ * br_sha224_init from sha2small.o(i.br_sha224_init) referenced from sha2small.o(.constdata)
+ * br_sha224_out from sha2small.o(i.br_sha224_out) referenced from sha2small.o(.constdata)
+ * br_sha224_set_state from sha2small.o(i.br_sha224_set_state) referenced 2 times from sha2small.o(.constdata)
+ * br_sha224_state from sha2small.o(i.br_sha224_state) referenced 2 times from sha2small.o(.constdata)
+ * br_sha224_update from sha2small.o(i.br_sha224_update) referenced 2 times from sha2small.o(.constdata)
+ * br_sha256_init from sha2small.o(i.br_sha256_init) referenced from sha2small.o(.constdata)
+ * br_sha256_out from sha2small.o(i.br_sha256_out) referenced from sha2small.o(.constdata)
+ * main from boot_main.o(i.main) referenced from entry9a.o(.ARM.Collect$$$$0000000B)
+
+==============================================================================
+
+Memory Map of the image
+
+  Image Entry point : 0x080000b5
+
+  Load Region LR_BOOT (Base: 0x08000000, Size: 0x00001ffc, Max: 0x00002000, ABSOLUTE)
+
+    Execution Region ER_BOOT (Base: 0x08000000, Size: 0x00001b48, Max: 0x00001fc0, ABSOLUTE)
+
+    Base Addr    Size         Type   Attr      Idx    E Section Name        Object
+
+    0x08000000   0x000000b4   Data   RO            3    RESET               startup.o
+    0x080000b4   0x00000000   Code   RO          680  * .ARM.Collect$$$$00000000  mc_p.l(entry.o)
+    0x080000b4   0x00000004   Code   RO          697    .ARM.Collect$$$$00000001  mc_p.l(entry2.o)
+    0x080000b8   0x00000004   Code   RO          700    .ARM.Collect$$$$00000004  mc_p.l(entry5.o)
+    0x080000bc   0x00000000   Code   RO          702    .ARM.Collect$$$$00000008  mc_p.l(entry7b.o)
+    0x080000bc   0x00000000   Code   RO          704    .ARM.Collect$$$$0000000A  mc_p.l(entry8b.o)
+    0x080000bc   0x00000008   Code   RO          705    .ARM.Collect$$$$0000000B  mc_p.l(entry9a.o)
+    0x080000c4   0x00000004   Code   RO          712    .ARM.Collect$$$$0000000E  mc_p.l(entry12b.o)
+    0x080000c8   0x00000000   Code   RO          707    .ARM.Collect$$$$0000000F  mc_p.l(entry10a.o)
+    0x080000c8   0x00000000   Code   RO          709    .ARM.Collect$$$$00000011  mc_p.l(entry11a.o)
+    0x080000c8   0x00000004   Code   RO          698    .ARM.Collect$$$$00002712  mc_p.l(entry2.o)
+    0x080000cc   0x00000012   Code   RO           12    .emb_text           boot_main.o
+    0x080000de   0x00000002   PAD
+    0x080000e0   0x0000001c   Code   RO            4    .text               startup.o
+    0x080000fc   0x0000002c   Code   RO          683    .text               mc_p.l(uidiv.o)
+    0x08000128   0x00000040   Code   RO          687    .text               mc_p.l(memmovea.o)
+    0x08000168   0x00000024   Code   RO          689    .text               mc_p.l(memseta.o)
+    0x0800018c   0x0000001a   Code   RO          691    .text               mc_p.l(memcmp.o)
+    0x080001a6   0x00000002   PAD
+    0x080001a8   0x00000024   Code   RO          713    .text               mc_p.l(init.o)
+    0x080001cc   0x00000018   Code   RO           13    i.AddressInBootMetadata  boot_main.o
+    0x080001e4   0x00000018   Code   RO           14    i.AddressInSwapStorage  boot_main.o
+    0x080001fc   0x00000044   Code   RO          159    i.BootSecurity_ReadFloor  boot_security.o
+    0x08000240   0x0000008c   Code   RO          160    i.BootSecurity_VerifyArtifact  boot_security.o
+    0x080002cc   0x00000034   Code   RO           15    i.CompletedSteps    boot_main.o
+    0x08000300   0x00000058   Code   RO           16    i.CopyPage          boot_main.o
+    0x08000358   0x00000030   Code   RO           17    i.Crc32Update       boot_main.o
+    0x08000388   0x00000078   Code   RO          161    i.DevRsaPkcs1Verify  boot_security.o
+    0x08000400   0x0000000e   Code   RO          336    i.EQ                i15_decmod.o
+    0x0800040e   0x0000000e   Code   RO          423    i.EQ                i15_muladd.o
+    0x0800041c   0x00000058   Code   RO           18    i.FlashErasePage    boot_main.o
+    0x08000474   0x00000022   Code   RO           19    i.FlashProgramHalfword  boot_main.o
+    0x08000496   0x00000002   PAD
+    0x08000498   0x00000058   Code   RO           20    i.FlashProgramHalfwordRaw  boot_main.o
+    0x080004f0   0x00000038   Code   RO           21    i.FlashWait         boot_main.o
+    0x08000528   0x00000010   Code   RO          337    i.GT                i15_decmod.o
+    0x08000538   0x00000010   Code   RO          424    i.GT                i15_muladd.o
+    0x08000548   0x00000030   Code   RO           22    i.HoldBoardPower    boot_main.o
+    0x08000578   0x0000004c   Code   RO           23    i.ImageVectorValid  boot_main.o
+    0x080005c4   0x000000c0   Code   RO           24    i.JumpToApplication  boot_main.o
+    0x08000684   0x0000001c   Code   RO           25    i.MarkerValid       boot_main.o
+    0x080006a0   0x00000030   Code   RO          162    i.ReadCopyFloor     boot_security.o
+    0x080006d0   0x000000b4   Code   RO           26    i.RunSwap           boot_main.o
+    0x08000784   0x0000007c   Code   RO           27    i.SecurityEnsureInitialized  boot_main.o
+    0x08000800   0x00000040   Code   RO           28    i.SecurityProgramVersion  boot_main.o
+    0x08000840   0x00000008   Code   RO           29    i.SystemInit        boot_main.o
+    0x08000848   0x00000024   Code   RO           30    i.WriteMarker       boot_main.o
+    0x0800086c   0x0000001c   Code   RO           31    i.__NVIC_SystemReset  boot_main.o
+    0x08000888   0x0000000e   Code   RO          717    i.__scatterload_copy  mc_p.l(handlers.o)
+    0x08000896   0x00000002   Code   RO          718    i.__scatterload_null  mc_p.l(handlers.o)
+    0x08000898   0x0000000e   Code   RO          719    i.__scatterload_zeroinit  mc_p.l(handlers.o)
+    0x080008a6   0x0000001c   Code   RO          531    i.br_ccopy          ccopy.o
+    0x080008c2   0x00000010   Code   RO          575    i.br_enc32be        sha2small.o
+    0x080008d2   0x0000003a   Code   RO          503    i.br_i15_add        i15_add.o
+    0x0800090c   0x000000fa   Code   RO          338    i.br_i15_decode_mod  i15_decmod.o
+    0x08000a06   0x00000038   Code   RO          362    i.br_i15_encode     i15_encode.o
+    0x08000a3e   0x00000070   Code   RO          466    i.br_i15_from_monty  i15_fmont.o
+    0x08000aae   0x000001ae   Code   RO          386    i.br_i15_modpow_opt  i15_modpow2.o
+    0x08000c5c   0x00000152   Code   RO          407    i.br_i15_montymul   i15_montmul.o
+    0x08000dae   0x00000002   PAD
+    0x08000db0   0x00000158   Code   RO          425    i.br_i15_muladd_small  i15_muladd.o
+    0x08000f08   0x0000003a   Code   RO          519    i.br_i15_sub        i15_sub.o
+    0x08000f42   0x0000001e   Code   RO          454    i.br_i15_to_monty   i15_tmont.o
+    0x08000f60   0x00000012   Code   RO          387    i.br_i15_zero       i15_modpow2.o
+    0x08000f72   0x00000024   Code   RO          543    i.br_range_dec32be  dec32be.o
+    0x08000f96   0x0000001c   Code   RO          559    i.br_range_enc32be  enc32be.o
+    0x08000fb2   0x00000002   PAD
+    0x08000fb4   0x000000d0   Code   RO          257    i.br_rsa_pkcs1_sig_unpad  rsa_pkcs1_sig_unpad.o
+    0x08001084   0x00000024   Code   RO          576    i.br_sha224_init    sha2small.o
+    0x080010a8   0x0000000a   Code   RO          577    i.br_sha224_out     sha2small.o
+    0x080010b2   0x00000018   Code   RO          578    i.br_sha224_set_state  sha2small.o
+    0x080010ca   0x00000018   Code   RO          579    i.br_sha224_state   sha2small.o
+    0x080010e2   0x00000058   Code   RO          580    i.br_sha224_update  sha2small.o
+    0x0800113a   0x00000002   PAD
+    0x0800113c   0x00000024   Code   RO          581    i.br_sha256_init    sha2small.o
+    0x08001160   0x0000000a   Code   RO          582    i.br_sha256_out     sha2small.o
+    0x0800116a   0x00000002   PAD
+    0x0800116c   0x00000404   Code   RO          583    i.br_sha2small_round  sha2small.o
+    0x08001570   0x00000036   Code   RO          426    i.divrem16          i15_muladd.o
+    0x080015a6   0x00000002   PAD
+    0x080015a8   0x000001e4   Code   RO           32    i.main              boot_main.o
+    0x0800178c   0x0000008a   Code   RO          584    i.sha2small_out     sha2small.o
+    0x08001816   0x000001a0   Data   RO          163    .constdata          boot_security.o
+    0x080019b6   0x0000000a   Data   RO          258    .constdata          rsa_pkcs1_sig_unpad.o
+    0x080019c0   0x00000178   Data   RO          585    .constdata          sha2small.o
+    0x08001b38   0x00000010   Data   RO          715    Region$$Table       anon$$obj.o
+
+
+    Execution Region ER_BOOT_API (Base: 0x08001fc0, Size: 0x0000003c, Max: 0x00000040, ABSOLUTE, FIXED)
+
+    Base Addr    Size         Type   Attr      Idx    E Section Name        Object
+
+    0x08001fc0   0x0000003c   Data   RO          164    BOOT_API            boot_security.o
+
+
+    Execution Region RW_BOOT (Base: 0x20000000, Size: 0x00000900, Max: 0x00002000, ABSOLUTE)
+
+    Base Addr    Size         Type   Attr      Idx    E Section Name        Object
+
+    0x20000000   0x00000900   Zero   RW            1    STACK               startup.o

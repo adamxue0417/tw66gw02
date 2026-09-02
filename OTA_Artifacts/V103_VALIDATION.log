@@ -1,0 +1,12 @@
+V103 validation generated 2026-09-02
+COMMAND: python tests/test_ota_artifacts.py
+secure OTA layout, CRC, manifest, and 150 interrupted swap/rollback cases passed
+COMMAND: powershell tests/verify_signed_ota.ps1
+Verified OK
+PASS: valid signature accepted; modified app, modified signature, zero signature, and wrong key rejected.
+BUILD v102 secure: Code=22336 RO=624 RW=280 ZI=4832; 0 errors, 0 warnings
+BUILD v103: Code=22336 RO=624 RW=280 ZI=4832; 0 errors, 0 warnings
+RSA maximum static stack=0x698 (1688); configured stack=0x900 (2304); margin=616
+ZIP PASS: mathis_ota_v103_dev_signed.ota, mathis_ota_v103_dev_signed.manifest.json, SHA256SUMS.txt, APP_V103_OTA_INTEGRATION.md
+SCRIPT PARSE PASS: build, signing test, secure factory programming, provisioning readback
+MANIFEST PASS: artifact size and SHA-256 match final OTA
