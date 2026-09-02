@@ -4,7 +4,9 @@ param(
     [switch]$OtaOnly,
     [string]$KeilRoot = 'C:\Keil_v5',
     [string]$OpenSsl = 'C:\Program Files\Git\usr\bin\openssl.exe',
-    [string]$DevPrivateKey = ''
+    [string]$DevPrivateKey = '',
+    [string]$DevPublicPem = '',
+    [string]$DevPublicDer = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,11 +19,15 @@ $fromelf = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\fromelf.exe'
 if ([string]::IsNullOrWhiteSpace($DevPrivateKey)) {
     $DevPrivateKey = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_private.pem'
 }
-$devPublicPem = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_public.pem'
-$devPublicDer = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_public.der'
+if ([string]::IsNullOrWhiteSpace($DevPublicPem)) {
+    $DevPublicPem = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_public.pem'
+}
+if ([string]::IsNullOrWhiteSpace($DevPublicDer)) {
+    $DevPublicDer = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_public.der'
+}
 if (!(Test-Path -LiteralPath $OpenSsl)) { throw "OpenSSL not found: $OpenSsl" }
 if (!(Test-Path -LiteralPath $DevPrivateKey)) { throw "DEV private key not found: $DevPrivateKey" }
-if (!(Test-Path -LiteralPath $devPublicPem) -or !(Test-Path -LiteralPath $devPublicDer)) {
+if (!(Test-Path -LiteralPath $DevPublicPem) -or !(Test-Path -LiteralPath $DevPublicDer)) {
     throw 'DEV public key files are missing.'
 }
 
@@ -148,7 +154,7 @@ try {
     & $OpenSsl dgst -sha256 -sign $DevPrivateKey -out $signatureFile $ota.Bin
     if ($LASTEXITCODE -ne 0) { throw 'DEV signing failed.' }
     if ((Get-Item -LiteralPath $signatureFile).Length -ne 384) { throw 'RSA-3072 signature is not 384 bytes.' }
-    & $OpenSsl dgst -sha256 -verify $devPublicPem -signature $signatureFile $ota.Bin | Out-Null
+    & $OpenSsl dgst -sha256 -verify $DevPublicPem -signature $signatureFile $ota.Bin | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Host-side signature verification failed.' }
     [byte[]]$signatureBytes = [IO.File]::ReadAllBytes($signatureFile)
     [byte[]]$artifact = New-Object byte[] ($appBytes.Length + $signatureBytes.Length)
@@ -169,7 +175,7 @@ try {
         artifact_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $otaFile).Hash
         signature_algorithm = 'RSA-3072-PKCS1-v1_5-SHA256'
         signing_key_class = 'DEV'
-        signing_key_fingerprint_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $devPublicDer).Hash
+        signing_key_fingerprint_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $DevPublicDer).Hash
         application_base = '0x08002000'
         boot_api_version = 1
         development_signature_placeholder = $false

@@ -1,10 +1,12 @@
 param(
-    [string]$KeilRoot = 'C:\Keil_v5'
+    [string]$KeilRoot = 'C:\Keil_v5',
+    [string]$OutputDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$outputDir = Join-Path $PSScriptRoot 'build'
+if ([string]::IsNullOrWhiteSpace($OutputDir)) { $outputDir = Join-Path $PSScriptRoot 'build' }
+else { $outputDir = [IO.Path]::GetFullPath($OutputDir) }
 New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 
 $compiler = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armcc.exe'

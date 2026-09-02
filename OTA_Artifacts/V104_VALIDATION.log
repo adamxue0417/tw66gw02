@@ -1,0 +1,17 @@
+V104 VALIDATION SUMMARY
+Keil application: 0 errors, 0 warnings
+Keil app ROM: 24476 / 25216 bytes (740 free)
+Keil app RW+ZI: 5120 bytes
+Keil bootloader ER_BOOT: 0x1D0C / 0x1FC0
+Keil boot API: 0x3C / 0x40
+RSA maximum static stack: 0x698 (1688 bytes)
+OTA size: 24860
+OTA CRC32: 0xC8BCBCC5
+OTA SHA256: 4EA2F3917C8461C6D37ABAE1C45E33476706BCB9670B8AA18AF7B9D5DA0E5468
+Original v103 app SHA256 preserved: C3AD66C2302ACA9CFCC19BFD8E77197EB7204CA1FE13DB7CFA4FE37F7869ACAE
+Offline Python tests: PASS (4/4)
+Signature positive test: PASS
+Mutated app/signature, zero signature, wrong-key signature: REJECTED (PASS)
+Bleak 3.0.2 Python 3.11 environment: PASS
+Read-only BLE discover: tool executed; target device was not advertising
+Hardware/SWD/WRP/PB3/current/temperature tests: PENDING TARGET BOARD
