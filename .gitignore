@@ -22,3 +22,39 @@ MDK-ARM/JLinkLog.txt
 *.lnp
 *.bak
 *.Bak
+
+# --- v10 OTA / Bootloader 构建产物（2026-09-03 补充）---
+# v11 的忽略规则未覆盖这些，v10 成为主线后根目录编译会产生
+OTA_Artifacts/
+MDK-ARM/tw66gw02_*/
+Bootloader/build/
+Bootloader/build_min/
+Diagnostics/build/
+/tw66gw02.hex
+# 仅忽略编译器生成的汇编；MDK-ARM/startup_stm32f030x8.s 是启动源码，必须保留
+MDK-ARM/boot_image.s
+
+# --- 本地版本快照 / 外部工程副本（2026-09-03 补充）---
+# 仅阻止误提交，不删除磁盘内容。
+# 版本 1~11 已分别在 Gitee 的 v1~v11 分支保全；12/13 是 GitHub 仓库的工作副本（自带 .git）。
+/1/
+/2/
+/3/
+/4/
+/5/
+/6/
+/7/
+/8/
+/9/
+/10/
+/11/
+/12/
+/13/
+/TEST/
+/eide/
+/ostest/
+/emb1061/
+
+# 文档类，已集中提交在 docs 分支，master 分支不再重复跟踪
+/JLink/
+/ble/
