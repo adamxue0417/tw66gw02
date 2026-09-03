@@ -9,6 +9,7 @@
 #define MATHIS_MAX_FRAME           (244u)
 #define MATHIS_TYPE_CMD            (0x01u)
 #define MATHIS_TYPE_TELEMETRY      (0x81u)
+#define MATHIS_TYPE_OTA_STATUS     (0x90u)
 
 #define MATHIS_CMD_SET_UNITS       (0x01u)
 #define MATHIS_CMD_POWER_OFF       (0x02u)
@@ -48,5 +49,8 @@ extern MathisBleDebug g_mathis_ble_debug;
 void Wireless_Init(void);
 void WirelessTask(void);
 uint16_t Mathis_Crc16(const uint8_t *data, uint16_t length);
+uint8_t Wireless_QueueProtocolFrame(uint8_t type, const uint8_t *payload, uint8_t payload_length);
+uint8_t Wireless_ProtocolTxIdle(void);
+void Wireless_DiscardQueuedFrames(void);
 
 #endif

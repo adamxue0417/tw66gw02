@@ -1,5 +1,6 @@
-/** Mathis BLE framed protocol. OTA types are intentionally unsupported. */
+/** Mathis BLE framed protocol, including the development OTA transport. */
 #include "config.h"
+#include "ota_update.h"
 
 #define TX_QUEUE_DEPTH              (4u)
 #define TELEMETRY_PERIOD_TICKS_20MS (50u)
@@ -32,6 +33,7 @@ static CoeffPending s_pending[TEMP_COEFF_CHANNEL_COUNT];
 MathisBleDebug g_mathis_ble_debug;
 
 static void SetConnection(uint8_t connected);
+static uint8_t QueueFrame(const uint8_t *data, uint8_t length);
 
 uint16_t Mathis_Crc16(const uint8_t *data, uint16_t length)
 {
@@ -160,7 +162,7 @@ static uint8_t HandleFrame(const uint8_t *frame, uint16_t length)
     }
     g_mathis_ble_debug.frames_ok++;
     if (frame[2] == MATHIS_TYPE_CMD) { HandleCommand(&frame[6], payload_length); }
-    /* 0x10..0x13 OTA and all unknown types are deliberately ignored. */
+    else { (void)OtaUpdate_HandleFrame(frame[2], &frame[6], payload_length); }
     return 1u;
 }
 
@@ -222,6 +224,7 @@ static void SetConnection(uint8_t connected)
         if (connected == 0u) {
             ClearPending(); s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
             s_rx_count = 0u; s_rx_expected = 0u;
+            OtaUpdate_HandleDisconnect();
         }
     }
 }
@@ -263,6 +266,35 @@ static uint8_t QueueFrame(const uint8_t *data, uint8_t length)
     memcpy(s_tx_queue[s_tx_tail].data, data, length); s_tx_queue[s_tx_tail].length = length;
     s_tx_tail = (uint8_t)((s_tx_tail + 1u) % TX_QUEUE_DEPTH); s_tx_count++;
     return 1u;
+}
+
+uint8_t Wireless_QueueProtocolFrame(uint8_t type, const uint8_t *payload, uint8_t payload_length)
+{
+    uint8_t frame[20];
+    uint16_t crc;
+    uint8_t frame_length;
+    if (payload_length > 12u) { return 0u; }
+    frame[0] = MATHIS_START_BYTE; frame[1] = MATHIS_START_BYTE;
+    frame[2] = type; frame[3] = s_tx_sequence;
+    frame[4] = payload_length; frame[5] = 0u;
+    if ((payload_length != 0u) && (payload != 0)) { memcpy(&frame[6], payload, payload_length); }
+    crc = Mathis_Crc16(&frame[2], (uint16_t)(4u + payload_length));
+    frame[6u + payload_length] = (uint8_t)crc;
+    frame[7u + payload_length] = (uint8_t)(crc >> 8);
+    frame_length = (uint8_t)(payload_length + 8u);
+    if (QueueFrame(frame, frame_length) == 0u) { return 0u; }
+    s_tx_sequence++;
+    return 1u;
+}
+
+uint8_t Wireless_ProtocolTxIdle(void)
+{
+    return ((s_tx_count == 0u) && (huart1.gState == HAL_UART_STATE_READY)) ? 1u : 0u;
+}
+
+void Wireless_DiscardQueuedFrames(void)
+{
+    s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
 }
 
 static int16_t EncodeTemperature(const MathisTelemetrySnapshot *snapshot, uint8_t channel)
@@ -315,7 +347,7 @@ void Wireless_Init(void)
     s_rx_count = 0u; s_rx_expected = 0u; s_connected = 0u;
     s_tx_sequence = 0u; s_telemetry_ticks = 0u; s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
     memset(&g_mathis_ble_debug, 0, sizeof(g_mathis_ble_debug));
-    ClearPending(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
+    ClearPending(); OtaUpdate_Init(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
 }
 
 void WirelessTask(void)
@@ -337,7 +369,8 @@ void WirelessTask(void)
             if (++s_pending[channel].age >= COEFF_TIMEOUT_TICKS_20MS) { memset(&s_pending[channel], 0, sizeof(s_pending[channel])); }
         }
     }
-    if (s_connected != 0u) {
+    OtaUpdate_Task20ms();
+    if ((s_connected != 0u) && (OtaUpdate_IsActive() == 0u)) {
         if (++s_telemetry_ticks >= TELEMETRY_PERIOD_TICKS_20MS) { s_telemetry_ticks = 0u; QueueTelemetry(); }
     }
     ServiceTransmit();

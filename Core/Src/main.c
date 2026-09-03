@@ -26,6 +26,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "config.h"
+#include "ota_boot.h"
+#include "ota_layout.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,6 +68,10 @@ void SystemClock_Config(void);
   */
 int main(void)
 {
+	/* Retain board power immediately after the C runtime has initialized. */
+	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+	GPIOB->BSRR = GPIO_BSRR_BS_3;
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_APP_MAIN;
 
   /* USER CODE BEGIN 1 */
 
@@ -75,6 +81,7 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_HAL_READY;
 
   /* USER CODE BEGIN Init */
 
@@ -82,6 +89,7 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_CLOCK_READY;
 
   /* USER CODE BEGIN SysInit */
 
@@ -93,11 +101,15 @@ int main(void)
   MX_ADC_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_PERIPH_READY;
   /* USER CODE BEGIN 2 */
   
 	SysDataInit();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_DATA_READY;
+	if (OtaBoot_IsTrial() != 0u) { UI_RequestBluetoothPairing(); }
 	Temp_Get_Init();
 	Screen_C8721_Init();
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_SCREEN_READY;
   com_init();
   Wireless_Init();
 	
@@ -106,6 +118,7 @@ int main(void)
  SCH_Add_Task(TempGetTask, 0 , 500);
  SCH_Add_Task(MainControl, 0 , 100);
  SCH_Add_Task(WirelessTask, 0, 20);
+ SCH_Add_Task(OtaBoot_ConfirmRunningImage, 10000, 0);
  
   /* USER CODE END 2 */
 
@@ -113,6 +126,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_LOOP_RUNNING;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -188,6 +202,7 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
+  *(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_APP_ERROR;
   __disable_irq();
   while (1)
   {

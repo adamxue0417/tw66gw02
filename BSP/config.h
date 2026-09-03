@@ -74,7 +74,10 @@
 #define PGout(n)   BIT_ADDR(GPIOG_ODR_Addr,n)
 #define PGin(n)    BIT_ADDR(GPIOG_IDR_Addr,n)
 #define delay_ms(X)    HAL_Delay(X);   
-#define system_version                   100u
+#ifndef MATHIS_FW_VERSION
+#define MATHIS_FW_VERSION                100u
+#endif
+#define system_version                   MATHIS_FW_VERSION
 #define unitF                            0
 #define unitC                            1
 #define off                              0
@@ -140,7 +143,6 @@ typedef struct {
 extern ErrMessage SystemErrMessage;
 
 #endif
-
 
 
 

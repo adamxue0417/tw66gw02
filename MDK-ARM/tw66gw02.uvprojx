@@ -70,9 +70,9 @@
             <nStopU2X>0</nStopU2X>
           </BeforeCompile>
           <BeforeMake>
-            <RunUserProg1>0</RunUserProg1>
+            <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name></UserProg1Name>
+            <UserProg1Name>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "..\PrepareFactoryBootImage.ps1"</UserProg1Name>
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
@@ -362,16 +362,16 @@
             </VariousControls>
           </Aads>
           <LDads>
-            <umfTarg>1</umfTarg>
+            <umfTarg>0</umfTarg>
             <Ropi>0</Ropi>
             <Rwpi>0</Rwpi>
             <noStLib>0</noStLib>
             <RepFail>1</RepFail>
-            <useFile>0</useFile>
+            <useFile>1</useFile>
             <TextAddressRange></TextAddressRange>
             <DataAddressRange></DataAddressRange>
             <pXoBase></pXoBase>
-            <ScatterFile></ScatterFile>
+            <ScatterFile>.\tw66gw02_factory.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>
@@ -388,6 +388,11 @@
               <FileName>startup_stm32f030x8.s</FileName>
               <FileType>2</FileType>
               <FilePath>startup_stm32f030x8.s</FilePath>
+            </File>
+            <File>
+              <FileName>boot_image.o</FileName>
+              <FileType>3</FileType>
+              <FilePath>boot_image.o</FilePath>
             </File>
           </Files>
         </Group>
@@ -1108,6 +1113,16 @@
               <FileName>main_control.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\COP\main_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>ota_boot.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\COP\ota_boot.c</FilePath>
+            </File>
+            <File>
+              <FileName>ota_update.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\COP\ota_update.c</FilePath>
             </File>
             <File>
               <FileName>shutdown.c</FileName>

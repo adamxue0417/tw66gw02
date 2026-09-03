@@ -8,6 +8,7 @@
   ******************************************************************************
   */
 #include "config.h"
+#include "ota_layout.h"
 #include <stddef.h>
 
 _work_process work_process,work_process_backups;
@@ -32,8 +33,8 @@ static uint16_t s_bt_pairing_ticks_100ms = 0u;
 static uint32_t s_idle_ticks_100ms = 0u;
 
 #define IDLE_AUTO_SHUTDOWN_TICKS_100MS (36000u)
-#define CONFIG_PAGE_A_ADDR              (0x0800F800u)
-#define CONFIG_PAGE_B_ADDR              (0x0800FC00u)
+#define CONFIG_PAGE_A_ADDR              (OTA_CONFIG_A_BASE)
+#define CONFIG_PAGE_B_ADDR              (OTA_CONFIG_B_BASE)
 #define CONFIG_MAGIC                    (0x4D415448u)
 #define CONFIG_VERSION                  (1u)
 #define CONFIG_COMMIT                   (0xA55Au)
@@ -975,7 +976,6 @@ void MainControl(void)
         }
     }
 }
-
 
 
 
