@@ -1,0 +1,15 @@
+烧录及测试顺序：
+1. SWD全片擦除。
+2. 将工厂基线BIN烧录到0x08000000。
+3. 重新开启Bootloader页0～7 WRP，保持RDP Level 0。
+4. 仅用电池供电，按KEY0启动，确认v103遥测。
+5. 依次运行：
+   selftest → discover → monitor → poweroff-check → 重新开机 → ota → monitor
+6. OTA成功后确认稳定收到v104遥测。
+7. 测量关机前后电池电流，并观察电池10分钟无温升。
+v104 OTA实际参数：
+- 大小：24,860字节
+- CRC-32：0xC8BCBCC5
+- SHA-256：4EA2F3917C8461C6D37ABAE1C45E33476706BCB9670B8AA18AF7B9D5DA0E5468
+- 版本：104
+- 签名：RSA-3072/PKCS#1 v1.5/SHA-256，DEV

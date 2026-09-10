@@ -1,6 +1,6 @@
 param(
     [string]$KeilRoot = 'C:\Keil_v5',
-    [string]$KeyRoot = 'C:\Users\PC\Desktop\TW66GW02\12\private_keys'
+    [string]$KeyRoot = (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'snapshot-12_secure-ota\private_keys')
 )
 $ErrorActionPreference='Stop'
 $root=$PSScriptRoot; $out=Join-Path $root 'OTA_Artifacts'; $bootBuild=Join-Path $root 'Bootloader\build_v2'
