@@ -1,0 +1,14 @@
+; STM32F030C8 development OTA bootloader: 6 KiB at flash base.
+LR_BOOT 0x08000000 0x00001800
+{
+  ER_BOOT 0x08000000 0x00001800
+  {
+    *.o (RESET, +First)
+    *(InRoot$$Sections)
+    .ANY (+RO)
+  }
+  RW_BOOT 0x20000000 0x00002000
+  {
+    .ANY (+RW +ZI)
+  }
+}

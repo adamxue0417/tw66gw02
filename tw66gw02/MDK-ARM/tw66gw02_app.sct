@@ -1,0 +1,15 @@
+; Relocated OTA application. SRAM[0..0xBF] is reserved for vector remap and
+; SRAM[0x1FF0..0x1FFF] is reserved for the development boot trace.
+LR_APP 0x08001800 0x00006A80
+{
+  ER_APP 0x08001800 0x00006A80
+  {
+    *.o (RESET, +First)
+    *(InRoot$$Sections)
+    .ANY (+RO)
+  }
+  RW_APP 0x200000C0 0x00001F30
+  {
+    .ANY (+RW +ZI)
+  }
+}
