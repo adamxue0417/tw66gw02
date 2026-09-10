@@ -1,0 +1,70 @@
+[
+  {
+    "id": "main_v100-to-v101_DEV",
+    "path": "05_发布与交付/MCU固件/main_v100-to-v101_DEV",
+    "factory_version": 100,
+    "ota_version": 101,
+    "application_base": "0x08001800",
+    "files": 19,
+    "validation": {
+      "date": "2026-09-10",
+      "ota_size_sha256_crc32": "PASS",
+      "ota_payload_matches_application": "PASS",
+      "factory_boot_partition_and_application": "PASS",
+      "signature": "384-byte zero DEV placeholder checked",
+      "hardware": "PENDING",
+      "application_base": "0x08001800"
+    }
+  },
+  {
+    "id": "snapshot14_v100-to-v101_DEV",
+    "path": "05_发布与交付/MCU固件/snapshot14_v100-to-v101_DEV",
+    "factory_version": 100,
+    "ota_version": 101,
+    "application_base": "0x08001800",
+    "files": 19,
+    "validation": {
+      "date": "2026-09-10",
+      "ota_size_sha256_crc32": "PASS",
+      "ota_payload_matches_application": "PASS",
+      "factory_boot_partition_and_application": "PASS",
+      "signature": "384-byte zero DEV placeholder checked",
+      "hardware": "PENDING",
+      "application_base": "0x08001800"
+    }
+  },
+  {
+    "id": "snapshot12_v102-to-v103_DEV",
+    "path": "05_发布与交付/MCU固件/snapshot12_v102-to-v103_DEV",
+    "factory_version": 102,
+    "ota_version": 103,
+    "application_base": "0x08002000",
+    "files": 21,
+    "validation": {
+      "date": "2026-09-10",
+      "ota_size_sha256_crc32": "PASS",
+      "ota_payload_matches_application": "PASS",
+      "factory_boot_partition_and_application": "PASS",
+      "signature": "Existing DEV signature preserved; cryptographic verification not repeated in step 4",
+      "hardware": "PENDING",
+      "application_base": "0x08002000"
+    }
+  },
+  {
+    "id": "snapshot13_v103-to-v104_bootv2_DEV",
+    "path": "05_发布与交付/MCU固件/snapshot13_v103-to-v104_bootv2_DEV",
+    "factory_version": 103,
+    "ota_version": 104,
+    "application_base": "0x08002000",
+    "files": 21,
+    "validation": {
+      "date": "2026-09-10",
+      "ota_size_sha256_crc32": "PASS",
+      "ota_payload_matches_application": "PASS",
+      "factory_boot_partition_and_application": "PASS",
+      "signature": "Existing DEV signature preserved; cryptographic verification not repeated in step 4",
+      "hardware": "PENDING",
+      "application_base": "0x08002000"
+    }
+  }
+]

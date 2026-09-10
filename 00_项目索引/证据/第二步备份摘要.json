@@ -1,0 +1,56 @@
+{
+  "date": "2026-09-09",
+  "scope": "Main/shared working files including Git metadata, and snapshots 12/13/14. Archives retain workspace-relative paths.",
+  "limitations": "Local same-disk recovery copies, not offsite backup. Signing private_keys, deps, .venv and __pycache__ directories are excluded and left untouched. Unchanged snapshots 1-11 are not archived.",
+  "archives": [
+    {
+      "archive": "main-and-shared.zip",
+      "files": 8173,
+      "source_bytes": 1300197256,
+      "zip_bytes": 1052266421,
+      "sha256": "4d56a8796ae556a8798d556d0a09e5dab368fd278cee398ddbbdddc64bc900d9",
+      "excluded_directories": [],
+      "verified_members": 8173,
+      "empty_directories": 23
+    },
+    {
+      "archive": "snapshot-12.zip",
+      "files": 1358,
+      "source_bytes": 269728722,
+      "zip_bytes": 103149534,
+      "sha256": "f94183431524874cf6b9582a4e7096449d50e398f5374538e43a92a4c748459a",
+      "excluded_directories": [
+        "12/private_keys"
+      ],
+      "verified_members": 1358,
+      "empty_directories": 2
+    },
+    {
+      "archive": "snapshot-13.zip",
+      "files": 721,
+      "source_bytes": 104409893,
+      "zip_bytes": 40181440,
+      "sha256": "7a5477d235707963fb716000a64965ce57c7d1ec98b31464d3449cb85a70ea39",
+      "excluded_directories": [
+        "13/tw66gw02/Tools/PC_BLE_Test/.venv",
+        "13/tw66gw02/Tools/PC_BLE_Test/__pycache__",
+        "13/tw66gw02/Tools/PC_BLE_Test/tests/__pycache__"
+      ],
+      "verified_members": 721,
+      "empty_directories": 1
+    },
+    {
+      "archive": "snapshot-14.zip",
+      "files": 1482,
+      "source_bytes": 338641236,
+      "zip_bytes": 122195536,
+      "sha256": "e3a0c5e319f453f119a37cfc12551c7fa7c81d12b16ff30d2a238937c9f84034",
+      "excluded_directories": [
+        "14/outputs/optimization/deps",
+        "14/tw66gw02/tests/simulator/__pycache__"
+      ],
+      "verified_members": 1482,
+      "empty_directories": 2
+    }
+  ]
+}

@@ -1,0 +1,1168 @@
+--- 12/tw66gw02/BSP/ota_layout.h
++++ 13/tw66gw02/BSP/ota_layout.h
+@@ -28,7 +28,8 @@
+ #define OTA_ACCEPTED_CHUNK_SIZE      (232u)
+ #define OTA_VECTOR_BYTES             (192u)
+ #define OTA_APP_RAM_BASE             (0x200000C0u)
+-#define OTA_APP_RAM_END              (0x20001FF0u)
++#define OTA_APP_RAM_END              (0x20001FE0u)
++#define OTA_POWER_STATE_ADDRESS      (0x20001FE0u) /* 16-byte retained power intent */
+ #define OTA_BOOT_TRACE_ADDRESS       (0x20001FF0u) /* 16-byte development trace */
+ #define OTA_BOOT_TRACE_ENTERED       (0xB0070001u)
+ #define OTA_BOOT_TRACE_VECTOR_OK     (0xB0070002u)
+--- 12/tw66gw02/BSP/screen_c8721.c
++++ 13/tw66gw02/BSP/screen_c8721.c
+@@ -338,6 +338,15 @@
+  * Call periodically (e.g. every 10 ms) from the scheduler .
+  */
+ uint8_t  displaystep=0;
++static volatile uint8_t s_display_shutdown = 0u;
++
++void Screen_C8721_PrepareShutdown(void)
++{
++    if (s_display_shutdown == 0u) {
++        CF_DisplayIntoSleep();
++        s_display_shutdown = 1u;
++    }
++}
+ /**
+   * @function DisplayTask()
+   * -------------
+@@ -349,6 +358,8 @@
+ {
+     int16_t displayTemp;
+     uint8_t special;
++
++    if (s_display_shutdown != 0u) { return; }
+ 
+     if (displaystep == 0u)
+     {
+--- 12/tw66gw02/BSP/screen_c8721.h
++++ 13/tw66gw02/BSP/screen_c8721.h
+@@ -122,6 +122,7 @@
+ 
+ void Screen_C8721_Init(void);
+ void DisplayTask(void);
++void Screen_C8721_PrepareShutdown(void);
+ 
+ #endif /* __SCREEN_C8721_H__ */
+ 
+--- 12/tw66gw02/BSP/temp.c
++++ 13/tw66gw02/BSP/temp.c
+@@ -625,6 +625,7 @@
+     int16_t probe_c;
+     uint16_t battery_mV;
+ 
++    if (work_process == shutdown) { return; }
+     update_three_temps_from_uart2();
+     if (s_comm_temp_valid != 0u)
+     {
+--- 12/tw66gw02/BSP/wireless.c
++++ 13/tw66gw02/BSP/wireless.c
+@@ -28,6 +28,7 @@
+ static uint8_t s_tx_head;
+ static uint8_t s_tx_tail;
+ static uint8_t s_tx_count;
++static uint8_t s_shutdown;
+ static CoeffPending s_pending[TEMP_COEFF_CHANNEL_COUNT];
+ MathisBleDebug g_mathis_ble_debug;
+ 
+@@ -261,6 +262,7 @@
+ 
+ static uint8_t QueueFrame(const uint8_t *data, uint8_t length)
+ {
++    if (s_shutdown != 0u) { return 0u; }
+     if ((length > sizeof(s_tx_queue[0].data)) || (s_tx_count >= TX_QUEUE_DEPTH)) { return 0u; }
+     memcpy(s_tx_queue[s_tx_tail].data, data, length); s_tx_queue[s_tx_tail].length = length;
+     s_tx_tail = (uint8_t)((s_tx_tail + 1u) % TX_QUEUE_DEPTH); s_tx_count++;
+@@ -296,6 +298,18 @@
+     s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+ }
+ 
++void Wireless_Shutdown(void)
++{
++    s_shutdown = 1u;
++    s_connected = 0u;
++    s_rx_count = 0u; s_rx_expected = 0u;
++    s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
++    ClearPending();
++    COM1.rxFlag = 0u; COM1.rxLen = 0u; COM1.pollPos = 0u;
++    __HAL_UART_DISABLE_IT(&huart1, UART_IT_IDLE);
++    (void)HAL_UART_DMAStop(&huart1);
++}
++
+ static int16_t EncodeTemperature(const MathisTelemetrySnapshot *snapshot, uint8_t channel)
+ {
+     uint8_t mask = (uint8_t)(1u << channel);
+@@ -345,6 +359,7 @@
+ {
+     s_rx_count = 0u; s_rx_expected = 0u; s_connected = 0u;
+     s_tx_sequence = 0u; s_telemetry_ticks = 0u; s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
++    s_shutdown = 0u;
+     memset(&g_mathis_ble_debug, 0, sizeof(g_mathis_ble_debug));
+     ClearPending(); OtaUpdate_Init(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
+ }
+@@ -355,6 +370,7 @@
+     uint16_t i;
+     uint16_t length;
+     uint8_t channel;
++    if (s_shutdown != 0u) { return; }
+     uart_chunk = COM_BorrowRx(&COM1, &length);
+     if (length != 0u) {
+         g_mathis_ble_debug.uart_chunks++;
+--- 12/tw66gw02/BSP/wireless.h
++++ 13/tw66gw02/BSP/wireless.h
+@@ -52,5 +52,6 @@
+ uint8_t Wireless_QueueProtocolFrame(uint8_t type, const uint8_t *payload, uint8_t payload_length);
+ uint8_t Wireless_ProtocolTxIdle(void);
+ void Wireless_DiscardQueuedFrames(void);
++void Wireless_Shutdown(void);
+ 
+ #endif
+--- 12/tw66gw02/Bootloader/boot_main.c
++++ 13/tw66gw02/Bootloader/boot_main.c
+@@ -1,29 +1,71 @@
+ #include "stm32f030x8.h"
+ #include "boot_security.h"
+ #include "ota_layout.h"
++#include "power_latch.h"
+ 
+ #define BOOT_ERROR_MASK       (FLASH_SR_PGERR | FLASH_SR_WRPERR)
+ #define BOOT_LOG_TOKEN_BASE   (0x5A00u)
+ 
+ #define BOOT_TRACE(value)     (*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = (value))
+ 
+-/* PB3 drives the board power-hold latch.  A push button only supplies the
+- * initial pulse, so the bootloader must take ownership before doing any flash
+- * recovery or jumping to the application. */
+-static void HoldBoardPower(void)
+-{
+-    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+-    (void)RCC->AHBENR;
+-    GPIOB->BSRR = GPIO_BSRR_BS_3;
+-    GPIOB->MODER = (GPIOB->MODER & ~(3u << (3u * 2u))) |
+-                   (1u << (3u * 2u));
+-    GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
++static uint32_t Crc32Update(uint32_t crc, const uint8_t *data, uint32_t length);
++static uint8_t HeaderValid(const OtaMetadataHeader *header);
++
++static void PowerDeniedWait(void)
++{
++    PowerLatch_DriveLow();
++    RCC->CSR |= RCC_CSR_RMVF;
++    __disable_irq();
++    while (1) { __WFI(); }
+ }
+ 
+ /* Called directly by Reset_Handler, before the C runtime initializes RAM. */
+ void SystemInit(void)
+ {
+-    HoldBoardPower();
++    const OtaMetadataHeader *header = (const OtaMetadataHeader *)OTA_METADATA_BASE;
++    uint32_t reset_flags;
++    uint32_t state = 0u;
++    uint8_t state_valid;
++    uint8_t recovery_reset;
++
++    PowerLatch_PreparePins();
++    reset_flags = RCC->CSR;
++    state_valid = PowerLatch_ReadState(&state);
++
++    /* Physical KEY0 always has highest priority and clears a stale shutdown. */
++    if (PowerLatch_KeyPressed() != 0u) {
++        PowerLatch_ClearState();
++        PowerLatch_WriteState(POWER_STATE_RUNNING);
++        PowerLatch_DriveHigh();
++        RCC->CSR |= RCC_CSR_RMVF;
++        return;
++    }
++    if ((state_valid != 0u) && (state == POWER_STATE_SHUTDOWN_REQUESTED)) {
++        PowerDeniedWait();
++    }
++    if ((state_valid != 0u) && (state == POWER_STATE_RESTART_ALLOWED) &&
++        ((reset_flags & RCC_CSR_SFTRSTF) != 0u)) {
++        PowerLatch_WriteState(POWER_STATE_RUNNING); /* consume one-shot grant */
++        PowerLatch_DriveHigh();
++        RCC->CSR |= RCC_CSR_RMVF;
++        return;
++    }
++    recovery_reset = ((reset_flags & (RCC_CSR_SFTRSTF | RCC_CSR_IWDGRSTF |
++                                      RCC_CSR_WWDGRSTF | RCC_CSR_PINRSTF)) != 0u) ? 1u : 0u;
++    if ((recovery_reset != 0u) && (HeaderValid(header) != 0u)) {
++        PowerLatch_WriteState(POWER_STATE_RUNNING);
++        PowerLatch_DriveHigh();
++        RCC->CSR |= RCC_CSR_RMVF;
++        return;
++    }
++    if ((state_valid != 0u) && (state == POWER_STATE_RUNNING) &&
++        ((reset_flags & RCC_CSR_PINRSTF) != 0u) &&
++        (PowerLatch_IsPowerReset(reset_flags) == 0u)) {
++        PowerLatch_DriveHigh();
++        RCC->CSR |= RCC_CSR_RMVF;
++        return;
++    }
++    PowerDeniedWait();
+ }
+ 
+ /* Change MSP and branch without allowing the C compiler to emit a stack
+@@ -291,6 +333,7 @@
+         BOOT_TRACE(0xB00700EFu);
+         while (1) {}
+     }
++    PowerLatch_WriteState(POWER_STATE_RUNNING);
+     BOOT_TRACE(OTA_BOOT_TRACE_REMAP_OK);
+     BranchToApplication(stack, reset);
+     while (1) {}
+@@ -300,7 +343,7 @@
+ {
+     const OtaMetadataHeader *header = (const OtaMetadataHeader *)OTA_METADATA_BASE;
+     uint8_t valid;
+-    HoldBoardPower();
++    if (PowerLatch_IsAlreadyHeld() == 0u) { PowerDeniedWait(); }
+     BOOT_TRACE(OTA_BOOT_TRACE_ENTERED);
+     valid = HeaderValid(header);
+     if (FlashUnlock() == 0u) { JumpToApplication(); }
+@@ -329,10 +372,10 @@
+                 if (WriteMarker(OTA_META_TRIAL_OFFSET, OTA_MARKER_TRIAL, OTA_MARKER_TRIAL_INV) != 0u) {
+                     JumpToApplication();
+                 }
+-                NVIC_SystemReset();
++                PowerLatch_SoftwareReset();
+             }
+             completed = CompletedSteps(OTA_META_FORWARD_LOG_OFFSET);
+-            if (completed != 0u) { NVIC_SystemReset(); }
++            if (completed != 0u) { PowerLatch_SoftwareReset(); }
+             (void)FlashErasePage(OTA_METADATA_BASE);
+         } else if ((trial != 0u) && (confirmed == 0u) && (rollback_done == 0u)) {
+             if (RunSwap(OTA_META_ROLLBACK_LOG_OFFSET, OTA_APP_SLOT_SIZE, 0u) != 0u) {
+@@ -342,7 +385,7 @@
+                     JumpToApplication();
+                 }
+             }
+-            NVIC_SystemReset();
++            PowerLatch_SoftwareReset();
+         } else if (rollback_done != 0u) {
+             (void)FlashErasePage(OTA_METADATA_BASE);
+             JumpToApplication();
+--- 12/tw66gw02/Bootloader/bootloader.sct
++++ 13/tw66gw02/Bootloader/bootloader.sct
+@@ -8,7 +8,7 @@
+   ER_BOOT_API 0x08001FC0 FIXED 0x00000040 {
+     boot_security.o (BOOT_API)
+   }
+-  RW_BOOT 0x20000000 0x00002000 {
++  RW_BOOT 0x20000000 0x00001FE0 {
+     .ANY (+RW +ZI)
+   }
+ }
+--- 12/tw66gw02/Bootloader/build_bootloader.ps1
++++ 13/tw66gw02/Bootloader/build_bootloader.ps1
+@@ -1,10 +1,12 @@
+ param(
+-    [string]$KeilRoot = 'C:\Keil_v5'
++    [string]$KeilRoot = 'C:\Keil_v5',
++    [string]$OutputDir = ''
+ )
+ 
+ $ErrorActionPreference = 'Stop'
+ $projectRoot = Split-Path -Parent $PSScriptRoot
+-$outputDir = Join-Path $PSScriptRoot 'build'
++if ([string]::IsNullOrWhiteSpace($OutputDir)) { $outputDir = Join-Path $PSScriptRoot 'build' }
++else { $outputDir = [IO.Path]::GetFullPath($OutputDir) }
+ New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
+ 
+ $compiler = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armcc.exe'
+--- 12/tw66gw02/BuildOtaArtifacts.ps1
++++ 13/tw66gw02/BuildOtaArtifacts.ps1
+@@ -4,7 +4,9 @@
+     [switch]$OtaOnly,
+     [string]$KeilRoot = 'C:\Keil_v5',
+     [string]$OpenSsl = 'C:\Program Files\Git\usr\bin\openssl.exe',
+-    [string]$DevPrivateKey = ''
++    [string]$DevPrivateKey = '',
++    [string]$DevPublicPem = '',
++    [string]$DevPublicDer = ''
+ )
+ 
+ $ErrorActionPreference = 'Stop'
+@@ -17,11 +19,15 @@
+ if ([string]::IsNullOrWhiteSpace($DevPrivateKey)) {
+     $DevPrivateKey = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_private.pem'
+ }
+-$devPublicPem = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_public.pem'
+-$devPublicDer = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_public.der'
++if ([string]::IsNullOrWhiteSpace($DevPublicPem)) {
++    $DevPublicPem = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_public.pem'
++}
++if ([string]::IsNullOrWhiteSpace($DevPublicDer)) {
++    $DevPublicDer = Join-Path (Split-Path -Parent $projectRoot) 'private_keys\mathis_dev_rsa3072_public.der'
++}
+ if (!(Test-Path -LiteralPath $OpenSsl)) { throw "OpenSSL not found: $OpenSsl" }
+ if (!(Test-Path -LiteralPath $DevPrivateKey)) { throw "DEV private key not found: $DevPrivateKey" }
+-if (!(Test-Path -LiteralPath $devPublicPem) -or !(Test-Path -LiteralPath $devPublicDer)) {
++if (!(Test-Path -LiteralPath $DevPublicPem) -or !(Test-Path -LiteralPath $DevPublicDer)) {
+     throw 'DEV public key files are missing.'
+ }
+ 
+@@ -148,7 +154,7 @@
+     & $OpenSsl dgst -sha256 -sign $DevPrivateKey -out $signatureFile $ota.Bin
+     if ($LASTEXITCODE -ne 0) { throw 'DEV signing failed.' }
+     if ((Get-Item -LiteralPath $signatureFile).Length -ne 384) { throw 'RSA-3072 signature is not 384 bytes.' }
+-    & $OpenSsl dgst -sha256 -verify $devPublicPem -signature $signatureFile $ota.Bin | Out-Null
++    & $OpenSsl dgst -sha256 -verify $DevPublicPem -signature $signatureFile $ota.Bin | Out-Null
+     if ($LASTEXITCODE -ne 0) { throw 'Host-side signature verification failed.' }
+     [byte[]]$signatureBytes = [IO.File]::ReadAllBytes($signatureFile)
+     [byte[]]$artifact = New-Object byte[] ($appBytes.Length + $signatureBytes.Length)
+@@ -169,7 +175,7 @@
+         artifact_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $otaFile).Hash
+         signature_algorithm = 'RSA-3072-PKCS1-v1_5-SHA256'
+         signing_key_class = 'DEV'
+-        signing_key_fingerprint_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $devPublicDer).Hash
++        signing_key_fingerprint_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $DevPublicDer).Hash
+         application_base = '0x08002000'
+         boot_api_version = 1
+         development_signature_placeholder = $false
+--- 12/tw66gw02/COP/main_control.c
++++ 13/tw66gw02/COP/main_control.c
+@@ -9,6 +9,7 @@
+   */
+ #include "config.h"
+ #include "ota_layout.h"
++#include "power_latch.h"
+ #include <stddef.h>
+ 
+ _work_process work_process,work_process_backups;
+@@ -46,6 +47,7 @@
+ static _work_process s_last_work_process = idle;
+ static uint8_t s_probe_connected_last = 0u;
+ static uint8_t s_probe_absent_ticks_100ms = 0u;
++static uint8_t s_shutdown_prepared = 0u;
+ static float s_temp_coeff[TEMP_COEFF_CHANNEL_COUNT][TEMP_COEFF_TERM_COUNT] =
+ {
+     {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}, /* D surface: y = x by default */
+@@ -70,6 +72,47 @@
+ 
+ static void BluetoothHwPowerOn(void);
+ static void BluetoothHwPowerOff(void);
++
++static void ShutdownPrepareOnce(void)
++{
++    if (s_shutdown_prepared != 0u) { return; }
++    s_shutdown_prepared = 1u;
++
++    /* This order is deliberate: put C8721 to sleep while its bus is alive,
++       then stop BLE traffic/power and finally stop every DMA producer. */
++    Screen_C8721_PrepareShutdown();
++    Wireless_Shutdown();
++    s_bt_state = BT_OFF;
++    s_bt_icon_on = 0u;
++    s_bt_pairing_req = 0u;
++    s_bt_poweroff_req = 0u;
++    s_bt_connected_input = 0u;
++    BluetoothHwPowerOff();
++
++    __HAL_UART_DISABLE_IT(&huart2, UART_IT_IDLE);
++    (void)HAL_UART_DMAStop(&huart2);
++    COM2.rxFlag = 0u; COM2.rxLen = 0u; COM2.pollPos = 0u;
++    (void)HAL_ADC_Stop_DMA(&hadc);
++    HAL_NVIC_DisableIRQ(USART1_IRQn);
++    HAL_NVIC_DisableIRQ(USART2_IRQn);
++    HAL_NVIC_DisableIRQ(DMA1_Channel1_IRQn);
++    HAL_NVIC_DisableIRQ(DMA1_Channel2_3_IRQn);
++    HAL_NVIC_DisableIRQ(DMA1_Channel4_5_IRQn);
++    HAL_NVIC_DisableIRQ(ADC1_IRQn);
++}
++
++static void ShutdownCutPower(void)
++{
++    __disable_irq();
++    SysTick->CTRL = 0u;
++    SysTick->LOAD = 0u;
++    SysTick->VAL = 0u;
++    NVIC->ICER[0] = 0xFFFFFFFFu;
++    NVIC->ICPR[0] = 0xFFFFFFFFu;
++    PowerLatch_WriteState(POWER_STATE_SHUTDOWN_REQUESTED);
++    PowerLatch_DriveLow();
++    while (1) { __WFI(); }
++}
+ 
+ static uint16_t ConfigCrc16(const uint8_t *data, uint16_t length)
+ {
+@@ -738,11 +781,9 @@
+   */
+ static void BluetoothHwPowerOff(void)
+ {
+-    if (s_bt_hw_on != 0u) {
+-        BT_Off;
+-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+-        s_bt_hw_on = 0u;
+-    }
++    BT_Off;
++    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
++    s_bt_hw_on = 0u;
+ }
+ 
+ /**
+@@ -915,6 +956,14 @@
+ 
+     KeyRespose(Key0_short_press, Key1_short_press, Key0_long_press, Key1_long_press, Key0_very_long_press, Key1_very_long_press);
+ 
++    if (work_process == shutdown) {
++        ShutdownPrepareOnce();
++        /* Remote power-off arrives with KEY0 released; a local long press waits
++           for release so the button cannot feed the latch while PB3 falls. */
++        if (key0 != 0u) { ShutdownCutPower(); }
++        return;
++    }
++
+     probe_was_absent_long = (s_probe_absent_ticks_100ms >= PROBE_REINSERT_MIN_OFF_TICKS_100MS) ? 1u : 0u;
+ 
+     if ((work_process != idle) && (work_process != shutdown)) {
+@@ -946,13 +995,6 @@
+             s_idle_ticks_100ms = 0u;
+         }
+ 
+-        if (work_process == shutdown) {
+-            s_bt_state = BT_OFF;
+-            s_bt_icon_on = 0u;
+-            BluetoothHwPowerOff();
+-            Power_Off;
+-        }
+-
+         s_last_work_process = work_process;
+     }
+ 
+@@ -966,30 +1008,21 @@
+         s_idle_ticks_100ms = 0u;
+     }
+ 
+-        /* Two-step power-off:
+-         * 1) enter shutdown immediately (screen off),
+-         * 2) wait KEY0 release, then cut PB3 power latch. */
+-    if (work_process == shutdown) {
+-        if (key0 != 0u) {
+-            Power_Off;
+-            work_process = idle;
+-        }
+-    }
+-}
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
++}
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
+--- 12/tw66gw02/COP/ota_boot.c
++++ 13/tw66gw02/COP/ota_boot.c
+@@ -1,6 +1,7 @@
+ #include "config.h"
+ #include "ota_layout.h"
+ #include "ota_boot.h"
++#include "power_latch.h"
+ 
+ static uint8_t MarkerValid(uint32_t address, uint16_t marker, uint16_t inverse)
+ {
+@@ -48,6 +49,6 @@
+     }
+     (void)HAL_FLASH_Lock();
+     if (MarkerValid(address, OTA_MARKER_CONFIRMED, OTA_MARKER_CONFIRMED_INV) != 0u) {
+-        NVIC_SystemReset();
++        PowerLatch_SoftwareReset();
+     }
+ }
+--- 12/tw66gw02/COP/ota_update.c
++++ 13/tw66gw02/COP/ota_update.c
+@@ -3,6 +3,7 @@
+ #include "ota_layout.h"
+ #include "ota_boot.h"
+ #include "ota_update.h"
++#include "power_latch.h"
+ 
+ #define OTA_TYPE_BEGIN             (0x10u)
+ #define OTA_TYPE_CHUNK             (0x11u)
+@@ -325,7 +326,7 @@
+     } else if (s_ota.state == OTA_STATE_APPLYING) {
+         if (s_ota.reset_ticks < OTA_RESET_DELAY_TICKS) { s_ota.reset_ticks++; }
+         if ((s_ota.reset_ticks >= OTA_RESET_DELAY_TICKS) && (Wireless_ProtocolTxIdle() != 0u)) {
+-            NVIC_SystemReset();
++            PowerLatch_SoftwareReset();
+         }
+     }
+ }
+--- 12/tw66gw02/Core/Src/gpio.c
++++ 13/tw66gw02/Core/Src/gpio.c
+@@ -87,7 +87,7 @@
+   /*Configure GPIO pins : PB4 PB5 */
+   GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+-  GPIO_InitStruct.Pull = GPIO_NOPULL;
++  GPIO_InitStruct.Pull = GPIO_PULLUP;
+   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+ 
+ }
+--- 12/tw66gw02/Core/Src/main.c
++++ 13/tw66gw02/Core/Src/main.c
+@@ -28,6 +28,7 @@
+ #include "config.h"
+ #include "ota_boot.h"
+ #include "ota_layout.h"
++#include "power_latch.h"
+ /* USER CODE END Includes */
+ 
+ /* Private typedef -----------------------------------------------------------*/
+@@ -68,9 +69,8 @@
+   */
+ int main(void)
+ {
+-	/* Retain board power immediately after the C runtime has initialized. */
+-	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+-	GPIOB->BSRR = GPIO_BSRR_BS_3;
++	/* SystemInit/Bootloader has already authorized and retained board power. */
++	PowerLatch_WriteState(POWER_STATE_RUNNING);
+ 	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_APP_MAIN;
+ 
+   /* USER CODE BEGIN 1 */
+--- 12/tw66gw02/Core/Src/system_stm32f0xx.c
++++ 13/tw66gw02/Core/Src/system_stm32f0xx.c
+@@ -44,6 +44,7 @@
+   */
+ 
+ #include "stm32f0xx.h"
++#include "power_latch.h"
+ 
+ /**
+   * @}
+@@ -125,15 +126,47 @@
+   */
+ void SystemInit(void)
+ {
+-  /* PB3 is the board power-hold latch.  Assert it before the C runtime and
+-     application initialization so a momentary power-button start cannot drop
+-     out while the image is booting. */
+-  RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+-  (void)RCC->AHBENR;
+-  GPIOB->BSRR = GPIO_BSRR_BS_3;
+-  GPIOB->MODER = (GPIOB->MODER & ~(3u << (3u * 2u))) |
+-                 (1u << (3u * 2u));
+-  GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
++  uint32_t reset_flags;
++  uint32_t state = 0u;
++  uint8_t state_valid;
++
++  PowerLatch_PreparePins();
++  reset_flags = RCC->CSR;
++  state_valid = PowerLatch_ReadState(&state);
++
++  /* Normal secure hand-off: the bootloader already owns PB3. */
++  if (PowerLatch_IsAlreadyHeld() != 0u) {
++    PowerLatch_WriteState(POWER_STATE_RUNNING);
++    RCC->CSR |= RCC_CSR_RMVF;
++    return;
++  }
++  /* Stand-alone application builds still require a physical key or a trusted
++     reset record; they never assert PB3 merely because reset occurred. */
++  if (PowerLatch_KeyPressed() != 0u) {
++    PowerLatch_ClearState();
++    PowerLatch_WriteState(POWER_STATE_RUNNING);
++    PowerLatch_DriveHigh();
++    RCC->CSR |= RCC_CSR_RMVF;
++    return;
++  }
++  if ((state_valid != 0u) && (state == POWER_STATE_RESTART_ALLOWED) &&
++      ((reset_flags & RCC_CSR_SFTRSTF) != 0u)) {
++    PowerLatch_WriteState(POWER_STATE_RUNNING);
++    PowerLatch_DriveHigh();
++    RCC->CSR |= RCC_CSR_RMVF;
++    return;
++  }
++  if ((state_valid != 0u) && (state == POWER_STATE_RUNNING) &&
++      ((reset_flags & RCC_CSR_PINRSTF) != 0u) &&
++      (PowerLatch_IsPowerReset(reset_flags) == 0u)) {
++    PowerLatch_DriveHigh();
++    RCC->CSR |= RCC_CSR_RMVF;
++    return;
++  }
++  PowerLatch_DriveLow();
++  RCC->CSR |= RCC_CSR_RMVF;
++  __disable_irq();
++  while (1) { __WFI(); }
+   /* NOTE :SystemInit(): This function is called at startup just after reset and 
+                          before branch to main program. This call is made inside
+                          the "startup_stm32f0xx.s" file.
+--- 12/tw66gw02/MDK-ARM/tw66gw02_app.sct
++++ 13/tw66gw02/MDK-ARM/tw66gw02_app.sct
+@@ -5,7 +5,7 @@
+     .ANY (+RO)
+     .ANY (+XO)
+   }
+-  RW_IRAM1 0x200000C0 0x00001F30 {
++  RW_IRAM1 0x200000C0 0x00001F20 {
+     .ANY (+RW +ZI)
+   }
+ }
+--- 12/tw66gw02/MDK-ARM/tw66gw02_direct.sct
++++ 13/tw66gw02/MDK-ARM/tw66gw02_direct.sct
+@@ -5,7 +5,7 @@
+     .ANY (+RO)
+     .ANY (+XO)
+   }
+-  RW_IRAM1 0x20000000 0x00001FF0 {
++  RW_IRAM1 0x20000000 0x00001FE0 {
+     .ANY (+RW +ZI)
+   }
+ }
+--- 12/tw66gw02/MDK-ARM/tw66gw02_factory.sct
++++ 13/tw66gw02/MDK-ARM/tw66gw02_factory.sct
+@@ -11,7 +11,7 @@
+     .ANY (+RO)
+     .ANY (+XO)
+   }
+-  RW_IRAM1 0x200000C0 0x00001F30 {
++  RW_IRAM1 0x200000C0 0x00001F20 {
+     .ANY (+RW +ZI)
+   }
+ }
+--- 12/tw66gw02/BSP/power_latch.h
++++ 13/tw66gw02/BSP/power_latch.h
+@@ -0,0 +1,122 @@
++#ifndef MATHIS_POWER_LATCH_H
++#define MATHIS_POWER_LATCH_H
++
++#include "stm32f030x8.h"
++#include <stdint.h>
++
++/* The final 32 bytes of SRAM are excluded from every linker region.
++ * 0x20001FE0..EF is retained across reset for trusted power intent and
++ * 0x20001FF0..FF remains the existing development boot trace area. */
++#define POWER_STATE_ADDRESS              (0x20001FE0u)
++#define POWER_STATE_MAGIC                (0x31525750u) /* "PWR1" */
++#define POWER_STATE_CHECK_XOR            (0xA53CC35Au)
++
++#define POWER_STATE_RUNNING              (0x52554E31u) /* "RUN1" */
++#define POWER_STATE_RESTART_ALLOWED      (0x52535431u) /* "RST1" */
++#define POWER_STATE_SHUTDOWN_REQUESTED   (0x53444E31u) /* "SDN1" */
++
++typedef struct {
++    uint32_t magic;
++    uint32_t state;
++    uint32_t inverse;
++    uint32_t check;
++} PowerStateRecord;
++
++static __inline uint32_t PowerLatch_CheckValue(uint32_t state)
++{
++    return POWER_STATE_MAGIC ^ (state * 0x9E3779B1u) ^ (~state) ^ POWER_STATE_CHECK_XOR;
++}
++
++static __inline uint8_t PowerLatch_KnownState(uint32_t state)
++{
++    return ((state == POWER_STATE_RUNNING) ||
++            (state == POWER_STATE_RESTART_ALLOWED) ||
++            (state == POWER_STATE_SHUTDOWN_REQUESTED)) ? 1u : 0u;
++}
++
++static __inline uint8_t PowerLatch_ReadState(uint32_t *state)
++{
++    const volatile PowerStateRecord *record =
++        (const volatile PowerStateRecord *)POWER_STATE_ADDRESS;
++    uint32_t value = record->state;
++    if ((record->magic != POWER_STATE_MAGIC) ||
++        (PowerLatch_KnownState(value) == 0u) ||
++        (record->inverse != ~value) ||
++        (record->check != PowerLatch_CheckValue(value))) {
++        return 0u;
++    }
++    if (state != 0) { *state = value; }
++    return 1u;
++}
++
++static __inline void PowerLatch_WriteState(uint32_t state)
++{
++    volatile PowerStateRecord *record = (volatile PowerStateRecord *)POWER_STATE_ADDRESS;
++    record->magic = 0u;
++    record->state = state;
++    record->inverse = ~state;
++    record->check = PowerLatch_CheckValue(state);
++    __DMB();
++    record->magic = POWER_STATE_MAGIC;
++    __DSB();
++}
++
++static __inline void PowerLatch_ClearState(void)
++{
++    ((volatile PowerStateRecord *)POWER_STATE_ADDRESS)->magic = 0u;
++    __DSB();
++}
++
++static __inline void PowerLatch_PreparePins(void)
++{
++    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
++    (void)RCC->AHBENR;
++    /* KEY0 PB5 is active low.  The pull-up makes an open key deterministic. */
++    GPIOB->MODER &= ~(3u << (5u * 2u));
++    GPIOB->PUPDR = (GPIOB->PUPDR & ~(3u << (5u * 2u))) |
++                   (1u << (5u * 2u));
++}
++
++static __inline uint8_t PowerLatch_KeyPressed(void)
++{
++    return ((GPIOB->IDR & GPIO_IDR_5) == 0u) ? 1u : 0u;
++}
++
++static __inline void PowerLatch_DriveHigh(void)
++{
++    PowerLatch_PreparePins();
++    GPIOB->BSRR = GPIO_BSRR_BS_3;
++    GPIOB->MODER = (GPIOB->MODER & ~(3u << (3u * 2u))) |
++                   (1u << (3u * 2u));
++    GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
++}
++
++static __inline void PowerLatch_DriveLow(void)
++{
++    PowerLatch_PreparePins();
++    GPIOB->BSRR = GPIO_BSRR_BR_3;
++    GPIOB->MODER = (GPIOB->MODER & ~(3u << (3u * 2u))) |
++                   (1u << (3u * 2u));
++    GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
++}
++
++static __inline uint8_t PowerLatch_IsAlreadyHeld(void)
++{
++    uint32_t mode = (GPIOB->MODER >> (3u * 2u)) & 3u;
++    return ((mode == 1u) && ((GPIOB->ODR & GPIO_ODR_3) != 0u)) ? 1u : 0u;
++}
++
++static __inline uint8_t PowerLatch_IsPowerReset(uint32_t reset_flags)
++{
++    return ((reset_flags & (RCC_CSR_PORRSTF | RCC_CSR_LPWRRSTF |
++                            RCC_CSR_V18PWRRSTF)) != 0u) ? 1u : 0u;
++}
++
++static __inline void PowerLatch_SoftwareReset(void)
++{
++    PowerLatch_WriteState(POWER_STATE_RESTART_ALLOWED);
++    __DSB();
++    NVIC_SystemReset();
++}
++
++#endif /* MATHIS_POWER_LATCH_H */
+--- 12/tw66gw02/BuildV104Delivery.ps1
++++ 13/tw66gw02/BuildV104Delivery.ps1
+@@ -0,0 +1,32 @@
++param(
++    [string]$KeilRoot = 'C:\Keil_v5',
++    [string]$KeyRoot = 'C:\Users\PC\Desktop\TW66GW02\12\private_keys'
++)
++$ErrorActionPreference='Stop'
++$root=$PSScriptRoot; $out=Join-Path $root 'OTA_Artifacts'; $bootBuild=Join-Path $root 'Bootloader\build_v2'
++$originalV103=Join-Path $out 'mathis_app_v103.bin'; $expectedV103='C3AD66C2302ACA9CFCC19BFD8E77197EB7204CA1FE13DB7CFA4FE37F7869ACAE'
++if ((Get-FileHash -Algorithm SHA256 $originalV103).Hash -ne $expectedV103) { throw 'Original 913c2b5 v103 app hash mismatch.' }
++& (Join-Path $root 'Bootloader\build_bootloader.ps1') -KeilRoot $KeilRoot -OutputDir $bootBuild
++if ($LASTEXITCODE -ne 0) { throw 'Bootloader v2 build failed.' }
++Copy-Item -Force (Join-Path $bootBuild 'mathis_bootloader.bin') (Join-Path $out 'mathis_secure_bootloader_dev_v2.bin')
++Copy-Item -Force (Join-Path $bootBuild 'mathis_bootloader.hex') (Join-Path $out 'mathis_secure_bootloader_dev_v2.hex')
++Copy-Item -Force (Join-Path $bootBuild 'mathis_bootloader.map') (Join-Path $out 'build_secure_bootloader_dev_v2.map')
++Copy-Item -Force (Join-Path $bootBuild 'mathis_bootloader.htm') (Join-Path $out 'build_secure_bootloader_dev_v2_callgraph.htm')
++& (Join-Path $root 'BuildOtaArtifacts.ps1') -OtaOnly -OtaVersion 104 -KeilRoot $KeilRoot `
++  -DevPrivateKey (Join-Path $KeyRoot 'mathis_dev_rsa3072_private.pem') `
++  -DevPublicPem (Join-Path $KeyRoot 'mathis_dev_rsa3072_public.pem') `
++  -DevPublicDer (Join-Path $KeyRoot 'mathis_dev_rsa3072_public.der')
++if ($LASTEXITCODE -ne 0) { throw 'v104 build/sign failed.' }
++Copy-Item -Force (Join-Path $root 'MDK-ARM\tw66gw02_ota_v104\tw66gw02.map') (Join-Path $out 'build_v104.map')
++Copy-Item -Force (Join-Path $root 'MDK-ARM\tw66gw02_ota_v104\tw66gw02.htm') (Join-Path $out 'build_v104_callgraph.htm')
++[byte[]]$boot=[IO.File]::ReadAllBytes((Join-Path $out 'mathis_secure_bootloader_dev_v2.bin'))
++[byte[]]$app=[IO.File]::ReadAllBytes($originalV103)
++[byte[]]$factory=New-Object byte[] (0x2000+$app.Length)
++for($index=0;$index-lt$factory.Length;$index++){$factory[$index]=0xFF}
++[Array]::Copy($boot,0,$factory,0,$boot.Length); [Array]::Copy($app,0,$factory,0x2000,$app.Length)
++[IO.File]::WriteAllBytes((Join-Path $out 'mathis_secure_factory_v103_bootv2_dev.bin'),$factory)
++$lines=[Collections.Generic.List[string]]::new()
++foreach($line in Get-Content (Join-Path $out 'mathis_secure_bootloader_dev_v2.hex')){if($line-ne':00000001FF'){$lines.Add($line)}}
++foreach($line in Get-Content (Join-Path $out 'mathis_app_v103.hex')){if($line-ne':00000001FF'){$lines.Add($line)}}
++$lines.Add(':00000001FF'); [IO.File]::WriteAllLines((Join-Path $out 'mathis_secure_factory_v103_bootv2_dev.hex'),$lines,[Text.Encoding]::ASCII)
++Write-Host 'v104 delivery build complete; private/public key files were referenced in place and not copied.'
+--- 12/tw66gw02/Tools/PC_BLE_Test/Run-PC-BLE.ps1
++++ 13/tw66gw02/Tools/PC_BLE_Test/Run-PC-BLE.ps1
+@@ -0,0 +1,5 @@
++param([Parameter(ValueFromRemainingArguments=$true)][string[]]$Arguments)
++$python = Join-Path $PSScriptRoot '.venv\Scripts\python.exe'
++if (!(Test-Path -LiteralPath $python)) { throw 'Run Setup-PC-BLE.ps1 first.' }
++& $python (Join-Path $PSScriptRoot 'mathis_ble.py') @Arguments
++exit $LASTEXITCODE
+--- 12/tw66gw02/Tools/PC_BLE_Test/Setup-PC-BLE.ps1
++++ 13/tw66gw02/Tools/PC_BLE_Test/Setup-PC-BLE.ps1
+@@ -0,0 +1,14 @@
++param([string]$PythonLauncher = 'py')
++$ErrorActionPreference = 'Stop'
++$root = $PSScriptRoot
++$venv = Join-Path $root '.venv'
++if (!(Test-Path -LiteralPath $venv)) {
++    & $PythonLauncher -3.11 -m venv $venv
++    if ($LASTEXITCODE -ne 0) { throw 'Python 3.11 virtual environment creation failed.' }
++}
++$python = Join-Path $venv 'Scripts\python.exe'
++& $python -m pip install --disable-pip-version-check -r (Join-Path $root 'requirements.txt')
++if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
++& $python (Join-Path $root 'mathis_ble.py') selftest
++if ($LASTEXITCODE -ne 0) { throw 'Offline selftest failed.' }
++Write-Host "Ready. Use: $python $root\mathis_ble.py discover"
+--- 12/tw66gw02/Tools/PC_BLE_Test/mathis_ble.py
++++ 13/tw66gw02/Tools/PC_BLE_Test/mathis_ble.py
+@@ -0,0 +1,210 @@
++from __future__ import annotations
++import argparse, asyncio, json, struct, sys, time
++from datetime import datetime, timezone
++from pathlib import Path
++from protocol import *
++
++DEFAULT_NAME="337910"; DEFAULT_ADDRESS="04:78:63:33:79:10"
++ROOT=Path(__file__).resolve().parents[2]
++DEFAULT_MANIFEST=ROOT/"OTA_Artifacts"/"mathis_ota_v104_dev_signed.manifest.json"
++DEFAULT_OTA=ROOT/"OTA_Artifacts"/"mathis_ota_v104_dev_signed.ota"
++
++class EventLog:
++    def __init__(self,command,log_dir):
++        log_dir.mkdir(parents=True,exist_ok=True); stamp=datetime.now().strftime("%Y%m%d_%H%M%S")
++        self.path=log_dir/f"{command}_{stamp}.jsonl"
++    def emit(self,event,**fields):
++        record={"time":datetime.now(timezone.utc).isoformat(),"event":event,**fields}
++        with self.path.open("a",encoding="utf-8") as f: f.write(json.dumps(record,ensure_ascii=False,default=str)+"\n")
++        detail=" ".join(f"{k}={v}" for k,v in fields.items() if k!="raw")
++        print(f"[{record['time']}] {event}{(' '+detail) if detail else ''}")
++
++def norm(value): return (value or "").replace("-",":").upper()
++def uuid16(uuid,short):
++    value=uuid.lower(); short=short.lower()
++    return value==short or value.startswith(f"0000{short}-") or value.endswith(short)
++
++async def scan_target(address,name,timeout,log):
++    from bleak import BleakScanner
++    found=await BleakScanner.discover(timeout=timeout,return_adv=True)
++    pairs=list(found.values()) if isinstance(found,dict) else [(d,None) for d in found]
++    for device,adv in pairs:
++        seen=getattr(adv,"local_name",None) or getattr(device,"name",None)
++        log.emit("scan",address=getattr(device,"address",""),name=seen)
++        if (address and norm(getattr(device,"address",""))==norm(address)) or (name and seen==name): return device
++    return None
++
++def describe(services,log):
++    for service in services:
++        log.emit("service",uuid=service.uuid,description=getattr(service,"description",""))
++        for char in service.characteristics:
++            log.emit("characteristic",uuid=char.uuid,properties=list(char.properties),service_uuid=service.uuid,
++                     max_write_without_response=getattr(char,"max_write_without_response_size",None))
++
++def select_chars(services,write_uuid,notify_uuid):
++    chars=[c for s in services for c in s.characteristics]
++    write=next((c for c in chars if c.uuid.lower()==write_uuid.lower()),None) if write_uuid else next((c for c in chars if uuid16(c.uuid,"ffe1") and ("write" in c.properties or "write-without-response" in c.properties)),None)
++    notify=next((c for c in chars if c.uuid.lower()==notify_uuid.lower()),None) if notify_uuid else next((c for c in chars if uuid16(c.uuid,"ffe2") and ("notify" in c.properties or "indicate" in c.properties)),None)
++    if not write or not notify: raise RuntimeError("未找到FFE1写特征/FFE2 Notify特征；请根据上方GATT表显式指定--write-uuid和--notify-uuid")
++    return write,notify
++
++class Link:
++    def __init__(self,args,log):
++        self.args=args; self.log=log; self.client=None; self.write_char=None; self.notify_char=None
++        self.parser=FrameParser(); self.frames=asyncio.Queue(); self.disconnected=asyncio.Event(); self.sequence=0
++    async def connect(self,scan_timeout=10.0):
++        from bleak import BleakClient
++        device=await scan_target(self.args.address,self.args.name,scan_timeout,self.log)
++        if device is None: raise RuntimeError("device not found")
++        self.client=BleakClient(device,disconnected_callback=lambda _c:self.disconnected.set())
++        await self.client.connect(); services=self.client.services; describe(services,self.log)
++        self.write_char,self.notify_char=select_chars(services,self.args.write_uuid,self.args.notify_uuid)
++        await self.client.start_notify(self.notify_char,self._notify)
++        self.log.emit("connected",address=getattr(device,"address",""),write_uuid=self.write_char.uuid,notify_uuid=self.notify_char.uuid)
++    def _notify(self,_sender,data):
++        raw=bytes(data); self.log.emit("notify",raw=raw.hex().upper(),length=len(raw))
++        for frame in self.parser.feed(raw):
++            self.log.emit("frame",type=f"0x{frame.type:02X}",sequence=frame.sequence,raw=frame.raw.hex().upper())
++            self.frames.put_nowait(frame)
++    async def close(self):
++        if self.client is not None and self.client.is_connected:
++            try: await self.client.stop_notify(self.notify_char)
++            except Exception: pass
++            await self.client.disconnect()
++    async def send(self,kind,payload=b""):
++        raw=encode_frame(kind,self.sequence,payload); self.sequence=(self.sequence+1)&255
++        capability=int(getattr(self.write_char,"max_write_without_response_size",20) or 20)
++        segment=max(1,min(self.args.segment_size,capability)); response="write-without-response" not in self.write_char.properties
++        for offset in range(0,len(raw),segment):
++            part=raw[offset:offset+segment]
++            await self.client.write_gatt_char(self.write_char,part,response=response)
++            self.log.emit("write",type=f"0x{kind:02X}",offset=offset,length=len(part),raw=part.hex().upper())
++            if offset+segment<len(raw): await asyncio.sleep(max(.025,self.args.gap_ms/1000))
++    async def wait_frame(self,wanted,timeout):
++        deadline=asyncio.get_running_loop().time()+timeout
++        while True:
++            remain=deadline-asyncio.get_running_loop().time()
++            if remain<=0: raise TimeoutError("frame timeout")
++            frame=await asyncio.wait_for(self.frames.get(),remain)
++            if frame.type in wanted: return frame
++    async def wait_status(self,timeout):
++        status=parse_status(await self.wait_frame({TYPE_OTA_STATUS},timeout))
++        self.log.emit("ota_status",**{k:(v.hex().upper() if isinstance(v,bytes) else v) for k,v in status.items()})
++        return status
++
++async def cmd_discover(args,log):
++    link=Link(args,log)
++    try: await link.connect()
++    finally: await link.close()
++
++async def cmd_monitor(args,log):
++    link=Link(args,log); count=0
++    try:
++        await link.connect(); await link.send(TYPE_CMD,bytes((CMD_TELEMETRY_CTRL,TELEMETRY_START)))
++        deadline=asyncio.get_running_loop().time()+args.seconds
++        while asyncio.get_running_loop().time()<deadline:
++            telemetry=parse_telemetry(await link.wait_frame({TYPE_TELEMETRY},max(1,deadline-asyncio.get_running_loop().time())))
++            log.emit("telemetry",**telemetry); count+=1
++        if count==0: raise RuntimeError("no telemetry")
++    finally:
++        if link.client is not None and link.client.is_connected:
++            try: await link.send(TYPE_CMD,bytes((CMD_TELEMETRY_CTRL,TELEMETRY_STOP)))
++            except Exception: pass
++        await link.close()
++
++async def cmd_poweroff(args,log):
++    if not args.confirm_poweroff: raise RuntimeError("add --confirm-poweroff")
++    link=Link(args,log); await link.connect(); await link.send(TYPE_CMD,bytes((CMD_POWER_OFF,)))
++    try: await asyncio.wait_for(link.disconnected.wait(),3)
++    except TimeoutError: await link.close(); raise RuntimeError("BLE did not disconnect within 3 seconds")
++    log.emit("poweroff_disconnected")
++    if await scan_target(args.address,args.name,30,log) is not None: raise RuntimeError("30秒内重新广播：怀疑PB3重锁存/复位循环")
++    log.emit("poweroff_pass",battery_only=True,quiet_seconds=30)
++
++FAILURES={STATUS_VERIFY_FAILED,STATUS_ABORTED,STATUS_POWER,STATUS_STORAGE,STATUS_BUSY,STATUS_BAD_OFFSET}
++async def reconnect_stable(args,log,version):
++    deadline=time.monotonic()+120; first=None; consecutive=0; reconnects=0
++    while time.monotonic()<deadline:
++        link=Link(args,log)
++        try:
++            await link.connect(min(10,max(1,deadline-time.monotonic()))); reconnects+=1
++            await link.send(TYPE_CMD,bytes((CMD_TELEMETRY_CTRL,TELEMETRY_START)))
++            while time.monotonic()<deadline and not link.disconnected.is_set():
++                try: telemetry=parse_telemetry(await link.wait_frame({TYPE_TELEMETRY},3))
++                except TimeoutError: continue
++                log.emit("reconnect_telemetry",reconnect=reconnects,**telemetry)
++                if telemetry["firmware_version"]==version:
++                    first=first or time.monotonic(); consecutive+=1
++                    if time.monotonic()-first>=15 and consecutive>=2:
++                        log.emit("ota_final",version=version,reconnects=reconnects); return
++                else: consecutive=0
++        except Exception as exc: log.emit("reconnect_retry",error=str(exc))
++        finally: await link.close()
++        await asyncio.sleep(1)
++    raise RuntimeError("120秒内未跨越两次重启稳定收到v104遥测")
++
++async def cmd_ota(args,log):
++    if args.confirm!="DEV-v104": raise RuntimeError("真实升级必须添加 --confirm DEV-v104")
++    manifest,artifact=load_and_validate_artifact(Path(args.manifest),Path(args.ota_file)); crc=int(str(manifest["crc32_iso_hdlc"]),0)
++    log.emit("artifact_valid",size=len(artifact),crc=f"0x{crc:08X}",sha256=manifest["artifact_sha256"],version=104,key_class="DEV")
++    link=Link(args,log); committed=False
++    try:
++        await link.connect(); await link.send(TYPE_OTA_BEGIN,struct.pack("<IIB",len(artifact),crc,104))
++        ready=await link.wait_status(15)
++        if ready["code"]!=STATUS_READY: raise RuntimeError(f"BEGIN rejected: {ready}")
++        chunk_size=min(int(ready.get("chunk_size",0)),232)
++        if chunk_size<=0: raise RuntimeError("invalid chunk size")
++        offset=0
++        while offset<len(artifact):
++            data=artifact[offset:offset+chunk_size]; payload=struct.pack("<I",offset)+data; accepted=False
++            for attempt in range(2):
++                await link.send(TYPE_OTA_CHUNK,payload)
++                try: status=await link.wait_status(5)
++                except TimeoutError:
++                    if attempt==0: log.emit("chunk_retry",offset=offset); continue
++                    raise
++                if status["code"]==STATUS_ACK and status.get("next_offset")==offset+len(data):
++                    offset=status["next_offset"]; accepted=True; break
++                if status["code"] in FAILURES: raise RuntimeError(f"chunk rejected {offset}: {status}")
++                raise RuntimeError(f"unexpected status: {status}")
++            if not accepted: raise RuntimeError(f"no ACK at {offset}")
++        await link.send(TYPE_OTA_COMMIT,struct.pack("<I",crc)); committed=True; verified=False; deadline=time.monotonic()+60
++        while time.monotonic()<deadline:
++            status=await link.wait_status(max(.1,deadline-time.monotonic()))
++            if status["code"]==STATUS_VERIFY_OK: verified=True
++            elif status["code"]==STATUS_APPLYING and verified: break
++            elif status["code"] in FAILURES: raise RuntimeError(f"COMMIT rejected: {status}")
++        else: raise RuntimeError("60秒内未收到VERIFY_OK→APPLYING")
++    except (KeyboardInterrupt,asyncio.CancelledError):
++        if not committed and link.client is not None and link.client.is_connected:
++            try: await link.send(TYPE_OTA_ABORT); log.emit("abort_sent")
++            except Exception as exc: log.emit("abort_failed",error=str(exc))
++        else: log.emit("commit_already_sent_wait_for_device")
++        raise
++    finally: await link.close()
++    await reconnect_stable(args,log,104)
++
++def selftest():
++    assert crc16_ccitt(b"123456789")==0x29B1 and crc32_iso_hdlc(b"123456789")==0xCBF43926
++    raw=encode_frame(TYPE_CMD,7,b"\xff\x01"); p=FrameParser(); frames=p.feed(raw[:3])+p.feed(raw[3:]+raw)
++    assert len(frames)==2 and frames[0].payload==b"\xff\x01"; print("selftest PASS")
++
++def parser():
++    p=argparse.ArgumentParser(); p.add_argument("--address",default=DEFAULT_ADDRESS); p.add_argument("--name",default=DEFAULT_NAME)
++    p.add_argument("--write-uuid"); p.add_argument("--notify-uuid"); p.add_argument("--segment-size",type=int,default=20)
++    p.add_argument("--gap-ms",type=float,default=25); p.add_argument("--log-dir",default=str(Path(__file__).parent/"logs"))
++    sub=p.add_subparsers(dest="command",required=True); sub.add_parser("selftest"); sub.add_parser("discover")
++    m=sub.add_parser("monitor"); m.add_argument("--seconds",type=float,default=10)
++    off=sub.add_parser("poweroff-check"); off.add_argument("--confirm-poweroff",action="store_true")
++    ota=sub.add_parser("ota"); ota.add_argument("--confirm"); ota.add_argument("--manifest",default=str(DEFAULT_MANIFEST)); ota.add_argument("--ota-file",default=str(DEFAULT_OTA))
++    return p
++
++def main():
++    args=parser().parse_args()
++    if args.command=="selftest": selftest(); return 0
++    log=EventLog(args.command,Path(args.log_dir)); log.emit("start",command=args.command,address=args.address,name=args.name)
++    commands={"discover":cmd_discover,"monitor":cmd_monitor,"poweroff-check":cmd_poweroff,"ota":cmd_ota}
++    try: asyncio.run(commands[args.command](args,log)); log.emit("pass",command=args.command); return 0
++    except KeyboardInterrupt: log.emit("cancelled"); return 130
++    except Exception as exc: log.emit("fail",error=str(exc)); print(f"ERROR: {exc}",file=sys.stderr); return 1
++if __name__=="__main__": raise SystemExit(main())
+--- 12/tw66gw02/Tools/PC_BLE_Test/protocol.py
++++ 13/tw66gw02/Tools/PC_BLE_Test/protocol.py
+@@ -0,0 +1,88 @@
++from __future__ import annotations
++import binascii, hashlib, json, struct
++from dataclasses import dataclass
++from pathlib import Path
++
++START=b"\x5a\x5a"; MAX_PAYLOAD=236
++TYPE_CMD=0x01; TYPE_TELEMETRY=0x81; TYPE_OTA_BEGIN=0x10; TYPE_OTA_CHUNK=0x11
++TYPE_OTA_COMMIT=0x12; TYPE_OTA_ABORT=0x13; TYPE_OTA_STATUS=0x90
++CMD_POWER_OFF=0x02; CMD_TELEMETRY_CTRL=0xFF; TELEMETRY_STOP=0; TELEMETRY_START=1
++STATUS_READY=1; STATUS_ACK=3; STATUS_VERIFY_OK=4; STATUS_VERIFY_FAILED=5
++STATUS_APPLYING=6; STATUS_ABORTED=7; STATUS_POWER=8; STATUS_STORAGE=9
++STATUS_BUSY=10; STATUS_BAD_OFFSET=11
++STATUS_NAMES={1:"READY",3:"ACK",4:"VERIFY_OK",5:"VERIFY_FAILED",6:"APPLYING",7:"ABORTED",8:"POWER",9:"STORAGE",10:"BUSY",11:"BAD_OFFSET"}
++REASON_NAMES={1:"CRC",2:"SIGNATURE",3:"SIZE",4:"TIMEOUT",5:"ROLLBACK",255:"UNKNOWN"}
++
++def crc16_ccitt(data:bytes)->int:
++    crc=0xFFFF
++    for value in data:
++        crc ^= value<<8
++        for _ in range(8): crc=((crc<<1)^0x1021)&0xFFFF if crc&0x8000 else (crc<<1)&0xFFFF
++    return crc
++
++def crc32_iso_hdlc(data:bytes)->int: return binascii.crc32(data)&0xFFFFFFFF
++
++@dataclass(frozen=True)
++class Frame:
++    type:int; sequence:int; payload:bytes; raw:bytes
++
++def encode_frame(frame_type:int, sequence:int, payload:bytes=b"")->bytes:
++    if len(payload)>MAX_PAYLOAD: raise ValueError("payload too large")
++    body=bytes((frame_type&255,sequence&255))+struct.pack("<H",len(payload))+payload
++    return START+body+struct.pack("<H",crc16_ccitt(body))
++
++def decode_frame(raw:bytes)->Frame:
++    if len(raw)<8 or raw[:2]!=START: raise ValueError("bad header")
++    size=struct.unpack_from("<H",raw,4)[0]
++    if size>MAX_PAYLOAD or len(raw)!=size+8: raise ValueError("bad length")
++    if struct.unpack_from("<H",raw,len(raw)-2)[0]!=crc16_ccitt(raw[2:-2]): raise ValueError("bad CRC16")
++    return Frame(raw[2],raw[3],raw[6:-2],raw)
++
++class FrameParser:
++    def __init__(self): self.buffer=bytearray()
++    def feed(self,chunk:bytes)->list[Frame]:
++        self.buffer.extend(chunk); out=[]
++        while True:
++            start=self.buffer.find(START)
++            if start<0:
++                self.buffer[:]=self.buffer[-1:] if self.buffer[-1:]==b"\x5a" else b""; break
++            if start: del self.buffer[:start]
++            if len(self.buffer)<6: break
++            size=struct.unpack_from("<H",self.buffer,4)[0]
++            if size>MAX_PAYLOAD: del self.buffer[0]; continue
++            total=size+8
++            if len(self.buffer)<total: break
++            try: out.append(decode_frame(bytes(self.buffer[:total]))); del self.buffer[:total]
++            except ValueError: del self.buffer[0]
++        return out
++
++def parse_telemetry(frame:Frame)->dict:
++    if frame.type!=TYPE_TELEMETRY or len(frame.payload)!=12: raise ValueError("not telemetry")
++    mode=frame.payload[0]
++    return {"mode_bits":mode,"valid_mask":mode&15,"units":"C" if mode&16 else "F",
++            "temperatures":struct.unpack_from("<hhhh",frame.payload,1),
++            "battery_percent":frame.payload[9],"firmware_version":frame.payload[10],"error_code":frame.payload[11]}
++
++def parse_status(frame:Frame)->dict:
++    if frame.type!=TYPE_OTA_STATUS or not frame.payload: raise ValueError("not OTA status")
++    code=frame.payload[0]; result={"code":code,"name":STATUS_NAMES.get(code,f"0x{code:02X}"),"extra":frame.payload[1:]}
++    if code==STATUS_READY and len(frame.payload)==3: result["chunk_size"]=struct.unpack_from("<H",frame.payload,1)[0]
++    elif code==STATUS_ACK and len(frame.payload)==5: result["next_offset"]=struct.unpack_from("<I",frame.payload,1)[0]
++    elif code in (STATUS_VERIFY_FAILED,STATUS_ABORTED) and len(frame.payload)>=2:
++        result["reason"]=frame.payload[1]; result["reason_name"]=REASON_NAMES.get(frame.payload[1],f"0x{frame.payload[1]:02X}")
++    return result
++
++def load_and_validate_artifact(manifest_path:Path,ota_path:Path)->tuple[dict,bytes]:
++    manifest=json.loads(manifest_path.read_text(encoding="utf-8-sig")); artifact=ota_path.read_bytes()
++    required={"target_version","security_version","application_size","signature_size","artifact_size","crc32_iso_hdlc","application_sha256","artifact_sha256","signature_algorithm","signing_key_class","development_signature_placeholder"}
++    missing=required.difference(manifest)
++    if missing: raise ValueError(f"manifest missing {sorted(missing)}")
++    if manifest["target_version"]!=104 or manifest["security_version"]!=104: raise ValueError("version is not 104")
++    if manifest["signing_key_class"]!="DEV" or manifest["development_signature_placeholder"] is not False: raise ValueError("not real DEV signature")
++    if manifest["signature_algorithm"]!="RSA-3072-PKCS1-v1_5-SHA256" or manifest["signature_size"]!=384: raise ValueError("bad signature format")
++    if manifest["artifact_size"]!=len(artifact) or manifest["application_size"]+384!=len(artifact): raise ValueError("size mismatch")
++    if crc32_iso_hdlc(artifact)!=int(str(manifest["crc32_iso_hdlc"]),0): raise ValueError("CRC32 mismatch")
++    if hashlib.sha256(artifact).hexdigest().upper()!=str(manifest["artifact_sha256"]).upper(): raise ValueError("OTA SHA mismatch")
++    app=artifact[:manifest["application_size"]]
++    if hashlib.sha256(app).hexdigest().upper()!=str(manifest["application_sha256"]).upper(): raise ValueError("app SHA mismatch")
++    return manifest,artifact
+--- 12/tw66gw02/Tools/PC_BLE_Test/tests/test_protocol.py
++++ 13/tw66gw02/Tools/PC_BLE_Test/tests/test_protocol.py
+@@ -0,0 +1,23 @@
++import hashlib,json,sys,tempfile,unittest
++from pathlib import Path
++sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
++from protocol import *
++
++class ProtocolTests(unittest.TestCase):
++    def test_crc_vectors(self):
++        self.assertEqual(crc16_ccitt(b"123456789"),0x29B1); self.assertEqual(crc32_iso_hdlc(b"123456789"),0xCBF43926)
++    def test_frame_round_trip(self):
++        frame=decode_frame(encode_frame(TYPE_CMD,0x42,b"\xff\x01")); self.assertEqual((frame.sequence,frame.payload),(0x42,b"\xff\x01"))
++    def test_split_coalesced_bad_crc_resync(self):
++        first=encode_frame(TYPE_CMD,1,b"\x01\x01"); second=encode_frame(TYPE_CMD,2,b"\xff\x00"); bad=bytearray(first); bad[-1]^=1
++        parser=FrameParser(); frames=parser.feed(b"noise"+bytes(bad)+first[:5]); frames+=parser.feed(first[5:]+second)
++        self.assertEqual([f.sequence for f in frames],[1,2])
++    def test_manifest_rejects_mutation(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            root=Path(tmp); app=b"A"*200; artifact=app+b"S"*384; ota=root/"x.ota"; mf=root/"x.json"; ota.write_bytes(artifact)
++            manifest={"target_version":104,"security_version":104,"application_size":len(app),"signature_size":384,"artifact_size":len(artifact),
++              "crc32_iso_hdlc":f"0x{crc32_iso_hdlc(artifact):08X}","application_sha256":hashlib.sha256(app).hexdigest(),"artifact_sha256":hashlib.sha256(artifact).hexdigest(),
++              "signature_algorithm":"RSA-3072-PKCS1-v1_5-SHA256","signing_key_class":"DEV","development_signature_placeholder":False}
++            mf.write_text(json.dumps(manifest),encoding="utf-8"); load_and_validate_artifact(mf,ota); ota.write_bytes(artifact[:-1]+b"X")
++            with self.assertRaises(ValueError): load_and_validate_artifact(mf,ota)
++if __name__=="__main__": unittest.main()

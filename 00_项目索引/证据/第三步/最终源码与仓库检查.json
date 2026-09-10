@@ -1,0 +1,185 @@
+{
+  "checked_source_config_files": 4499,
+  "changed": [
+    {
+      "path": "01_固件工程/main/PrepareFactoryBootImage.ps1",
+      "before_sha256": "e6bba671feca2344dbd3f4d561a7e70c578b00b7963760a70bc0c2fe5502a171",
+      "after_sha256": "27366f14f7bd1f8d5358a5d5518d0f4c7c96a9ffb18e9ce598be43c34cd8ea74",
+      "expected": true
+    },
+    {
+      "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BuildV104Delivery.ps1",
+      "before_sha256": "8fd20f0c3d9efff8f0a47deb4e8919edcee2f4368f77b59dfcfa11412a8cd366",
+      "after_sha256": "d5a924917d93e6e2dcd4e31a964ecbc37edc4c72da35f4e8dacaa70efa7057b2",
+      "expected": true
+    },
+    {
+      "path": "06_工具与参考/JFlash配置/tw66gw02_snapshot10.jflash",
+      "before_sha256": "421026ca2b6b0f5f27e09dd28a97fe8b7579af8137b13e4c2c4b22a44739a037",
+      "after_sha256": "830c69f2932bb9e0dc0d528db17d710237c43d87e51299cff4f856108d597c4c",
+      "expected": true
+    }
+  ],
+  "missing": [],
+  "unexpected_changes": [],
+  "repositories": {
+    "root": {
+      "path": ".",
+      "root": {
+        "exit_code": 0,
+        "output": "C:/Users/PC/Desktop/TW66GW02",
+        "error": ""
+      },
+      "head": {
+        "exit_code": 0,
+        "output": "1c249a8f6466f04a8de34710f95f3cd1ec19260e",
+        "error": ""
+      },
+      "branch": {
+        "exit_code": 0,
+        "output": "master",
+        "error": ""
+      },
+      "staged": {
+        "exit_code": 0,
+        "output": "",
+        "error": ""
+      }
+    },
+    "12": {
+      "path": "01_固件工程/development/snapshot-12_secure-ota/tw66gw02",
+      "root": {
+        "exit_code": 0,
+        "output": "C:/Users/PC/Desktop/TW66GW02/01_固件工程/development/snapshot-12_secure-ota/tw66gw02",
+        "error": ""
+      },
+      "head": {
+        "exit_code": 0,
+        "output": "913c2b5ed78fc2f6830bb5dec02f8f2b1eb44d49",
+        "error": ""
+      },
+      "branch": {
+        "exit_code": 0,
+        "output": "test/v103-integration-memory",
+        "error": ""
+      },
+      "staged": {
+        "exit_code": 0,
+        "output": "",
+        "error": ""
+      }
+    },
+    "13": {
+      "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02",
+      "root": {
+        "exit_code": 0,
+        "output": "C:/Users/PC/Desktop/TW66GW02/01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02",
+        "error": ""
+      },
+      "head": {
+        "exit_code": 0,
+        "output": "8b4b7a08527b27b4852a8dd03315675469ac1692",
+        "error": ""
+      },
+      "branch": {
+        "exit_code": 0,
+        "output": "test/v104-poweroff-pc-ble",
+        "error": ""
+      },
+      "staged": {
+        "exit_code": 0,
+        "output": "",
+        "error": ""
+      }
+    },
+    "14": {
+      "path": "01_固件工程/development/snapshot-14_refactor-from-10",
+      "root": {
+        "exit_code": 0,
+        "output": "C:/Users/PC/Desktop/TW66GW02/01_固件工程/development/snapshot-14_refactor-from-10",
+        "error": ""
+      },
+      "head": {
+        "exit_code": 128,
+        "output": "",
+        "error": "fatal: Needed a single revision"
+      },
+      "branch": {
+        "exit_code": 0,
+        "output": "refactor-from-10",
+        "error": ""
+      },
+      "staged": {
+        "exit_code": 0,
+        "output": "",
+        "error": ""
+      }
+    }
+  },
+  "ignore_checks": [
+    {
+      "repository": ".",
+      "path": "01_固件工程/main/BSP/config.h",
+      "expected_ignored": false,
+      "actual_ignored": false,
+      "pass": true
+    },
+    {
+      "repository": ".",
+      "path": "01_固件工程/main/MDK-ARM/startup_stm32f030x8.s",
+      "expected_ignored": false,
+      "actual_ignored": false,
+      "pass": true
+    },
+    {
+      "repository": ".",
+      "path": "01_固件工程/main/MDK-ARM/tw66gw02_factory.sct",
+      "expected_ignored": false,
+      "actual_ignored": false,
+      "pass": true
+    },
+    {
+      "repository": ".",
+      "path": "01_固件工程/main/OTA_Artifacts/mathis_ota_v101.ota",
+      "expected_ignored": true,
+      "actual_ignored": true,
+      "pass": true
+    },
+    {
+      "repository": ".",
+      "path": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/BSP/config.h",
+      "expected_ignored": true,
+      "actual_ignored": true,
+      "pass": true
+    },
+    {
+      "repository": ".",
+      "path": "01_固件工程/history/snapshot-10_development-ota/tw66gw02/BSP/config.h",
+      "expected_ignored": true,
+      "actual_ignored": true,
+      "pass": true
+    },
+    {
+      "repository": "01_固件工程/development/snapshot-14_refactor-from-10",
+      "path": "tw66gw02/BSP/config.h",
+      "expected_ignored": false,
+      "actual_ignored": false,
+      "pass": true
+    },
+    {
+      "repository": "01_固件工程/development/snapshot-14_refactor-from-10",
+      "path": "outputs/optimization/baseline/build_mathis_test_workbook.ps1",
+      "expected_ignored": false,
+      "actual_ignored": false,
+      "pass": true
+    },
+    {
+      "repository": "01_固件工程/development/snapshot-14_refactor-from-10",
+      "path": "outputs/optimization/deps/unicorn/__init__.py",
+      "expected_ignored": true,
+      "actual_ignored": true,
+      "pass": true
+    }
+  ],
+  "note": "Generated build outputs are excluded from this final source check; pre-edit full move checks cover 15919 files."
+}

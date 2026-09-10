@@ -22,6 +22,8 @@ MDK-ARM/JLinkLog.txt
 *.lnp
 *.bak
 *.Bak
+__pycache__/
+*.pyc
 
 # --- v10 OTA / Bootloader 构建产物（2026-09-03 补充）---
 # v11 的忽略规则未覆盖这些，v10 成为主线后根目录编译会产生
@@ -50,6 +52,7 @@ MDK-ARM/boot_image.s
 /11/
 /12/
 /13/
+/14/
 /TEST/
 /eide/
 /ostest/
@@ -58,3 +61,20 @@ MDK-ARM/boot_image.s
 # 文档类，已集中提交在 docs 分支，master 分支不再重复跟踪
 /JLink/
 /ble/
+
+# Local recovery archives and restored copies are not source deliverables.
+/90_历史原始包/整理前备份/
+
+# Organized local repositories, snapshots and experimental/tool copies.
+/01_固件工程/history/
+/01_固件工程/development/
+/04_测试与联调/实验工程/
+/06_工具与参考/JLink/
+
+# Local delivery binaries; keep manifests, checksums and documentation trackable.
+/05_发布与交付/**/*.apk
+/05_发布与交付/**/*.ipa
+/05_发布与交付/**/*.bin
+/05_发布与交付/**/*.hex
+/05_发布与交付/**/*.ota
+/05_发布与交付/**/*.zip

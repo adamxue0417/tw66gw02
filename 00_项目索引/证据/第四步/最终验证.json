@@ -1,0 +1,117 @@
+{
+  "date": "2026-09-10",
+  "protected_source_config_files": 347,
+  "unexpected_source_changes": [],
+  "mobile_ble_files_verified": 6,
+  "packages": [
+    {
+      "id": "main_v100-to-v101_DEV",
+      "checksummed_files": 18,
+      "checks": {
+        "date": "2026-09-10",
+        "ota_size_sha256_crc32": "PASS",
+        "ota_payload_matches_application": "PASS",
+        "factory_boot_partition_and_application": "PASS",
+        "signature": "384-byte zero DEV placeholder checked",
+        "hardware": "PENDING",
+        "application_base": "0x08001800"
+      }
+    },
+    {
+      "id": "snapshot12_v102-to-v103_DEV",
+      "checksummed_files": 20,
+      "checks": {
+        "date": "2026-09-10",
+        "ota_size_sha256_crc32": "PASS",
+        "ota_payload_matches_application": "PASS",
+        "factory_boot_partition_and_application": "PASS",
+        "signature": "Existing DEV signature preserved; cryptographic verification not repeated in step 4",
+        "hardware": "PENDING",
+        "application_base": "0x08002000"
+      }
+    },
+    {
+      "id": "snapshot13_v103-to-v104_bootv2_DEV",
+      "checksummed_files": 20,
+      "checks": {
+        "date": "2026-09-10",
+        "ota_size_sha256_crc32": "PASS",
+        "ota_payload_matches_application": "PASS",
+        "factory_boot_partition_and_application": "PASS",
+        "signature": "Existing DEV signature preserved; cryptographic verification not repeated in step 4",
+        "hardware": "PENDING",
+        "application_base": "0x08002000"
+      }
+    },
+    {
+      "id": "snapshot14_v100-to-v101_DEV",
+      "checksummed_files": 18,
+      "checks": {
+        "date": "2026-09-10",
+        "ota_size_sha256_crc32": "PASS",
+        "ota_payload_matches_application": "PASS",
+        "factory_boot_partition_and_application": "PASS",
+        "signature": "384-byte zero DEV placeholder checked",
+        "hardware": "PENDING",
+        "application_base": "0x08001800"
+      }
+    }
+  ],
+  "build_tests": {
+    "main_ota_test": "PASS / 162 cases",
+    "snapshot14_ota_test": "PASS / 162 cases"
+  },
+  "main_factory": "PASS / 0 errors, 0 warnings",
+  "ignore_checks": [
+    {
+      "path": "05_发布与交付/README.md",
+      "ignored": false,
+      "pass": true
+    },
+    {
+      "path": "05_发布与交付/MCU固件/main_v100-to-v101_DEV/delivery-manifest.json",
+      "ignored": false,
+      "pass": true
+    },
+    {
+      "path": "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Factory_Flash/mathis_factory_v100.bin",
+      "ignored": true,
+      "pass": true
+    },
+    {
+      "path": "05_发布与交付/手机APP/Android/v3.6.9_build368/application-aaa6c0d1-46c7-4075-8fe6-ca621db3e285.apk",
+      "ignored": true,
+      "pass": true
+    },
+    {
+      "path": "01_固件工程/main/MDK-ARM/startup_stm32f030x8.s",
+      "ignored": false,
+      "pass": true
+    },
+    {
+      "path": "90_历史原始包/整理前备份/20260910-step4/compiler-intermediates.zip",
+      "ignored": true,
+      "pass": true
+    }
+  ],
+  "space": {
+    "before_files": 1951,
+    "before_bytes": 574897480,
+    "after_rebuild_files": 915,
+    "after_rebuild_bytes": 268446773,
+    "reduction_in_selected_intermediates_bytes": 306450707,
+    "backup_zip_bytes": 155746125,
+    "reduction_less_backup_bytes": 150704582,
+    "scope": "Only .o/.crf/.d in the explicitly selected compiler output directories; not total disk free-space measurement",
+    "restored_samples": [
+      "01_固件工程/main/Bootloader/build/boot_main.o",
+      "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/Bootloader/build/boot_main.o"
+    ]
+  },
+  "limitations": [
+    "No hardware/BLE/app installation testing",
+    "Existing DEV signatures preserved, not cryptographically reverified in this step",
+    "Original Bootloader build commits unknown for historical secure deliveries",
+    "Step 3 pre-existing v12 factory/workbook issues remain"
+  ]
+}

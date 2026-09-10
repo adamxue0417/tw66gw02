@@ -1,0 +1,38 @@
+[
+  {
+    "old_path": "apk/application-aaa6c0d1-46c7-4075-8fe6-ca621db3e285.apk",
+    "new_path": "05_发布与交付/手机APP/Android/v3.6.9_build368/application-aaa6c0d1-46c7-4075-8fe6-ca621db3e285.apk",
+    "sha256": "e0019986e1b9c9372071f643b29a3ad4c592cb298e44e36ba1ff84459b765597",
+    "bytes": 210469466
+  },
+  {
+    "old_path": "apk/application-e1ac71ac-a215-47eb-ad57-d93d42f1575a.ipa",
+    "new_path": "05_发布与交付/手机APP/iOS/v3.6.9_build98/application-e1ac71ac-a215-47eb-ad57-d93d42f1575a.ipa",
+    "sha256": "9eebfcc0414ae67db879435ee2aae293bd5913e0da9dc6f7bffe6c06b3e729e2",
+    "bytes": 29793410
+  },
+  {
+    "old_path": "ble/oven_ble.all.bin",
+    "new_path": "05_发布与交付/BLE模块固件/oven_ble_版本待核实/oven_ble.all.bin",
+    "sha256": "d7df8180217ad3ede0fe536bf001e23667bcabfa80be894bd05543e8fa48636b",
+    "bytes": 520192
+  },
+  {
+    "old_path": "emb1061/EMC1061-P.jflash",
+    "new_path": "05_发布与交付/BLE模块固件/EMB1061_版本待核实/EMC1061-P.jflash",
+    "sha256": "f623d65b488261508b366cfdd64d046ef9075838a20e6472579da9782f8235ef",
+    "bytes": 1944
+  },
+  {
+    "old_path": "emb1061/ooni_mathis_emb1061_260812_1605(1).hex",
+    "new_path": "05_发布与交付/BLE模块固件/EMB1061_版本待核实/ooni_mathis_emb1061_260812_1605(1).hex",
+    "sha256": "8bb7a648152246912c7e6865e4146cfbcb70ce49febc3c192f5c6e19a41e8f25",
+    "bytes": 187260
+  },
+  {
+    "old_path": "emb1061/ooni_mathis_emb1061_nologwork.hex",
+    "new_path": "05_发布与交付/BLE模块固件/EMB1061_版本待核实/ooni_mathis_emb1061_nologwork.hex",
+    "sha256": "56de66031c6d6d472ef69d21cb51e7db27d27108ca7accf419721657c1c950eb",
+    "bytes": 179593
+  }
+]

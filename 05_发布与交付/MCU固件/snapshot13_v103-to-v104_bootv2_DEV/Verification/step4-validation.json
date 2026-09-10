@@ -1,0 +1,9 @@
+{
+  "date": "2026-09-10",
+  "ota_size_sha256_crc32": "PASS",
+  "ota_payload_matches_application": "PASS",
+  "factory_boot_partition_and_application": "PASS",
+  "signature": "Existing DEV signature preserved; cryptographic verification not repeated in step 4",
+  "hardware": "PENDING",
+  "application_base": "0x08002000"
+}

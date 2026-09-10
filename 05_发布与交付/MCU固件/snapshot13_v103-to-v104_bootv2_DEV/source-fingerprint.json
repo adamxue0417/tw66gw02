@@ -1,0 +1,862 @@
+[
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/C8721.c",
+    "sha256": "b5d58acbf35de0bf4c7c1039fb39d45e146a254de56f4be0a7a97f1996ccbf9e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/C8721.h",
+    "sha256": "d2fad65f8521c4a598f2cdb9cf30118b45e684f575bc735d57abc5e4eabb7ac5"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/battery_level.c",
+    "sha256": "3a119978004d7d1e9bc8253493ff9f6be67044a6434e12889193ea4e301574fb"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/battery_level.h",
+    "sha256": "b0fe7f6466ccfcfdd043222cc979a34e2d988e4762476bcffa5310f34327337e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/bh66f5242.c",
+    "sha256": "c49c8c8420a7d54268a294fb74b6a3bd28c0ca671e7b264dbfb674ef9ffb6add"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/bh66f5242.h",
+    "sha256": "338f96fc3aca20c9919e169c22856e0e16bf1bf6686c3f40e156d346b059b25c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/boot_api.h",
+    "sha256": "9516babe5d007d312ad62ae193a89462e6087c550994a10de44375db66b9209c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/buzz.c",
+    "sha256": "d4f658cb8fa348122e1fab443de517ad8c024de4a437008405fe303152759786"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/buzz.h",
+    "sha256": "d6a06eefb3c8d251b1133e5566fbde0a2ba29bb5717e1d67e100e65d91f0662a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/config.h",
+    "sha256": "955c24cd3a1c768e4c5907c67ee50df7b066fc5b4aeb1e1e2533b05253941cd1"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/key.c",
+    "sha256": "024fe42baf7b1292e2c2e336b93465c077b087276d08bdc6de508c9c844b781a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/key.h",
+    "sha256": "4c52e123eb6fea0d9635fd338c1a66fc0fa52d4c3ab786ead92822d0a2f01edc"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/ota_layout.h",
+    "sha256": "12bc047590136f4f92d5011ec972942f6d5f2872a1fd1601db98ceb4591c9cb7"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/power_latch.h",
+    "sha256": "6c1852937e647890126b3d2803919f082595a66a7602a362c4240c83993f2ddc"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/screen_c8721.c",
+    "sha256": "b1e149a26c8d2b91c4f5c465a12c7d3c615fa13664e8f0419883a30917c1377a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/screen_c8721.h",
+    "sha256": "d3bf6d7fd990dd90632c351a4bf8c979dff6f7718a9a2095fe1c63bc1f1d455f"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/temp.c",
+    "sha256": "1ff290d8f3d84988f0fb374eae3645268c1ad132ccf5961336f217814908972e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/temp.h",
+    "sha256": "4c9153259ce7a5848afd8978fe058671c6964dc6d148b07e0539cf2d6dcddb39"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/wireless.c",
+    "sha256": "3dc38447fd39378e17760f5f0d9c9dc37a5c37331106f91714ad313af1853356"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BSP/wireless.h",
+    "sha256": "bc85275be7d938b6a4b96120b1c3debee40afb2a548f9ef197676578bda53ef4"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Bootloader/boot_main.c",
+    "sha256": "85544ef0843ea0451a1986e03da818a7e3b46e35aabbcd40b0cb205669f2faf2"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Bootloader/boot_security.c",
+    "sha256": "d0f5e7f85955f073a5ebe26b931315254e06283b2eb045353eccfcd18c945c27"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Bootloader/boot_security.h",
+    "sha256": "66f747d0e7fe47b7b9b88f73b4f42f4d4e113f330263479ab7e0437633a50170"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Bootloader/bootloader.sct",
+    "sha256": "574ecd2297f13b7ac7d225f036c16bd36ba981042be6bb22d1464dfa974ee212"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Bootloader/build_bootloader.ps1",
+    "sha256": "7f78ebadedf3ade235c1c658a6d2c8482994ddbe92d6fb22658db70dd2bae9c4"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Bootloader/build_min_bootloader.ps1",
+    "sha256": "553eaf2c8861eac3c4be6b456ffb5d8ad971ac4de14b6ff9b4c146632f560a53"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Bootloader/min_boot_main.c",
+    "sha256": "7e886f20b9960a396c95a0883906d1f1d61ac315414767236813f4ad79c10f23"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BuildKeilFactoryTarget.ps1",
+    "sha256": "ade4b805384b947ea6ccc74eab878919e68bb4b8393c3fafebb0a06c462cf88c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BuildOtaArtifacts.ps1",
+    "sha256": "8a00b9930a7084537eaa985a065cfdb9d940320fe4907f32942e4fc0d8938702"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BuildStartupDiagnostic.ps1",
+    "sha256": "28ff7710316d0a62f1fd04a6a1206e220f1c9bfa2a55fc8727c223584cd39c3b"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BuildV104Delivery.ps1",
+    "sha256": "d5a924917d93e6e2dcd4e31a964ecbc37edc4c72da35f4e8dacaa70efa7057b2"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/gagent_md5.c",
+    "sha256": "7c7435c58508a6299040acb0de43aaef02c798973e1653a93b222dbfe0b28044"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/gagent_md5.h",
+    "sha256": "34f858b2b2f755822bc98fb0389f6f5225448987e033a9d0826f4a6ba655440a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/idle.c",
+    "sha256": "1653bfc080f1c1638400c71d2f38038ce53a579e7c80a9318650395e058b73a5"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/idle.h",
+    "sha256": "a6cbdb71de115f0709a8f21967e33e6ba5a167b0ade7c5fc6a8f55b5894d6870"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/main_control.c",
+    "sha256": "c3b6e3bf9ef20820c6f4ea3127829bed4225651bb087637a10d562d4df44db81"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/main_control.h",
+    "sha256": "97a7407af8b06332ab79db85ca776379bc6b3480a4486417461f971ecaa5b6d9"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/ota.c",
+    "sha256": "e5a7e011b7ce278b6a1062ffebf0318c828b19f51f4b14a405e002776d453740"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/ota.h",
+    "sha256": "2f71f322b8b4f568353fd854f2bf4f37386280299672b4e68bc2f0341c14e9e4"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/ota_boot.c",
+    "sha256": "9cdeedca3087ad7213ef45ac395ea4e1074976293d3b0f92178ebf4e176da459"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/ota_boot.h",
+    "sha256": "59ecbfd0afb6d560c439b64afb56614e30850597aee8cec852c336152b703019"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/ota_update.c",
+    "sha256": "1d5a88e591d3e74874af95e1b2f005e2cbf5e908ba537a5a7ba76440575a8f7c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/ota_update.h",
+    "sha256": "e1f439adeffce2cc489306bcd5ed725cd71f3315ccc3c00b3ca6e1ea6f0b61ed"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/pid.c",
+    "sha256": "2cd7d229d6234e952a7c0a99d2a2ca83084bf750cb8cddcab47ac0fabc1566f5"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/pid.h",
+    "sha256": "0707bc51d0416321d93d3b78e1ee1feca7176b5ed1bddcb35576241e1ae164f1"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/run.c",
+    "sha256": "15ad04788f186e0d60faf5a6be70d2209067f033cf9ca30a0482be615bf79b1a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/run.h",
+    "sha256": "ea440535e18edbd07c88b6bf689e32eb0be5dd997f29aa6dc68698a86db5713f"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/set.c",
+    "sha256": "57cde9f0a5dbc1bad14e16bf2b615d8457b3ee428995e06e5f60093f1db1d41a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/set.h",
+    "sha256": "1339a678a5a607baf0678eeab5f7c98ec136d99f27e4b119b3b4f252e655b348"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/shutdown.c",
+    "sha256": "e5165813723b5271871e38a1b25a30f2f6d5f33711c651a0b0240c957b80d072"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/shutdown.h",
+    "sha256": "89a9f886d3843504796942195f858eeb3b241a7bca4f6ac4b98b0b90851d2cc1"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/start_up.c",
+    "sha256": "1780bca013991de3da40cfcd0bab052b2ce32091234965abfe42e9da72b68ab4"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/start_up.h",
+    "sha256": "754f5a3386f1df67cf379e07b4b5330bcada879c345e71c0bac506d7f9b13706"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/test.c",
+    "sha256": "2c2c9c6f7348a436fe1185026392011d26088abe935ecfe4da80c57234f31f47"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/test.h",
+    "sha256": "fb5533851667c6820aac85f93e32b25272af2cfc1308b1857b40200d382ac6fd"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/warning.c",
+    "sha256": "a73227f5ed7dc0dd3d22e06a2f48c18cd089943d0264cf88f9922a277fba147e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/COP/warning.h",
+    "sha256": "0d224c347a6cf8083e199cab96c1bddddc7b9f1a664aca9f01f1a03e12b31f5d"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Inc/adc.h",
+    "sha256": "4052f2e6bc5b3bcb85d083dc16c9dfc2d851564d319e918b6621ea01d4aea37b"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Inc/dma.h",
+    "sha256": "7cf6f7450a29d26303cbba5a3ca8c6cb24a02635d6a5ba4d05141fdfc75c4c49"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Inc/gpio.h",
+    "sha256": "e2d62f964a0b7f238384ed6a20a181d09df9647240a268dc547acf5b35099f74"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Inc/main.h",
+    "sha256": "ef067e8a4e2e9040720af5e7cb8d1e3d9360d46a3debf11da9771bb0104293c8"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Inc/stm32f0xx_hal_conf.h",
+    "sha256": "b7548d75ac43ec9efefd83c00491df3450962801b384b33657e76d98b0a3548d"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Inc/stm32f0xx_it.h",
+    "sha256": "19b12c10ffa7a5da88a3dc07129c6d3e128fd81529f979e614af09978f603bb8"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Inc/tim.h",
+    "sha256": "b060d62de6437c2e1be10eb11aa9c07afba7588e10491d67739df5bacda5d4bd"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Inc/usart.h",
+    "sha256": "0ebdf83369c652bbd8e19e13690d4c5fe6f2a832daed0abe852948bf6e4b3787"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Src/adc.c",
+    "sha256": "8908b5138ca35ebe901a8381d9ec7a8d874e0bece07b2b86544025f09774aae5"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Src/dma.c",
+    "sha256": "69c62ddd8ca5ca7f16d57cc767580c42229a650ad1a4f2f564b9ffa7452e96af"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Src/gpio.c",
+    "sha256": "b679b2daa9847933ac0b4fb451bcc1356e0ecbfdf97ecadcca2c195189a23420"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Src/main.c",
+    "sha256": "e545a03635e94ab02f870b7964786164e558387d10f1cf2873ee3f711f401a3f"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Src/stm32f0xx_hal_msp.c",
+    "sha256": "0d3c29e612ee305efeb5006b3b1335bd67fea4c6a4888b2fe6075cec5e5dda81"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Src/stm32f0xx_it.c",
+    "sha256": "2f97569c6eb1644f4d4750fc793378ca20f194e583ba6690e2b5ea246bd9c2d4"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Src/system_stm32f0xx.c",
+    "sha256": "6ddab737b8cd29f0e6c1050d8aa884e823fe40aea068c25175c2e62d3f1df5fa"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Src/tim.c",
+    "sha256": "ef3d834916271c53858be3887ea3ad7932a8d1a8a59dff0f199f083ae9c96e49"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Core/Src/usart.c",
+    "sha256": "b437f59e75434cfe6d8023bb923fe8ebb8cade9df3bb6c05f498a61843ec814d"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Diagnostics/build_gpio_alive.ps1",
+    "sha256": "73b92e92c3b08b4931e51904efe6af1dfcbde2e5e59169380a7749070c979196"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Diagnostics/gpio_alive.c",
+    "sha256": "3371e08c46612f5cf73805b0d597649df2d4ef9ef90be1b4581607d206b17c82"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Device/ST/STM32F0xx/Include/stm32f030x8.h",
+    "sha256": "1dbac54147ae3eb6bfe3541faa10432c4b6ada34c2ecb01509d6a36fd9ab2695"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Device/ST/STM32F0xx/Include/stm32f0xx.h",
+    "sha256": "6797014ace07b739b885d61497e76366a30ea5be6dd5c8fc9ac1d113ed40b56b"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Device/ST/STM32F0xx/Include/system_stm32f0xx.h",
+    "sha256": "fba2f60c67917873d6a010f502508c6e661738a06846f6bb8c3e9edfdfc1f754"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/cmsis_armcc.h",
+    "sha256": "57b8d88cd03152f60bf74de0149ec979ae20210d86ab06e837aa69c66f27d615"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/cmsis_armclang.h",
+    "sha256": "da29dbad3cf27f6c86437af6bd0b302e105210742ad7a602bea51b104f1661c9"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/cmsis_compiler.h",
+    "sha256": "cd3cbd1c771a5252827a14c75a12e7ed975f76b9fc1577d53a74ba0e7c1af6c3"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/cmsis_gcc.h",
+    "sha256": "8c16d51f7884a9fc07c5cbe6f2bcd24e5e092ddc519f71d36740c2d2e2ff6a27"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/cmsis_iccarm.h",
+    "sha256": "a600765888c69ee60cd2d01d77356902d4ae5fa98aa7e1d73703663c96b7f87a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/cmsis_version.h",
+    "sha256": "280b9fc8739aefa878d47e68d7adbd4908a15f98ec193cdba1a4b514133f5c34"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_armv8mbl.h",
+    "sha256": "220d90f3f99126e656c31c32f099ff766b32cf487f7dd77388e4c9a78e1898c8"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_armv8mml.h",
+    "sha256": "825a8799d71f3fa29690b1597dfc2dfb660b103d44e20b8185f26b4f3b4ffdf0"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_cm0.h",
+    "sha256": "1beaa04c859225f75142d055e9c5dacfc9ac1d88c82934177f745b9c5f3f4094"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_cm0plus.h",
+    "sha256": "c953256e1c1b1cd6accbbfca5d47c09a9b0534f3147b125e17e59c0ae6c30ed7"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_cm1.h",
+    "sha256": "460281028a261740cd5ec86840bed01c480d70ba5b54a0f9938d4cefadfd486b"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_cm23.h",
+    "sha256": "6303efec943ca0f9eccdab8fc39200d6f95dc943d4051198e0d49f24395028a5"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_cm3.h",
+    "sha256": "368296087a925cf78133d27e0854d748605441915e0f4fece93f2f97eea68adb"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_cm33.h",
+    "sha256": "7f1b6a76b119e1e1680f756da897929f63d98133442c5115678af60adf20f1a8"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_cm4.h",
+    "sha256": "738dff259c25e68ed2529baf425315d8dae1af5dac6c11b66bfdef82e78e86c9"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_cm7.h",
+    "sha256": "6b75e3bef1eb81e0d3e2c311ad26fcdbac4cde2cd3462a62b81a23f6aec0e55f"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_sc000.h",
+    "sha256": "d1528d13fbf91da620ef977e99802d83ded093c0521c04cad128da23e3001524"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/core_sc300.h",
+    "sha256": "fa514ea0cf5327b0523c2bdfebfb76fd2e69f972e5f60fbfb94ade56b31c722b"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/mpu_armv7.h",
+    "sha256": "b0b6da4ec744b5f547a94e60e24b0a6ff6bb7307d3f81a83d0b7c3a64dc29326"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/mpu_armv8.h",
+    "sha256": "8280a1d4d3d25f60cdc05b84718cf504f02b7265fc3b7c5790cb29cd7dcf116c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/CMSIS/Include/tz_context.h",
+    "sha256": "7fcc21fc190f6fd970390e9caaa6a86d72fd10f9edf4efab36f12aecf1a8baa0"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h",
+    "sha256": "15d4df18dbf6f7a59cc9738f028e0f41412cb68456cd19dfea5ea2d15ccafe7b"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal.h",
+    "sha256": "4bf569f9e79e4823ec122fb82bbce650eddfe0c4673189748939fca731c723aa"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_adc.h",
+    "sha256": "4a0c36b2b01c25d3cfc1c0b8f3229eb76fa0f2e16fe4622650310205af487ecd"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_adc_ex.h",
+    "sha256": "4d2755bd9d5994b3ec248c407232fe2cbba7f5f1026d9284cb06a8cfc8360892"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_cortex.h",
+    "sha256": "c06a769fa95b38b34f79284f3317f5e91dafaf0e6bb455e49645f83a43229225"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_def.h",
+    "sha256": "69fdfccc54dc35d48cfede72acfaf29635da68f7233b6079a19fca29ed46e649"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_dma.h",
+    "sha256": "8ee069c14292191e69741dc70faecef486b5e6cd8acc86d8065b79ba7e98123d"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_dma_ex.h",
+    "sha256": "202e5944dcce2deeacc80903eb1ccaa5b551ba053c7ecb8ffc586d5c4f0628d7"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_exti.h",
+    "sha256": "3dd64cc8d73f0ae77d8abf87dd12f098b6b5c4d1ffbdccbfcd3387dd13bcb6b4"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_flash.h",
+    "sha256": "cfaaba9d465a7cc9f626722d6266d72b95bbe5eb55569203c339afce24e8ae9e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_flash_ex.h",
+    "sha256": "d16ae367eb79e7d0e8c7a1c20c6662723432e38328694149a712b8782f7d9605"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_gpio.h",
+    "sha256": "49b0daf00c021816dce8303439309fe8d1762e00b283b14d5f15d5b9d99d1b50"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_gpio_ex.h",
+    "sha256": "aa61d7a77edd78a27288fe2bd79c63bcf3e2f1a976e992171f161e8bad40503e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_i2c.h",
+    "sha256": "ec4d633410f9d67e4c0d8bd2455f713fe051865855e6c80448bdbd28d850bb8e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_i2c_ex.h",
+    "sha256": "76cfba8c9914f3c9ad19ae7a4746556f8c89845d299465967d5d7c98216a294c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_pwr.h",
+    "sha256": "370823441b546d45ea043493c7da94a8ea5d9b514da3fccbbbb40a4332b1660c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_pwr_ex.h",
+    "sha256": "2106ed4c79062efa103b5ec30f415a209720ec8069a852292fd54c7ab6b087b7"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_rcc.h",
+    "sha256": "1e5218c1752f51e3adcb81959ebdb7d876048d4788f99b0dad56423baf6951c0"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_rcc_ex.h",
+    "sha256": "b470a34d6648bca18b8717dfff098d67aaea60a9545e325da730f2438afcc12d"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim.h",
+    "sha256": "77435476448f4881905f5c2ad70b2353f905275af7c732bfaed1be27b469a90b"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h",
+    "sha256": "af05b0b5f55456d9a69b50175510447f20b85efb7af57d69beee822579966857"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h",
+    "sha256": "96e77e8b9165f0d18dd6eb3167866196fcdafc13364a4e572e857aed19846b51"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h",
+    "sha256": "58165e2dfa4fd28b4053355e848a18e05f8aa90a8931158f531c3582891fa3e8"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_adc.h",
+    "sha256": "fcf29ef568ac40c6edcbdfe815b047c0b8d483b314e4c613dbf50b8f7577b580"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_bus.h",
+    "sha256": "b2830a7ed0491f88ba511dedc15a44ae92ae9e505b5a3c910b0f5894d26e0a3e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_cortex.h",
+    "sha256": "64621d8b8ae39929054b53a7f9302aa7c0c2a64af8c881fecc96e3c0c4181267"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_crs.h",
+    "sha256": "fe2aa9f1985a4c2b211a93e639a1b9889b01d3eeee86c7e5b127d34a3d40f099"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_dma.h",
+    "sha256": "80360164c79035439ac8ad5bdb08acb7dd84851788171d8d4ad21fa25f190777"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_exti.h",
+    "sha256": "5af57cbe376b5e3d66d1b79639b961d7834b2bc324a6ac517c9aa6894a5c9072"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_gpio.h",
+    "sha256": "f7f7d285996c3f0b8d54c474db82dd10bb014d6ae17afc48a4ca868546183ff5"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_pwr.h",
+    "sha256": "05395d5b7633825e371821bdd01ebb14bf4a91ee87ebdd571d64329cdb8d3b7f"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_rcc.h",
+    "sha256": "e52a83bdff50320ea5f6e15d5f6695bac3a99c991c2d383c890cb1fd96f36eaa"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_system.h",
+    "sha256": "eadb9722ca4b36aff7e4a0cd3a58e26ab73ad583bbc94019b929d3ec87ac1375"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_tim.h",
+    "sha256": "79c1bb8b8173fca78efe8ac6c4c2bee7ff27788fb551ebdbbb3f17c24fe453a1"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_usart.h",
+    "sha256": "3b7ade97b600bb04326d900f858bc5346e434de6552bda844824a17a65e71f71"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_utils.h",
+    "sha256": "50cf82c6810a9315de81ecd2d97aed6bab9191b11798553b544d2bf1c8d1c243"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal.c",
+    "sha256": "beed69aee4769102e220052aa8d973f1c4d3f5724ae2fc974d4a9eb80b1e6be7"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_adc.c",
+    "sha256": "09ed5fed60f8a74e8b73ada0e1e825b08dd2cfa0549ca2a68931d1a3aa31da61"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_adc_ex.c",
+    "sha256": "02737c058749050f9996b848ce06d2768382e3f14732342d91ad1479ac8d2392"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_cortex.c",
+    "sha256": "6da76cf6e6953d71701d5f95d5c902d6e54a8fa3d4db3afb48d14e494d9aaa6c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_dma.c",
+    "sha256": "df012ae14e9e8f779e53cc91ac8276cdd82f20056768a7053add9bf21f3a777f"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_exti.c",
+    "sha256": "4a42a719c42bd753908a1a85888923462cb332d7f09cdadf4ba2b68084ba847e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_flash.c",
+    "sha256": "78d6fbb750575b75d831edf84c68c63214144fe289e9db536bc54098d65ad1ce"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_flash_ex.c",
+    "sha256": "90b7b21fede811ac962c4bfb80754db08091fb5efe54ab9abbc0a7b43d2d2e19"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_gpio.c",
+    "sha256": "1c5ab6e6a42a6191e4d0f972a417444ef8969c78aab60a0bedb630f4c6f0481a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_i2c.c",
+    "sha256": "bf4b8e6c694b24edc46ea7c604e786eef2920f79ff751dd14cc374736c357550"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_i2c_ex.c",
+    "sha256": "c0e3495bbac8f55057acbe15abd292452d0d24c149fc12b9662ea1226442046a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_pwr.c",
+    "sha256": "ee45a6f9316f87f5185408ca5b713befa6ea36cf363d68911ce18368706c9b30"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_pwr_ex.c",
+    "sha256": "7edad016e0669238730cb5a8cff52dc517b3bc7bbab24f063a2dc86e624330a8"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_rcc.c",
+    "sha256": "9a4a293ddbb8a91b26fac4b849ad2fd463878ba23ebfec4e51a9efa82255574c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_rcc_ex.c",
+    "sha256": "6b9a3ff04e67be19060556be0f347e4adf40e4244cec1cc55b9197c34f92091d"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_tim.c",
+    "sha256": "1316ba9110b70d9b4f8f11d3d58968fe0b9dec0c9a7499b782a8ad1d8eb3cd44"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_tim_ex.c",
+    "sha256": "3d048e0ed7cfd712179253e924097736e504c2087846c615a2a0116cd0d8c44d"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_uart.c",
+    "sha256": "17a87c33a0c42979520a3662d32b8dbb5445c7ab6a77155b9097ef76c7cb81b2"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_uart_ex.c",
+    "sha256": "fb6e5d18aa45e6fc0df083da5de7b955ee618bad8cec07f06089578b6bcd49f9"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/RTE/_TEST2/RTE_Components.h",
+    "sha256": "6d8a39fa7345c1ad2921d97519cee913fca1526f8d7c7c89abbf14cf0e17618b"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/RTE/_TW66GW02/RTE_Components.h",
+    "sha256": "eda78e2d8e0e82fdb580aed8d13e9e662206d4ba17d67b561e1ffdac466f3cff"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/startup_stm32f030x8.s",
+    "sha256": "bf8437ac7dc1f532b1f36e6bd203622f8df1b11e20368a435792202649f30f3a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/tw66gw02.sct",
+    "sha256": "d8281f52ae54fb3bfd1b7c2c8f36c46d51fb5330eab5f56e6634238c33b172f9"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/tw66gw02.uvprojx",
+    "sha256": "46c39277dc5871b58e1f894bb9a3b4f99dd3871d7d11ef19337c5c5afafe3fd5"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/tw66gw02/TEST2.sct",
+    "sha256": "e7a3fda057de787634157af13f8b55eead1d7e7daa494e5a0ff24cf156e8ba02"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/tw66gw02/tw66gw02.sct",
+    "sha256": "ee4f9183632123d856622fae2bc9fac168c0dae91e9edd2c8daca44cf7576e02"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/tw66gw02_app.sct",
+    "sha256": "0c02c0d1bd8dfc799754bce8e2f07689bcd9218551f4659ac0cc50735c0dc879"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/tw66gw02_direct.sct",
+    "sha256": "55472447919288ca97c60a1e42fe86c5ad0bb4bc41c8e574579d756b7b08de81"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/tw66gw02_factory.sct",
+    "sha256": "f31c801708fb44cbf62e7583a9e5e776873e1475a09f2d05b201fdc05369eb1f"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/OS/TaskScheduler.c",
+    "sha256": "69d998f729ea27a548989e07e6128ffb3a3f96a503462258ce6a7caf10173953"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/OS/TaskScheduler.h",
+    "sha256": "72c610ce58648a7c84aa15559c7dc62fee0a5f850fda069ccc2010ef2e157aee"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/PrepareFactoryBootImage.ps1",
+    "sha256": "d1b0e69383bd7906caf52e7356298f5abc91e0511a7c4fa9a0b266e6e25163c7"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ProgramBootloaderOnlyWithJLink.ps1",
+    "sha256": "4e1a4659fa06d810008009e6dc44abd9ce4b6155f55accb15351dccaa37b3473"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ProgramFactoryWithJLink.ps1",
+    "sha256": "8178582067b60b70b04af8082d86585c088584f019968fdbbbf4c7a30511306e"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ProgramSecureFactoryWithJLink.ps1",
+    "sha256": "81bbf44d8b21ab15ffedaf4d88de05f8f63e296d3920dd963f6f053bc7308a5a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ReadStartupStateWithJLink.ps1",
+    "sha256": "f8de73e0b743f7c2aed5075e73215c6ad3574661d87bc4c8f3aef8ba343a7562"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl.h",
+    "sha256": "9fff869010b58186580438d46fb8580e970567dae139e33c97713e1e1bf6c627"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_aead.h",
+    "sha256": "a25de4604faf6a08eab780b3ba5076ca8d7cf69353effe49ab6c6ba41bd47b5a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_block.h",
+    "sha256": "55f23d829b1e80b97b9e1ad3bdd94405362ee53a764d11fb2a6fb7af9f95f7eb"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_ec.h",
+    "sha256": "0519d15f1c81de3a47f1b2491bfe0945235c1d8a3a46b45548df0473a3ca23c1"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_hash.h",
+    "sha256": "5b272ac0175d33c8ab4b4d66f21974d276ffc38c0b9f16203394a5b9437ef936"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_hmac.h",
+    "sha256": "f096c677d4ef9816580a7c576de74da3275de92068640bca88738c4abe444630"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_kdf.h",
+    "sha256": "87282a4eae49e8e35bdf3279015bd2bd88a712e2ce175649a1fb77678388e6a6"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_pem.h",
+    "sha256": "31afd296d71f6dda6de2489b388e70b6dbf20e3a1af54b4c6e2eb4a823386228"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_prf.h",
+    "sha256": "cf0d7c7b480866de81dd831a53dcd9cba1b13a093edbe27d07886caaa28bbce9"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_rand.h",
+    "sha256": "b6ed02b100c1b8c50f1def69b4f357fa33a79afb5fe3e3105aca2f96cb054d0a"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_rsa.h",
+    "sha256": "73ad7f54b8215f94543d8eb5f0b8568b4f98d5e9d5fb24fad29706aa91313192"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_ssl.h",
+    "sha256": "ed3e5fd5bd627c501e9e905dbfe983e17fbae00ec47a489962da852c75e47635"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/inc/bearssl_x509.h",
+    "sha256": "6495db1c71d5f4d33bcbbf4f7558a9362626b49b79007ad275b5e1a6342d0ed4"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/codec/ccopy.c",
+    "sha256": "55b12d2cd8b96eb2b2beeca608c491aea3ab1633473565c276cbd19b850d2ecd"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/codec/dec32be.c",
+    "sha256": "0f0cd8d51e63dd301f3b5b6d5e6a38a9fd21c3d8f245d6188cbf4e03b87fa9ba"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/codec/enc32be.c",
+    "sha256": "9554454c749ef3fd4c53caa3f7f9719fd5137634d0dee99a7ea1812f605b32cc"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/config.h",
+    "sha256": "dce709cd96cdce5ca3699c58bd74b679a8f6ff2f63edf9d7c7efe9ca2651a4a1"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/hash/sha2small.c",
+    "sha256": "7fb9a302efb1818b08633ddf9bb00434d18a642991e0ea9cdac5c8f76c1efae1"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/inner.h",
+    "sha256": "d3304c959f62dd3dbb18c2a4b0f9b1306855e391e96027093605842f389c9b74"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_add.c",
+    "sha256": "3dee5b383985980df769a0df5949ac8f76a0416da0ab39276c7d30979b5dc981"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_bitlen.c",
+    "sha256": "7c3855829258df1c94f558222875badee177da72be960937f51db36454937421"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_decmod.c",
+    "sha256": "e39e9e9960812552cfef75374e81b90dddd975bf2365a07ae9c0474000746146"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_decode.c",
+    "sha256": "159179d594ddbe09a0bae99a6ef4caf45a9605bb32672acb43b6e7bcdf44d9fd"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_encode.c",
+    "sha256": "04a8874cce57d0b5f9372f1556ef8294900bff179b7a91b85bdfb44c985a58c6"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_fmont.c",
+    "sha256": "36c1fa1d3fd828fd420830c4082c7977eefc2480a4d7a4417ac04443f248f3ed"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_modpow2.c",
+    "sha256": "e4d2cc41d863e2c502aab97b29c490451f6c508fb2561bd19020f22e5c69de13"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_montmul.c",
+    "sha256": "5985a1799ec5dada6f9a45d6fbb279767dfdab23b2cc0ba78b292f30a4308043"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_muladd.c",
+    "sha256": "580bec97054cf45f1b07aedaefad19824bf8f0c428ca648b917a774fd33b0e51"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_ninv15.c",
+    "sha256": "dbc56f9b5224b138a3a450d5be93d79cf8ea609575a607fd7ef2df28bb4e4cb2"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_sub.c",
+    "sha256": "ebd4d376ec1a2917adf8f25e01392ca22f8633fc668cde2394a2fc154fb37f76"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/int/i15_tmont.c",
+    "sha256": "dc9d4fec252a3f620d8f82a77bfd83d94d111328f31a1e77ebb93a2f5bcc3ac6"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/rsa/rsa_i15_pkcs1_vrfy.c",
+    "sha256": "30832c1b5ad7c837a2213370315c09f3d7e256979d7cc5cfd7667973cc02255c"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/rsa/rsa_i15_pub.c",
+    "sha256": "4fe170ada70472e365fd250d299a7f34e2545800e046a5831181e1673ba45eca"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/ThirdParty/BearSSL/src/rsa/rsa_pkcs1_sig_unpad.c",
+    "sha256": "29e7efb628b8fedd9d7625441fb5b5f0aa75529fe33a2f0afebca01463ee5728"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Tools/PC_BLE_Test/Run-PC-BLE.ps1",
+    "sha256": "dc5e631a4a3ee6176e36b7b5fbbb15467bf0c09e39b57f5e77960b2ddc39bc25"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Tools/PC_BLE_Test/Setup-PC-BLE.ps1",
+    "sha256": "c09a0f93a2b6c9862565c966e71cef02e2474d57711cd81c51a413c1a45166fa"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Tools/PC_BLE_Test/mathis_ble.py",
+    "sha256": "b1f3a54faf3c31c82634d50dbca3b6810c074d4c03c13a7f0be723ae85b4b375"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Tools/PC_BLE_Test/protocol.py",
+    "sha256": "022da796e6e3a41eed77bf23a0637c2553509aa2c6411ee306c058d675e55abb"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/Tools/PC_BLE_Test/tests/test_protocol.py",
+    "sha256": "07dfbc267a4d03ab38d31ad6c4631ac6210093e7f719a24d121780e8e1250ad7"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/VerifySecureProvisioningWithJLink.ps1",
+    "sha256": "cd7bd7a3b450fbe7866e593308cb38363dbb33872522f1d7e96b89e66494c6f2"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/tests/test_ota_artifacts.py",
+    "sha256": "2b2cdfdaf0e00c03b4b455a11e488c53f3df1939a9a394757e6ff3c3e1124fbf"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/tests/verify_signed_ota.ps1",
+    "sha256": "b14d84cfa1e079a1d0b2ad2f978bf2f34d0108b6fe84489a929262c703de6f41"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/tw66gw02.ioc",
+    "sha256": "d368cbfcb7755b8f94444f4df1dac49c5fb4dc274726093afe32c58dfae1f28d"
+  }
+]

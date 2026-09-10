@@ -1,0 +1,3185 @@
+--- 1/tw66gw02/BSP/C8721.c
++++ 2_git/tw66gw02/BSP/C8721.c
+@@ -4,8 +4,7 @@
+   * @author 
+   * @version V1.0
+   * @date
+-  * @brief   Command and communication driver level with C8721. 
+-  *          Functional configuration and low level display function.
++  * @brief   Command and communication driver level with C8721.
+   ******************************************************************************
+   */
+ #include "C8721.h"
+@@ -26,7 +25,13 @@
+                                 114,119,124,129,134,140,146,152,
+                                 158,164,170,176,182,188,195,202,
+                                 209,216,223,230,237,244,251,255 };
+-
++/**
++  * @function CF_TimeDlyUs()
++  * --------------
++  * @brief    Provide a short delay for C8721 serial timing.
++  * @param    None
++  * @note     None
++  */
+ void		CF_TimeDlyUs(void)
+ {
+ 	 uint16_t i=0;
+@@ -115,9 +120,9 @@
+ }
+ 
+ /**
+-  * @function CF_SendCLK()
+-  * ----------------------
+-  * @brief    Sending one CLK.
++  * @function CF_SendSCK()
++  * ------------
++  * @brief    CF_SendSCK function.
+   * @param    None
+   * @note     None
+   */
+@@ -332,7 +337,13 @@
+     CF_SendCommandPackage(CmdDataUpdate); 
+     CF_SendSCK();
+ }
+-
++/**
++  * @function CF_DisplaySegment()
++  * -------------------
++  * @brief    CF_DisplaySegment function.
++  * @param    step - input parameter
++  * @note     None
++  */
+ 
+ void  CF_DisplaySegment(uint8_t step)
+ {
+--- 1/tw66gw02/BSP/C8721.h
++++ 2_git/tw66gw02/BSP/C8721.h
+@@ -1,4 +1,12 @@
+-
++/**
++  ******************************************************************************
++  * @file    C8721.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   C8721 command, display buffer and driver interface definitions.
++  ******************************************************************************
++  */
+ /* Define to prevent recursive inclusion --------------------------------------*/
+ #ifndef __C8721_H__
+ #define __C8721_H__
+--- 1/tw66gw02/BSP/battery_level.c
++++ 2_git/tw66gw02/BSP/battery_level.c
+@@ -1,5 +1,13 @@
++/**
++  ******************************************************************************
++  * @file    battery_level.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Battery level lookup and power switching implementation.
++  ******************************************************************************
++  */
+ ///******************************************************************************
+-// * @file    battery_level.c
+ // * @brief   Battery Level Monitoring Module Implementation
+ // * @details Implements battery voltage monitoring, percentage calculation, and
+ // *          power source management for 4-cell 18650 battery pack
+--- 1/tw66gw02/BSP/battery_level.h
++++ 2_git/tw66gw02/BSP/battery_level.h
+@@ -1,9 +1,12 @@
+-/******************************************************************************
+- * @file    battery_level.h
+- * @brief   Battery Level Monitoring Module Header File
+- * @details This module monitors battery voltage and calculates battery level
+- *          percentage for display and power management
+- ******************************************************************************/
++/**
++  ******************************************************************************
++  * @file    battery_level.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Battery level monitoring interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__BATTERY_LEVEL_H__
+ #define		__BATTERY_LEVEL_H__
+ #include "config.h"
+--- 1/tw66gw02/BSP/bh66f5242.c
++++ 2_git/tw66gw02/BSP/bh66f5242.c
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    bh66f5242.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   BH66F5242 temperature acquisition implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+ 
+ /* Compatibility wrapper layer.
+@@ -10,32 +19,68 @@
+ //{
+ //    /* Kept for compatibility with legacy calls; handled in TempGetTask(). */
+ //}
+-
++/**
++  * @function ThermocoupleTempGet_Task()
++  * --------------------------
++  * @brief    Execute thermocouple temperature acquisition task.
++  * @param    None
++  * @note     None
++  */
+ Temp_GetTypeDef ThermocoupleTempGet_Task(void)
+ {
+     TempGetTask();
+     return Temperature;
+ }
+-
++/**
++  * @function TempGet_Init()
++  * --------------
++  * @brief    Initialize temperature acquisition resources.
++  * @param    None
++  * @note     None
++  */
+ void TempGet_Init(void)
+ {
+     Temp_Get_Init();
+ }
+-
++/**
++  * @function TempInit()
++  * ------------
++  * @brief    Initialize temperature module state.
++  * @param    None
++  * @note     None
++  */
+ void TempInit(void)
+ {
+     Temp_Get_Init();
+ }
+-
++/**
++  * @function TempStabDis()
++  * -------------
++  * @brief    Stabilize temperature display output.
++  * @param    None
++  * @note     None
++  */
+ void TempStabDis(void)
+ {
+ }
+-
++/**
++  * @function LCDDisplayCalculation()
++  * -----------------------
++  * @brief    Calculate LCD display temperature from sampled data.
++  * @param    t - input parameter
++  * @note     None
++  */
+ void LCDDisplayCalculation(Temp_GetTypeDef* t)
+ {
+     (void)t;
+ }
+-
++/**
++  * @function adc_filter()
++  * ------------
++  * @brief    Apply ADC moving average filter.
++  * @param    channel - input parameter
++  * @note     None
++  */
+ uint32_t adc_filter(uint8_t channel)
+ {
+     (void)channel;
+--- 1/tw66gw02/BSP/bh66f5242.h
++++ 2_git/tw66gw02/BSP/bh66f5242.h
+@@ -1,10 +1,12 @@
+-/******************************************************************************
+- * @file    bh66f5242.h
+- * @brief   BH66F5242 Temperature Acquisition Module Header File
+- * @details This module handles temperature reading from RTD (PT1000) sensors
+- *          and thermocouples via UART communication with BH66F5242 chips,
+- *          includes ADC filtering, calibration, and LCD display calculation
+- ******************************************************************************/
++/**
++  ******************************************************************************
++  * @file    bh66f5242.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   BH66F5242 temperature acquisition interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__BH66F5242_H__
+ #define		__BH66F5242_H__
+ #include "config.h"
+--- 1/tw66gw02/BSP/buzz.c
++++ 2_git/tw66gw02/BSP/buzz.c
+@@ -1,23 +1,21 @@
++/**
++  ******************************************************************************
++  * @file    buzz.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Buzzer driver implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+-/**
+- * @file    buzz.c
+- * @brief   蜂鸣器驱动文件
+- * @author  niu
+- * @date    2026.02.21
+- * @version 1.0
+- * 
+- * 详细描述:该文件实现了蜂鸣器功能模块，可以控制蜂鸣器的开启和关闭。对蜂鸣器的控制接口为GPIO口，
+-   通过控制GPIO口的高低电平，输出控制蜂鸣器的开启及关闭。对应硬件标准库中电路编码C01电路。
+- */
+ /***************************************************************************************************************************************************************/ 
+ /**
+- * @brief   buzzer函数功能简述
+- * @param   buzzer_control     蜂鸣器的开启和关闭 :0 关闭蜂鸣器  1 开启蜂鸣器  
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数通过传入形式参数，来控制蜂鸣器的开启和关闭，常常应用于系统声音报警，设定时间到提示，按钮触摸音。
+- */
++  * @function buzzer()
++  * ------------
++  * @brief    Control buzzer output timing.
++  * @param    buzzer_control - input parameter
++  * @note     None
++  */
+ void buzzer(uint8_t buzzer_control)
+ {
+        if(buzzer_control){buzzer_on_gpio;}
+--- 1/tw66gw02/BSP/buzz.h
++++ 2_git/tw66gw02/BSP/buzz.h
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    buzz.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Buzzer driver interface definitions.
++  ******************************************************************************
++  */
+ #ifndef __BUZZ_H__
+ #define __BUZZ_H__
+ #include "config.h"
+--- 1/tw66gw02/BSP/config.h
++++ 2_git/tw66gw02/BSP/config.h
+@@ -1,6 +1,14 @@
++/**
++  ******************************************************************************
++  * @file    config.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   System-wide configuration, includes, macros and shared data declarations.
++  ******************************************************************************
++  */
+ #ifndef		__CONFIG_H__
+ #define		__CONFIG_H__
+-/***************************单片机的头文件******************************/
+ #include <string.h>
+ #include <stdio.h>
+ #include <math.h>
+@@ -8,13 +16,11 @@
+ #include "stdint.h"
+ #include "stdio.h"
+ #include "stm32f030x8.h"
+-/***************************片上外设的头文件*****************************/
+ #include "gpio.h"
+ #include "adc.h"
+ #include "dma.h"
+ #include "tim.h"
+ #include "usart.h"
+-/***************************系统项目的头文件*****************************/
+ //BSP
+ #include "buzz.h"
+ #include "key.h"
+@@ -36,13 +42,10 @@
+ //#include "gagent_md5.h"
+ //OS
+ #include "TaskScheduler.h"
+-//系统参数的定义
+ /****************************************************************************************************************/
+-//IO口操作宏定义
+ #define BITBAND(addr, bitnum) ((addr & 0xF0000000)+0x2000000+((addr &0xFFFFF)<<5)+(bitnum<<2)) 
+ #define MEM_ADDR(addr)  *((volatile unsigned long  *)(addr)) 
+ #define BIT_ADDR(addr, bitnum)   MEM_ADDR(BITBAND(addr, bitnum)) 
+-//IO口地址映射
+ #define GPIOA_ODR_Addr    (GPIOA_BASE+12) //0x4001080C 
+ #define GPIOB_ODR_Addr    (GPIOB_BASE+12) //0x40010C0C 
+ #define GPIOC_ODR_Addr    (GPIOC_BASE+12) //0x4001100C 
+@@ -57,8 +60,6 @@
+ #define GPIOE_IDR_Addr    (GPIOE_BASE+8) //0x40011808 
+ #define GPIOF_IDR_Addr    (GPIOF_BASE+8) //0x40011A08 
+ #define GPIOG_IDR_Addr    (GPIOG_BASE+8) //0x40011E08 
+-//IO口操作,只对单一的IO口!
+-//确保n的值小于16!
+ #define PAout(n)   BIT_ADDR(GPIOA_ODR_Addr,n)
+ #define PAin(n)    BIT_ADDR(GPIOA_IDR_Addr,n)
+ #define PBout(n)   BIT_ADDR(GPIOB_ODR_Addr,n)
+--- 1/tw66gw02/BSP/key.c
++++ 2_git/tw66gw02/BSP/key.c
+@@ -1,7 +1,23 @@
++/**
++  ******************************************************************************
++  * @file    key.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Key scan, key event dispatch and key action implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+ 
+ _KeyState KeyState[KeyNumber];
+-
++/**
++  * @function ConvertTempToUnit()
++  * -------------------
++  * @brief    Convert a temperature value between Celsius and Fahrenheit units.
++  * @param    value - input parameter
++  * @param    toUnit - input parameter
++  * @note     None
++  */
+ static int16_t ConvertTempToUnit(int16_t value, uint8_t toUnit)
+ {
+     int32_t t = (int32_t)value;
+@@ -16,7 +32,13 @@
+     if (t < -200) { t = -200; }
+     return (int16_t)t;
+ }
+-
++/**
++  * @function SyncTempsAfterUnitSwitch()
++  * --------------------------
++  * @brief    Synchronize cached temperatures after a unit switch.
++  * @param    toUnit - input parameter
++  * @note     None
++  */
+ static void SyncTempsAfterUnitSwitch(uint8_t toUnit)
+ {
+     uint8_t i;
+@@ -26,7 +48,13 @@
+         system_data.pt1000_temp[i] = ConvertTempToUnit(system_data.pt1000_temp[i], toUnit);
+     }
+ }
+-
++/**
++  * @function IsDisplayDashOnlyAlarm()
++  * ------------------------
++  * @brief    Check whether the main display should keep dash-only alarm state.
++  * @param    None
++  * @note     None
++  */
+ static uint8_t IsDisplayDashOnlyAlarm(void)
+ {
+     uint8_t inv0, inv1, inv2;
+@@ -35,7 +63,13 @@
+     inv2 = (uint8_t)(system_data.pt1000_temp[2] == HaveTempErr);
+     return (uint8_t)(inv0 && inv1 && inv2);
+ }
+-
++/**
++  * @function Key_Scan()
++  * ------------
++  * @brief    Scan keys and update key press states.
++  * @param    None
++  * @note     None
++  */
+ void Key_Scan(void)
+ {
+     static uint16_t time_count[KeyNumber];
+@@ -89,7 +123,18 @@
+         }
+     }
+ }
+-
++/**
++  * @function KeyRespose()
++  * ------------
++  * @brief    Dispatch key events to the configured callback functions.
++  * @param    Key0ShortPress - input parameter
++  * @param    Key1ShortPress - input parameter
++  * @param    Key0LongPress - input parameter
++  * @param    Key1LongPress - input parameter
++  * @param    Key0VeryLongPress - input parameter
++  * @param    Key1VeryLongPress - input parameter
++  * @note     None
++  */
+ void KeyRespose(void(*Key0ShortPress)(),
+                 void(*Key1ShortPress)(),
+                 void(*Key0LongPress)(),
+@@ -124,9 +169,21 @@
+         }
+     }
+ }
+-
++/**
++  * @function Key_Respose_Nothing()
++  * ---------------------
++  * @brief    Provide an empty key response callback.
++  * @param    None
++  * @note     None
++  */
+ void Key_Respose_Nothing(void) {}
+-
++/**
++  * @function Key0_short_press()
++  * ------------------
++  * @brief    Handle KEY0 short press action.
++  * @param    None
++  * @note     None
++  */
+ void Key0_short_press(void)
+ {
+     switch (work_process)
+@@ -147,7 +204,13 @@
+             break;
+     }
+ }
+-
++/**
++  * @function Key1_short_press()
++  * ------------------
++  * @brief    Handle KEY1 short press action.
++  * @param    None
++  * @note     None
++  */
+ void Key1_short_press(void)
+ {
+     switch (work_process)
+@@ -172,14 +235,26 @@
+             break;
+     }
+ }
+-
++/**
++  * @function Key0_long_press()
++  * -----------------
++  * @brief    Handle KEY0 long press action.
++  * @param    None
++  * @note     None
++  */
+ void Key0_long_press(void)
+ {
+     /* KEY0 >=1s: force shutdown from any state (no release required). */
+     work_process = shutdown;
+     UI_NotifyLocalInteraction();
+ }
+-
++/**
++  * @function Key1_long_press()
++  * -----------------
++  * @brief    Handle KEY1 long press action.
++  * @param    None
++  * @note     None
++  */
+ void Key1_long_press(void)
+ {
+     switch (work_process)
+@@ -195,12 +270,24 @@
+             break;
+     }
+ }
+-
++/**
++  * @function Key0_very_long_press()
++  * ----------------------
++  * @brief    Handle KEY0 very long press action.
++  * @param    None
++  * @note     None
++  */
+ void Key0_very_long_press(void)
+ {
+     Key0_long_press();
+ }
+-
++/**
++  * @function Key1_very_long_press()
++  * ----------------------
++  * @brief    Handle KEY1 very long press action.
++  * @param    None
++  * @note     None
++  */
+ void Key1_very_long_press(void)
+ {
+     switch (work_process)
+--- 1/tw66gw02/BSP/key.h
++++ 2_git/tw66gw02/BSP/key.h
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    key.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Key scan and key event interface definitions.
++  ******************************************************************************
++  */
+ #ifndef  __KEY_H__
+ #define   __KEY_H__
+ #include "config.h"
+@@ -20,7 +29,7 @@
+                 void(*Key1ShortPress)(),
+                 void(*Key0LongPress)(),
+                 void(*Key1LongPress)(),
+-                void(*Key0VeryLongPress)(),   // 新增超长按回调
++                void(*Key0VeryLongPress)(),
+                 void(*Key1VeryLongPress)());
+ void Key_Respose_Nothing(void);  
+ void Key0_short_press(void);
+--- 1/tw66gw02/BSP/screen_c8721.c
++++ 2_git/tw66gw02/BSP/screen_c8721.c
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    screen_c8721.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   C8721 screen mapping and display task implementation.
++  ******************************************************************************
++  */
+ #include "screen_c8721.h"
+ #include "C8721.h"
+ #include "config.h"
+@@ -36,10 +45,13 @@
+ {
+     86u, 158u, 230u, 302u, 374u, 446u, 518u, 590u, 662u
+ };
+-/*
+- * Port implementations for C8721 driver.
+- * C8721.h maps CF_SCL_Write(x) -> SCL_Write(x) and CF_SDA_Write(x) -> SDA_Write(x).
+- */
++/**
++  * @function SCL_Write()
++  * ------------
++  * @brief    Drive the C8721 SCL pin to the requested level.
++  * @param    x - input parameter
++  * @note     None
++  */
+ void SCL_Write(uint8_t x)
+ {
+     if (x)
+@@ -47,7 +59,13 @@
+     else
+         C8721_SCL_L();
+ }
+-
++/**
++  * @function SDA_Write()
++  * ------------
++  * @brief    Drive the C8721 SDA pin to the requested level.
++  * @param    x - input parameter
++  * @note     None
++  */
+ void SDA_Write(uint8_t x)
+ {
+     if (x)
+@@ -56,15 +74,13 @@
+         C8721_SDA_L();
+ }
+ 
+-/*
+- * Convert DisplayMapTable to CF_DisplayBuf.
+- *
+- * TM1640 layout:  DisplayMapTable[g] bit s  = LED on/off at grid g, seg s
+- * C8721 layout:   CF_DisplayBuf[g + s*16]   = PWM brightness for that LED
+- *
+- * Mapping: g = 0..15 (SEG axis), s = 0..7 (COM axis)
+- *   bit=1 -> CF_LUMI_FULL (0xFF), bit=0 -> CF_LUMI_OFF (0x00)
+- */
++/**
++  * @function Screen_MapToDisplayBuf()
++  * ------------------------
++  * @brief    Map logical display bits into the C8721 PWM display buffer.
++  * @param    None
++  * @note     None
++  */
+ static void Screen_MapToDisplayBuf(void)
+ {
+     uint8_t g, s;
+@@ -76,10 +92,13 @@
+     }
+ }
+ 
+-/*
+- * Initialize C8721 driver and clear display.
+- * Call once at startup before the main loop.
+- */
++/**
++  * @function Screen_C8721_Init()
++  * -------------------
++  * @brief    Initialize the C8721 display driver and clear the screen.
++  * @param    None
++  * @note     None
++  */
+ void Screen_C8721_Init(void)
+ {
+     CF_Init();
+@@ -87,9 +106,13 @@
+     CF_DisplayBufAutomatic();
+ }
+ 
+-/* Write a 7-segment code to all three display digit positions simultaneously.
+- * Each digit uses two complementary hardware banks (e.g. SearHundred0 and
+- * SearHundred1) that are driven with identical segment data. */
++/**
++  * @function ShowTemp3Digits()
++  * -----------------
++  * @brief    Write a signed temperature value to the three display digits.
++  * @param    displayTemp - input parameter
++  * @note     None
++  */
+ static void ShowTemp3Digits(int16_t displayTemp)
+ {
+     uint8_t hundred, ten, low;
+@@ -126,7 +149,15 @@
+     Screen_Data.DisplayMap.SearLow1     = DigitalTubeDisplayTable[low];
+ }
+ 
+-/* Write raw 7-segment codes to the three digit positions (for special strings) */
++/**
++  * @function ShowSpecialChars()
++  * ------------------
++  * @brief    Write raw segment codes to the three display digits.
++  * @param    charH - input parameter
++  * @param    charT - input parameter
++  * @param    charL - input parameter
++  * @note     None
++  */
+ static void ShowSpecialChars(uint8 charH, uint8 charT, uint8 charL)
+ {
+     /* Mask to 7 bits: bit 7 belongs to the icon field, not the digit */
+@@ -140,7 +171,13 @@
+ 
+ 
+ 
+-/* Apply temperature-unit indicators [9][10] for the current tempUnit */
++/**
++  * @function ApplyUnitIcons()
++  * ----------------
++  * @brief    Apply Celsius or Fahrenheit unit icons.
++  * @param    None
++  * @note     None
++  */
+ static void ApplyUnitIcons(void)
+ {
+     if(system_data.units == unitC)
+@@ -155,7 +192,13 @@
+     }
+ }
+ 
+-/* Turn off all temperature-source icons [6][7][8][13] */
++/**
++  * @function ClearTempSourceIcons()
++  * ----------------------
++  * @brief    Clear all temperature source icons.
++  * @param    None
++  * @note     None
++  */
+ static void ClearTempSourceIcons(void)
+ {
+     Screen_Data.DisplayMap.PIcon       = 0u;  /* [6]  Probe icon          */
+@@ -166,7 +209,13 @@
+     Screen_Data.DisplayMap.CavityIcon3 = 0u;
+ }
+ 
+-/* Apply source icon for the current display mode */
++/**
++  * @function ApplySourceIcon()
++  * -----------------
++  * @brief    Apply the source icon for the current display mode.
++  * @param    None
++  * @note     None
++  */
+ static void ApplySourceIcon(void)
+ {
+     ClearTempSourceIcons();
+@@ -197,8 +246,13 @@
+     }
+ }
+ 
+-/* Update the Temperature Gauge Line .
+- * displayTemp is already in the currently selected unit. */
++/**
++  * @function UpdateGauge()
++  * -------------
++  * @brief    Update the temperature gauge line according to the display temperature.
++  * @param    displayTemp - input parameter
++  * @note     None
++  */
+ static void UpdateGauge(uint16_t displayTemp)
+ {
+     const uint16_t *thresh;
+@@ -231,7 +285,13 @@
+     Screen_Data.DisplayMap.TempI = (segOn >= 9u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+ }
+ 
+-/* Clear all gauge segments */
++/**
++  * @function ClearGauge()
++  * ------------
++  * @brief    Turn off all temperature gauge segments.
++  * @param    None
++  * @note     None
++  */
+ static void ClearGauge(void)
+ {
+     Screen_Data.DisplayMap.TempA = GAUGE_SEG_OFF;
+@@ -251,7 +311,13 @@
+  * Call periodically (e.g. every 10 ms) from the scheduler .
+  */
+ uint8_t  displaystep=0;
+-
++/**
++  * @function DisplayTask()
++  * -------------
++  * @brief    Refresh the display buffer and send it to the C8721 driver.
++  * @param    None
++  * @note     None
++  */
+ void DisplayTask(void)
+ {
+     int16_t displayTemp;
+--- 1/tw66gw02/BSP/screen_c8721.h
++++ 2_git/tw66gw02/BSP/screen_c8721.h
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    screen_c8721.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   C8721 screen mapping and display interface definitions.
++  ******************************************************************************
++  */
+ #ifndef __SCREEN_C8721_H__
+ #define __SCREEN_C8721_H__
+ 
+@@ -89,7 +98,6 @@
+ 
+ extern _screen_data Screen_Data;
+ 
+-// 在某个公共头文件或本文件顶部定义
+ typedef enum {
+     DISPLAY_MODE_D_SURFACE,   // 0
+     DISPLAY_MODE_O_SURFACE,   // 1
+--- 1/tw66gw02/BSP/temp.c
++++ 2_git/tw66gw02/BSP/temp.c
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    temp.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Temperature and battery acquisition implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+ #include "temp.h"
+ 
+@@ -48,9 +57,12 @@
+ };
+ 
+ /**
+- * @brief Initialize ADC channel accumulation context.
+- * @details Clears max/min/sum/filtered voltage buffers before a new ADC sampling round.
+- */
++  * @function channel_env_init()
++  * ------------------
++  * @brief    Initialize ADC channel accumulation context.
++  * @param    None
++  * @note     None
++  */
+ void channel_env_init(void)
+ {
+     uint8_t i;
+@@ -65,9 +77,12 @@
+ }
+ 
+ /**
+- * @brief Acquire filtered ADC values for all local channels.
+- * @details Runs ADC calibration, samples multiple frames via DMA, removes max/min, and keeps mean value.
+- */
++  * @function Get_Filter_ADC12bitResult()
++  * ---------------------------
++  * @brief    Acquire filtered ADC values for all local channels.
++  * @param    None
++  * @note     None
++  */
+ void Get_Filter_ADC12bitResult(void)
+ {
+     uint16_t i, j;
+@@ -99,11 +114,12 @@
+ }
+ 
+ /**
+- * @brief Convert PT1000 resistance to temperature in Celsius.
+- * @details Uses binary search on a lookup table (-20C to 455C) and linear interpolation between points.
+- * @param fR PT1000 resistance value scaled by 10.
+- * @return Temperature in Celsius.
+- */
++  * @function PT1000_CalculateTemperature()
++  * -----------------------------
++  * @brief    Convert PT1000 resistance to Celsius temperature.
++  * @param    fR - input parameter
++  * @note     None
++  */
+ float PT1000_CalculateTemperature(uint16_t fR)
+ {
+     const int16_t temp_min = -20;
+@@ -157,11 +173,12 @@
+ }
+ 
+ /**
+- * @brief Convert raw ADC channel reading to probe temperature.
+- * @details Translates ADC voltage to PT1000 resistance and returns Fahrenheit, TempErr, or TempHigh sentinel.
+- * @param channel ADC channel index, where channel 0 is probe temperature.
+- * @return Probe temperature in Fahrenheit or error sentinel.
+- */
++  * @function Temp_Get()
++  * ------------
++  * @brief    Convert raw ADC reading to probe temperature.
++  * @param    channel - input parameter
++  * @note     None
++  */
+ uint16_t Temp_Get(uint8_t channel) 
+ {
+ 	uint16_t temp;
+@@ -194,12 +211,13 @@
+ }
+ 
+ /**
+- * @brief Compute arithmetic mean of a temperature buffer.
+- * @details Sums all items in the provided array and returns integer average.
+- * @param arr Input temperature buffer.
+- * @param Length Number of elements to average.
+- * @return Averaged temperature value.
+- */
++  * @function Average_Temp()
++  * --------------
++  * @brief    Calculate the arithmetic average of a temperature buffer.
++  * @param    arr - input parameter
++  * @param    Length - input parameter
++  * @note     None
++  */
+ uint16_t  Average_Temp(uint16_t arr[],uint8_t Length)
+ {
+ 	static uint8_t i = 0;
+@@ -218,13 +236,15 @@
+ }
+ 
+ /**
+- * @brief Push one new sample into a fixed-size history buffer.
+- * @details Shifts the buffer to the left and appends the latest sample at the tail.
+- * @param arr Target history buffer.
+- * @param Length Buffer length.
+- * @param New_Data New sample to append.
+- */
+-void Add_Temp(uint16_t arr[],uint8_t Length,uint16_t New_Data)		//在数组中加入一个新元素
++  * @function Add_Temp()
++  * ------------
++  * @brief    Push one new sample into a fixed-size history buffer.
++  * @param    arr - target history buffer
++  * @param    Length - buffer length
++  * @param    New_Data - new sample to append
++  * @note     None
++  */
++void Add_Temp(uint16_t arr[],uint8_t Length,uint16_t New_Data)
+ {
+ 	uint16_t *str = arr;
+ 	static uint8_t i = 0;
+@@ -237,14 +257,15 @@
+ 
+ 
+ /**
+- * @brief Update moving-average state for probe temperature.
+- * @details Fills the buffer during startup, then keeps a rolling window and returns current average.
+- * @param arr History buffer used for smoothing.
+- * @param length Window length.
+- * @param temp Latest probe sample.
+- * @return Smoothed probe temperature sample.
+- */
+-uint16_t Temp_Handle(uint16_t arr[],uint8_t length, uint16_t temp)	//温度处理
++  * @function Temp_Handle()
++  * ---------------
++  * @brief    Update moving-average state for probe temperature.
++  * @param    arr - history buffer used for smoothing
++  * @param    length - window length
++  * @param    temp - latest probe sample
++  * @note     None
++  */
++uint16_t Temp_Handle(uint16_t arr[],uint8_t length, uint16_t temp)
+ {
+ 	static uint8_t Size=0;
+ 	static uint16_t InTtemp=0;
+@@ -266,11 +287,12 @@
+ 
+ /* channel: ADC1=battery voltage */
+ /**
+- * @brief Convert ADC reading to battery voltage in millivolts.
+- * @details Applies linear scaling from 12-bit ADC code to the 3.3V reference domain.
+- * @param channel ADC channel index, where channel 1 is battery voltage.
+- * @return Battery voltage in mV.
+- */
++  * @function Battery_Get_mV()
++  * ----------------
++  * @brief    Convert ADC reading to battery voltage in millivolts.
++  * @param    channel - input parameter
++  * @note     None
++  */
+ static uint16_t Battery_Get_mV(uint8_t channel)
+ {
+     uint32_t vol = (uint32_t)ch_env[channel].vol;
+@@ -278,10 +300,12 @@
+ }
+ 
+ /**
+- * @brief Update low-battery flag with debounce and hysteresis.
+- * @details Sets or clears global low-battery state only after consecutive threshold confirmations.
+- * @param batt_mV Current battery voltage in mV.
+- */
++  * @function UpdateBatteryLevel()
++  * --------------------
++  * @brief    Update battery low flag with debounce and hysteresis.
++  * @param    batt_mV - input parameter
++  * @note     None
++  */
+ static void UpdateBatteryLevel(uint16_t batt_mV)
+ {
+     static uint8_t low_cnt = 0u;
+@@ -303,11 +327,12 @@
+ }
+ 
+ /**
+- * @brief Parse one big-endian 32-bit temperature payload into Celsius.
+- * @details Converts source scaling (/100), validates protocol sentinels and bounds, then returns value or HaveTempErr.
+- * @param buf Pointer to 4-byte big-endian payload.
+- * @return Temperature in Celsius or HaveTempErr.
+- */
++  * @function parse_be32_to_int16_c()
++  * -----------------------
++  * @brief    Parse a big-endian 32-bit temperature payload into Celsius.
++  * @param    buf - input parameter
++  * @note     None
++  */
+ static int16_t parse_be32_to_int16_c(const uint8_t *buf)
+ {
+     int32_t raw;
+@@ -329,9 +354,12 @@
+ }
+ 
+ /**
+- * @brief Request and parse three external PT1000 temperatures via UART2.
+- * @details Sends poll frame, checks RX DMA completion, validates frame length, and updates channel cache.
+- */
++  * @function update_three_temps_from_uart2()
++  * -------------------------------
++  * @brief    Request and parse three external PT1000 temperatures by UART2.
++  * @param    None
++  * @note     None
++  */
+ static void update_three_temps_from_uart2(void)
+ {
+     uint8_t tx_req[8] = {0xAA, 0x55, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
+@@ -358,18 +386,24 @@
+ }
+ 
+ /**
+- * @brief Initialize temperature acquisition peripherals.
+- * @details Initializes ADC hardware used by local probe and battery acquisition.
+- */
++  * @function Temp_Get_Init()
++  * ---------------
++  * @brief    Initialize temperature acquisition peripherals.
++  * @param    None
++  * @note     None
++  */
+ void Temp_Get_Init(void)
+ {
+     MX_ADC_Init();
+ }
+ 
+ /**
+- * @brief Run one temperature acquisition and state-update cycle.
+- * @details Updates main channels from UART, probe from ADC with filtering and protections, and battery status.
+- */
++  * @function TempGetTask()
++  * -------------
++  * @brief    Run one temperature acquisition and state update cycle.
++  * @param    None
++  * @note     None
++  */
+ void TempGetTask(void)
+ {
+     uint8_t i;
+@@ -625,10 +659,12 @@
+ }
+ 
+ /**
+- * @brief ADC conversion complete callback.
+- * @details Clears DMA wait flag used by synchronous ADC sampling routine when ADC1 transfer finishes.
+- * @param hadc ADC handle provided by HAL.
+- */
++  * @function HAL_ADC_ConvCpltCallback()
++  * --------------------------
++  * @brief    Handle ADC conversion complete callback.
++  * @param    hadc - input parameter
++  * @note     None
++  */
+ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+ {
+     if (hadc->Instance == ADC1)
+--- 1/tw66gw02/BSP/temp.h
++++ 2_git/tw66gw02/BSP/temp.h
+@@ -1,11 +1,20 @@
++/**
++  ******************************************************************************
++  * @file    temp.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Temperature and battery acquisition interface definitions.
++  ******************************************************************************
++  */
+ #ifndef   __TEMP_H__
+ #define   __TEMP_H__
+ #include "config.h"
+ #define TempCount 4
+ #define USR_ADC_COUNT	4
+ #define USR_ADC_CH_NR	2
+-#define  TempErr 999             //计算出错/探头断开
+-#define  TempHigh 998            //探头存在但温度超上限
++#define  TempErr 999
++#define  TempHigh 998
+ typedef struct channel_evn_s {
+ 	uint16_t max;
+ 	uint16_t min;
+--- 1/tw66gw02/BSP/wireless.c
++++ 2_git/tw66gw02/BSP/wireless.c
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    wireless.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Wireless protocol receive, parse, dispatch and reply module.
++  ******************************************************************************
++  */
+ #include "config.h"
+ 
+ /*
+@@ -28,7 +37,13 @@
+ 
+ static uint8_t s_tx[WL_TX_MAX];
+ static uint8_t s_bt_status = 0u;
+-
++/**
++  * @function wl_get_probe_temp()
++  * -------------------
++  * @brief    Get the current probe temperature for wireless reporting.
++  * @param    None
++  * @note     None
++  */
+ static uint16_t wl_get_probe_temp(void)
+ {
+     if (g_probe_connected == 0u) {
+@@ -36,14 +51,26 @@
+     }
+     return system_data.pt1000_temp[3];
+ }
+-
++/**
++  * @function wl_get_temp_by_channel()
++  * ------------------------
++  * @brief    Get a temperature value by wireless protocol channel.
++  * @param    ch - input parameter
++  * @note     None
++  */
+ static uint16_t wl_get_temp_by_channel(uint8_t ch)
+ {
+     if (ch == 0x01u) { return system_data.pt1000_temp[3]; } /* probe1 in legacy protocol */
+     if (ch == 0x02u) { return HaveTempErr; }                /* probe2 unsupported */
+     return HaveTempErr;
+ }
+-
++/**
++  * @function wl_get_display_main_temp()
++  * --------------------------
++  * @brief    Get the main display temperature for wireless reporting.
++  * @param    None
++  * @note     None
++  */
+ static uint16_t wl_get_display_main_temp(void)
+ {
+     if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return system_data.pt1000_temp[1]; }
+@@ -52,7 +79,16 @@
+     if (DisplayMode == DISPLAY_MODE_PROBE)     { return wl_get_probe_temp(); }
+     return system_data.pt1000_temp[0];
+ }
+-
++/**
++  * @function wl_split3()
++  * ------------
++  * @brief    Split a temperature value into three display digits.
++  * @param    v - input parameter
++  * @param    h - input parameter
++  * @param    t - input parameter
++  * @param    l - input parameter
++  * @note     None
++  */
+ static void wl_split3(uint16_t v, uint8_t *h, uint8_t *t, uint8_t *l)
+ {
+     if (v > 999u) { v = 999u; }
+@@ -60,7 +96,14 @@
+     *t = (uint8_t)((v / 10u) % 10u);
+     *l = (uint8_t)(v % 10u);
+ }
+-
++/**
++  * @function wl_send()
++  * ------------
++  * @brief    Send one wireless protocol frame.
++  * @param    buf - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_send(const uint8_t *buf, uint16_t len)
+ {
+     if ((buf == NULL) || (len == 0u)) {
+@@ -68,7 +111,14 @@
+     }
+     USART1_SendData((uint8_t *)buf, len);
+ }
+-
++/**
++  * @function wl_ack_cmd2()
++  * -------------
++  * @brief    Reply to a two-byte wireless command acknowledgement.
++  * @param    cmd - input parameter
++  * @param    p2 - input parameter
++  * @note     None
++  */
+ static void wl_ack_cmd2(uint8_t cmd, uint8_t p2)
+ {
+     s_tx[0] = WL_HEAD;
+@@ -77,7 +127,14 @@
+     s_tx[3] = WL_TAIL;
+     wl_send(s_tx, 4u);
+ }
+-
++/**
++  * @function wl_handle_power()
++  * -----------------
++  * @brief    Handle wireless power command.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_power(const uint8_t *rx, uint16_t len)
+ {
+     (void)len;
+@@ -89,7 +146,14 @@
+     UI_NotifyLocalInteraction();
+     wl_ack_cmd2(WL_CMD_POWER, rx[2]);
+ }
+-
++/**
++  * @function wl_handle_temp_up()
++  * -------------------
++  * @brief    Handle wireless temperature increment command.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_temp_up(const uint8_t *rx, uint16_t len)
+ {
+     uint16_t step;
+@@ -109,7 +173,14 @@
+     s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
+     wl_send(s_tx, 7u);
+ }
+-
++/**
++  * @function wl_handle_temp_down()
++  * ---------------------
++  * @brief    Handle wireless temperature decrement command.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_temp_down(const uint8_t *rx, uint16_t len)
+ {
+     uint16_t step;
+@@ -130,7 +201,14 @@
+     s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
+     wl_send(s_tx, 7u);
+ }
+-
++/**
++  * @function wl_handle_set_temp()
++  * --------------------
++  * @brief    Handle wireless set-temperature command.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_set_temp(const uint8_t *rx, uint16_t len)
+ {
+     uint16_t v;
+@@ -150,7 +228,14 @@
+     s_tx[2] = rx[2]; s_tx[3] = rx[3]; s_tx[4] = rx[4]; s_tx[5] = rx[5]; s_tx[6] = WL_TAIL;
+     wl_send(s_tx, 7u);
+ }
+-
++/**
++  * @function wl_handle_jump_set()
++  * --------------------
++  * @brief    Handle wireless jump-to-set command.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_jump_set(const uint8_t *rx, uint16_t len)
+ {
+     uint8_t h, t, l;
+@@ -161,7 +246,14 @@
+     s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
+     wl_send(s_tx, 7u);
+ }
+-
++/**
++  * @function wl_handle_query_probe()
++  * -----------------------
++  * @brief    Handle wireless probe temperature query.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_query_probe(const uint8_t *rx, uint16_t len)
+ {
+     uint16_t p;
+@@ -177,7 +269,14 @@
+     s_tx[6] = h; s_tx[7] = t; s_tx[8] = l; s_tx[9] = WL_TAIL;
+     wl_send(s_tx, 10u);
+ }
+-
++/**
++  * @function wl_handle_unit()
++  * ----------------
++  * @brief    Handle wireless unit switch command.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_unit(const uint8_t *rx, uint16_t len)
+ {
+     (void)len;
+@@ -186,7 +285,14 @@
+     UI_NotifyLocalInteraction();
+     wl_ack_cmd2(WL_CMD_UNIT, rx[2]);
+ }
+-
++/**
++  * @function wl_handle_query_status()
++  * ------------------------
++  * @brief    Handle wireless status query command.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_query_status(const uint8_t *rx, uint16_t len)
+ {
+     uint16_t in_t;
+@@ -227,7 +333,14 @@
+     s_tx[15] = WL_TAIL;
+     wl_send(s_tx, 16u);
+ }
+-
++/**
++  * @function wl_handle_query_set_all()
++  * -------------------------
++  * @brief    Handle wireless query of all set temperatures.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_query_set_all(const uint8_t *rx, uint16_t len)
+ {
+     uint8_t h, t, l;
+@@ -240,7 +353,14 @@
+     s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; s_tx[23] = WL_TAIL;
+     wl_send(s_tx, 24u);
+ }
+-
++/**
++  * @function wl_handle_query_act_all()
++  * -------------------------
++  * @brief    Handle wireless query of all actual temperatures.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_query_act_all(const uint8_t *rx, uint16_t len)
+ {
+     uint16_t in_t, p1;
+@@ -263,7 +383,14 @@
+     s_tx[23] = WL_TAIL;
+     wl_send(s_tx, 24u);
+ }
+-
++/**
++  * @function wl_handle_fw_info()
++  * -------------------
++  * @brief    Handle wireless firmware information query.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_handle_fw_info(const uint8_t *rx, uint16_t len)
+ {
+     (void)len;
+@@ -279,7 +406,14 @@
+     s_tx[20] = WL_TAIL;
+     wl_send(s_tx, 21u);
+ }
+-
++/**
++  * @function wl_dispatch()
++  * -------------
++  * @brief    Dispatch a received wireless command frame.
++  * @param    rx - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ static void wl_dispatch(const uint8_t *rx, uint16_t len)
+ {
+     switch (rx[1])
+@@ -306,7 +440,13 @@
+         default:                   wl_ack_cmd2(rx[1], rx[2]); break;
+     }
+ }
+-
++/**
++  * @function Wireless_Init()
++  * ---------------
++  * @brief    Initialize wireless module state.
++  * @param    None
++  * @note     None
++  */
+ void Wireless_Init(void)
+ {
+     COM1.rxFlag = 0u;
+@@ -314,7 +454,13 @@
+     s_bt_status = 0u;
+ 	
+ }
+-
++/**
++  * @function WirelessTask()
++  * --------------
++  * @brief    Run the wireless receive and dispatch task.
++  * @param    None
++  * @note     None
++  */
+ void WirelessTask(void)
+ {
+     uint16_t len;
+--- 1/tw66gw02/BSP/wireless.h
++++ 2_git/tw66gw02/BSP/wireless.h
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    wireless.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Wireless protocol module interface definitions.
++  ******************************************************************************
++  */
+ #ifndef __WIRELESS_H__
+ #define __WIRELESS_H__
+ 
+--- 1/tw66gw02/COP/gagent_md5.c
++++ 2_git/tw66gw02/COP/gagent_md5.c
+@@ -1,9 +1,24 @@
++/**
++  ******************************************************************************
++  * @file    gagent_md5.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   GAgent MD5 algorithm implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+ unsigned char PADDING[] = { 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+ 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+-
++/**
++  * @function GAgent_MD5Init()
++  * ----------------
++  * @brief    Initialize an MD5 context.
++  * @param    context - input parameter
++  * @note     None
++  */
+ void GAgent_MD5Init(MD5_CTX *context)
+ {
+ 	context->count[0] = 0;
+@@ -13,7 +28,15 @@
+ 	context->state[2] = 0x98BADCFE;
+ 	context->state[3] = 0x10325476;
+ }
+-
++/**
++  * @function GAgent_MD5Update()
++  * ------------------
++  * @brief    Update the MD5 context with input data.
++  * @param    context - input parameter
++  * @param    input - input parameter
++  * @param    inputlen - input parameter
++  * @note     None
++  */
+ void GAgent_MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen)
+ {
+ 	unsigned int i = 0, index = 0, partlen = 0;
+@@ -38,6 +61,14 @@
+ 	}
+ 	memcpy(&context->buffer[index], &input[i], inputlen - i);
+ }
++/**
++  * @function GAgent_MD5Final()
++  * -----------------
++  * @brief    Finalize MD5 calculation and output digest.
++  * @param    context - input parameter
++  * @param    digest - input parameter
++  * @note     None
++  */
+ void GAgent_MD5Final(MD5_CTX *context, unsigned char digest[16])
+ {
+ 	unsigned int index = 0, padlen = 0;
+@@ -49,7 +80,15 @@
+ 	GAgent_MD5Update(context, bits, 8);
+ 	GAgent_MD5Encode(digest, context->state, 16);
+ }
+-
++/**
++  * @function GAgent_MD5Encode()
++  * ------------------
++  * @brief    Encode 32-bit words into little-endian bytes.
++  * @param    output - input parameter
++  * @param    input - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ void GAgent_MD5Encode(unsigned char *output, unsigned int *input, unsigned int len)
+ {
+ 	unsigned int i = 0, j = 0;
+@@ -63,7 +102,15 @@
+ 		j += 4;
+ 	}
+ }
+-
++/**
++  * @function GAgent_MD5Decode()
++  * ------------------
++  * @brief    Decode little-endian bytes into 32-bit words.
++  * @param    output - input parameter
++  * @param    input - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
+ void GAgent_MD5Decode(unsigned int *output, unsigned char *input, unsigned int len)
+ {
+ 	unsigned int i = 0, j = 0;
+@@ -77,7 +124,14 @@
+ 		j += 4;
+ 	}
+ }
+-
++/**
++  * @function GAgent_MD5Transform()
++  * ---------------------
++  * @brief    Transform one 64-byte MD5 block.
++  * @param    state - input parameter
++  * @param    block - input parameter
++  * @note     None
++  */
+ void GAgent_MD5Transform(unsigned int state[4], unsigned char block[64])
+ {
+ 	unsigned int a = state[0];
+--- 1/tw66gw02/COP/gagent_md5.h
++++ 2_git/tw66gw02/COP/gagent_md5.h
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    gagent_md5.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   GAgent MD5 context, macro and function declarations.
++  ******************************************************************************
++  */
+ #ifndef _GAGENT_MD5_H
+ #define _GAGENT_MD5_H
+ #include "config.h"
+--- 1/tw66gw02/COP/idle.c
++++ 2_git/tw66gw02/COP/idle.c
+@@ -1,28 +1,25 @@
++/**
++  ******************************************************************************
++  * @file    idle.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Idle state control implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+-/**
+- * @file    idle.c
+- * @brief   空闲状态文件
+- * @author  niu
+- * @date    2026.02.26
+- * @version 1.0
+- * 
+- * 详细描述:该文件实现了空闲状态下，设备的运行情况，是状态机中空闲情况下，设备的运行逻辑和情况。
+- */
+ /***************************************************************************************************************************************************************/ 
+ /**
+- * @brief   idle_control函数功能简述
+- * @param   none      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备空闲情况下的控制逻辑函数。
+- */
++  * @function idle_control()
++  * --------------
++  * @brief    Execute idle state control logic.
++  * @param    None
++  * @note     None
++  */
+ void idle_control(void)
+ {
+ 
+-//		 fan_turn_off();						     							//风扇关闭 
+-//		 all_heats_off();					                    //加热棒关闭 
+-		 SystemErrState=NoErr;											  //清除错误
++		 SystemErrState=NoErr;
+ 
+ }
+ 
+--- 1/tw66gw02/COP/idle.h
++++ 2_git/tw66gw02/COP/idle.h
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    idle.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Idle state control interface definitions.
++  ******************************************************************************
++  */
+ #ifndef   __IDLE_H__
+ #define   __IDLE_H__
+ #include "config.h"
+--- 1/tw66gw02/COP/main_control.c
++++ 2_git/tw66gw02/COP/main_control.c
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    main_control.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Main control state machine and UI runtime cache implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+ 
+ _work_process work_process,work_process_backups;
+@@ -52,11 +61,12 @@
+ static void BluetoothHwPowerOff(void);
+ 
+ /**
+- * @brief Check whether a main temperature sample is invalid.
+- * @details Treats HaveTempErr sentinel as invalid and all other values as valid.
+- * @param t Temperature sample in current display unit.
+- * @return 1 if invalid, otherwise 0.
+- */
++  * @function IsMainTempInvalid()
++  * -------------------
++  * @brief    Check whether a main temperature sample is invalid.
++  * @param    t - input parameter
++  * @note     None
++  */
+ static uint8_t IsMainTempInvalid(int16_t t)
+ {
+     if (t == HaveTempErr) {
+@@ -66,11 +76,12 @@
+ }
+ 
+ /**
+- * @brief Convert temperature from current UI unit to Celsius.
+- * @details Passes through value in Celsius mode and converts from Fahrenheit otherwise.
+- * @param t Temperature in current system unit.
+- * @return Temperature converted to Celsius.
+- */
++  * @function TempToC()
++  * ------------
++  * @brief    Convert temperature from current UI unit to Celsius.
++  * @param    t - input parameter
++  * @note     None
++  */
+ static int16_t TempToC(int16_t t)
+ {
+     if (system_data.units == unitC) {
+@@ -80,11 +91,12 @@
+ }
+ 
+ /**
+- * @brief Convert temperature from Celsius to current UI unit.
+- * @details Passes through value in Celsius mode and converts to Fahrenheit otherwise.
+- * @param c Temperature in Celsius.
+- * @return Temperature converted to current system unit.
+- */
++  * @function TempFromC()
++  * ------------
++  * @brief    Convert temperature from Celsius to current UI unit.
++  * @param    c - input parameter
++  * @note     None
++  */
+ static int16_t TempFromC(int16_t c)
+ {
+     if (system_data.units == unitC) {
+@@ -95,13 +107,14 @@
+ 
+ 
+ /**
+- * @brief Apply main-channel consensus correction for outlier suppression.
+- * @details Compares source channel against median/mean of valid main channels and optionally outputs corrected value.
+- * @param src_idx Source channel index (0..2).
+- * @param raw_temp Raw source temperature in current unit.
+- * @param out_display_temp Output pointer for corrected display value.
+- * @return 1 when correction is applied, otherwise 0.
+- */
++  * @function CalcMainConsensusTemp()
++  * -----------------------
++  * @brief    Apply main-channel consensus correction for outlier suppression.
++  * @param    src_idx - input parameter
++  * @param    raw_temp - input parameter
++  * @param    out_display_temp - input parameter
++  * @note     None
++  */
+ static uint8_t CalcMainConsensusTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_display_temp)
+ {
+     // Store valid main-channel temperatures (converted to Celsius) for consensus calculation.
+@@ -181,13 +194,14 @@
+ }
+ 
+ /**
+- * @brief Calculate fitted display temperature using probe and main channels.
+- * @details Applies main consensus first, then performs weighted fusion with probe under valid and low-temperature conditions.
+- * @param src_idx Source channel index.
+- * @param raw_temp Raw source temperature in current unit.
+- * @param out_display_temp Output pointer for fitted value.
+- * @return 1 when fitted/corrected output is produced, otherwise 0.
+- */
++  * @function CalcFittedTemp()
++  * ----------------
++  * @brief    Calculate fitted display temperature using probe and main channels.
++  * @param    src_idx - input parameter
++  * @param    raw_temp - input parameter
++  * @param    out_display_temp - input parameter
++  * @note     None
++  */
+ static uint8_t CalcFittedTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_display_temp)
+ {
+     // Probe temperature in Celsius used as fusion anchor.
+@@ -372,9 +386,12 @@
+ }
+ 
+ /**
+- * @brief Initialize runtime system state after power-on.
+- * @details Sets default work mode, unit, display mode, and Bluetooth-related state flags.
+- */
++  * @function SysDataInit()
++  * -------------
++  * @brief    Initialize runtime system state after power-on.
++  * @param    None
++  * @note     None
++  */
+ void SysDataInit(void)
+ {
+     uint8_t i;
+@@ -397,18 +414,24 @@
+ }
+ 
+ /**
+- * @brief Notify UI logic of local user interaction.
+- * @details Resets idle timer used by auto-shutdown logic.
+- */
++  * @function UI_NotifyLocalInteraction()
++  * ---------------------------
++  * @brief    Notify UI logic of local user interaction.
++  * @param    None
++  * @note     None
++  */
+ void UI_NotifyLocalInteraction(void)
+ {
+     s_idle_ticks_100ms = 0u;
+ }
+ 
+ /**
+- * @brief Cycle through available display modes.
+- * @details Skips probe mode when probe is absent and blocks mode switching if all main channels are invalid.
+- */
++  * @function UI_CycleDisplayMode()
++  * ---------------------
++  * @brief    Cycle through available display modes.
++  * @param    None
++  * @note     None
++  */
+ void UI_CycleDisplayMode(void)
+ {
+     DisplayMode_t next = DisplayMode;
+@@ -435,9 +458,12 @@
+ }
+ 
+ /**
+- * @brief Request Bluetooth pairing mode.
+- * @details Sets pairing request flag and ensures Bluetooth hardware power is enabled.
+- */
++  * @function UI_RequestBluetoothPairing()
++  * ----------------------------
++  * @brief    Request Bluetooth pairing mode.
++  * @param    None
++  * @note     None
++  */
+ void UI_RequestBluetoothPairing(void)
+ {
+     s_bt_pairing_req = 1u;
+@@ -445,9 +471,12 @@
+ }
+ 
+ /**
+- * @brief Request Bluetooth power-off.
+- * @details Sets power-off request flag and immediately powers hardware down path.
+- */
++  * @function UI_RequestBluetoothPowerOff()
++  * -----------------------------
++  * @brief    Request Bluetooth power-off.
++  * @param    None
++  * @note     None
++  */
+ void UI_RequestBluetoothPowerOff(void)
+ {
+     s_bt_poweroff_req = 1u;
+@@ -455,10 +484,12 @@
+ }
+ 
+ /**
+- * @brief Update Bluetooth link state input.
+- * @details Stores external connection state for Bluetooth state machine processing.
+- * @param connected Non-zero means connected.
+- */
++  * @function UI_SetBluetoothConnectionState()
++  * --------------------------------
++  * @brief    Update Bluetooth link state input.
++  * @param    connected - input parameter
++  * @note     None
++  */
+ void UI_SetBluetoothConnectionState(uint8_t connected)
+ {
+     if (connected != 0u) {
+@@ -469,58 +500,72 @@
+ }
+ 
+ /**
+- * @brief Get current cached display temperature.
+- * @details Returns numeric temperature field used by UI rendering.
+- * @return Cached display temperature.
+- */
++  * @function UI_GetDisplayTemp()
++  * -------------------
++  * @brief    Get current cached display temperature.
++  * @param    None
++  * @note     None
++  */
+ int16_t UI_GetDisplayTemp(void)
+ {
+     return s_display_temp;
+ }
+ 
+ /**
+- * @brief Get current special display status.
+- * @details Returns special flag for -HI, -LO, or --- display conditions.
+- * @return Special display code.
+- */
++  * @function UI_GetDisplaySpecial()
++  * ----------------------
++  * @brief    Get current special display status.
++  * @param    None
++  * @note     None
++  */
+ uint8_t UI_GetDisplaySpecial(void)
+ {
+     return s_display_special;
+ }
+ 
+ /**
+- * @brief Get current Bluetooth icon visibility state.
+- * @details Used by UI to render steady/blinking/off Bluetooth indicator.
+- * @return Icon on/off state.
+- */
++  * @function UI_GetBluetoothIconState()
++  * --------------------------
++  * @brief    Get current Bluetooth icon visibility state.
++  * @param    None
++  * @note     None
++  */
+ uint8_t UI_GetBluetoothIconState(void)
+ {
+     return s_bt_icon_on;
+ }
+ 
+ /**
+- * @brief Check whether probe is currently considered connected.
+- * @details Returns debounced probe connection state.
+- * @return 1 if connected, otherwise 0.
+- */
++  * @function UI_IsProbeConnected()
++  * ---------------------
++  * @brief    Check whether probe is currently considered connected.
++  * @param    None
++  * @note     None
++  */
+ uint8_t UI_IsProbeConnected(void)
+ {
+     return g_probe_connected;
+ }
+ 
+ /**
+- * @brief Execute periodic LED task.
+- * @details Toggles run indicator LED.
+- */
++  * @function LedTask()
++  * ------------
++  * @brief    Execute periodic LED task.
++  * @param    None
++  * @note     None
++  */
+ static void LedTask(void)
+ {
+     run_led_toggle;
+ }
+ 
+ /**
+- * @brief Power on Bluetooth hardware block.
+- * @details Enables Bluetooth power pin and applies reset sequence once.
+- */
++  * @function BluetoothHwPowerOn()
++  * --------------------
++  * @brief    Power on Bluetooth hardware block.
++  * @param    None
++  * @note     None
++  */
+ static void BluetoothHwPowerOn(void)
+ {
+     if (s_bt_hw_on == 0u) {
+@@ -532,9 +577,12 @@
+ }
+ 
+ /**
+- * @brief Power off Bluetooth hardware block.
+- * @details Disables Bluetooth power and clears hardware-on tracking flag.
+- */
++  * @function BluetoothHwPowerOff()
++  * ---------------------
++  * @brief    Power off Bluetooth hardware block.
++  * @param    None
++  * @note     None
++  */
+ static void BluetoothHwPowerOff(void)
+ {
+     if (s_bt_hw_on != 0u) {
+@@ -545,9 +593,12 @@
+ }
+ 
+ /**
+- * @brief Run 100 ms Bluetooth state-machine tick.
+- * @details Handles pairing, reconnecting, link transitions, icon blinking, and pairing timeout.
+- */
++  * @function BluetoothTask_100ms()
++  * ---------------------
++  * @brief    Run 100 ms Bluetooth state-machine tick.
++  * @param    None
++  * @note     None
++  */
+ static void BluetoothTask_100ms(void)
+ {
+     if (s_bt_poweroff_req != 0u) {
+@@ -608,9 +659,12 @@
+ }
+ 
+ /**
+- * @brief Refresh display cache from latest temperature states.
+- * @details Selects channel by mode, applies fitted temperature logic, and updates special display flags.
+- */
++  * @function UpdateDisplayCache()
++  * --------------------
++  * @brief    Refresh display cache from latest temperature states.
++  * @param    None
++  * @note     None
++  */
+ static void UpdateDisplayCache(void)
+ {
+     uint8_t no_main_temp;
+@@ -690,9 +744,12 @@
+ }
+ 
+ /**
+- * @brief Main control loop task.
+- * @details Runs sensor acquisition, key handling, mode transitions, UI cache updates, and process state actions.
+- */
++  * @function MainControl()
++  * -------------
++  * @brief    Execute main control loop task.
++  * @param    None
++  * @note     None
++  */
+ void MainControl(void)
+ {
+     uint8_t probe_now;
+--- 1/tw66gw02/COP/main_control.h
++++ 2_git/tw66gw02/COP/main_control.h
+@@ -1,4 +1,12 @@
+-/***************************用于定义各种接口******************************/
++/**
++  ******************************************************************************
++  * @file    main_control.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Main control state machine and UI runtime interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__MAIN_CONTROL_H__
+ #define		__MAIN_CONTROL_H__
+ #include "config.h"
+--- 1/tw66gw02/COP/ota.c
++++ 2_git/tw66gw02/COP/ota.c
+@@ -1,22 +1,25 @@
++/**
++  ******************************************************************************
++  * @file    ota.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   OTA and IAP upgrade implementation.
++  ******************************************************************************
++  */
+ //#include "config.h"
+ //_OTA_Date OTA_Date;
+ ///**
+-// * @file    ota.c
+-// * @brief   ota升级文件
+ // * @author  niu
+ // * @date    2026.02.26
+ // * @version 1.0
+ // * 
+-// * 详细描述:该文件实现了ota升级的一些功能函数，用于设备的在线升级固件。
+ // */
+ ///***************************************************************************************************************************************************************/ 
+ ///**
+-// * @brief   FLASH_ErasePage函数功能简述
+-// * @param   addr 要擦除的地址      
+-// * @return  none
+-// * @note    none
+-// * 
+-// * 详细说明：此函数为设备内存FLASH页擦除函数。
++// * @return  none
++// * @note    none
++// * 
+ // */
+ //void FLASH_ErasePage(uint32_t addr)
+ //{
+@@ -31,12 +34,10 @@
+ //    HAL_FLASHEx_Erase(&FlashEraseInit,&PageError);
+ //}
+ ///**
+-// * @brief   recv_bin_success函数功能简述
+ // * @param   none      
+ // * @return  none
+ // * @note    none
+ // * 
+-// * 详细说明：此函数为设备数据接收成功函数。
+ // */
+ //void recv_bin_success(void)
+ //{
+@@ -47,61 +48,43 @@
+ //	flashBUF[1] = 0x2b2b;
+ //	HAL_FLASH_Unlock();
+ 
+-//	FLASH_ErasePage(UPGRADEaddr1);// 先擦后写
+-//	for (i=0;i<2;i++) {// u8变成u16后的字节数据					   
+-//		HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,(UPGRADEaddr1+i*2),flashBUF[i]);// flash  为一个字节存储，16位数据必须地址加2
+ //	}
+ //	HAL_FLASH_Lock();
+ //}
+ ///**
+-// * @brief   download_success函数功能简述
+ // * @param   none      
+ // * @return  none
+ // * @note    none
+ // * 
+-// * 详细说明：此函数为设备下载成功函数。
+ // */
+ //void download_success(void)
+ //{
+-//	__disable_irq();   // 关闭总中断
+ //	recv_bin_success();
+-//	__enable_irq();    // 开启总中断
+-//}
+-///**
+-// * @brief   SoftReset函数功能简述
++//}
++///**
+ // * @param   none      
+ // * @return  none
+ // * @note    none
+ // * 
+-// * 详细说明：此函数为软件复位函数。
+ // */
+ //void SoftReset(void)
+ //{  
+-//	__disable_irq();   // 关闭总中断
+-// 	NVIC_SystemReset();//复位
+-//}
+-///**
+-// * @brief   iap_write_appbin函数功能简述
+-// * @param   appxaddr：要写入更新的地址  appbuf：要写入的数据    appsize：要写入数据的大小   
+-// * @return  none
+-// * @note    none
+-// * 
+-// * 详细说明：此函数为数据写入flash更新ota数据函数。
++//}
++///**
++// * @return  none
++// * @note    none
++// * 
+ // */
+ //void iap_write_appbin(uint32_t appxaddr,uint8_t *appbuf,uint32_t appsize)
+ //{
+ //	uint16_t t;
+ //	uint16_t i=0,j;
+-//	uint32_t fwaddr=appxaddr;//当前写入的地址
+ //  static uint16_t iapbuf[1024];
+ //  static uint32_t fwaddrShade=FLASH_BAK_ADDR;
+-//	__disable_irq();   // 关闭总中断
+ //	for(t=0;t<appsize;t+=2)
+ //	{						    
+ //				iapbuf[i++]=((uint16_t)appbuf[1]<<8)+(uint16_t)appbuf[0];
+-//				appbuf+=2;//偏移2个字节		
+ //	}
+-//	if(i)//小于1024字节填入
+ //	{
+ //				HAL_FLASH_Unlock();
+ //		    if(((fwaddr-fwaddrShade)==2048)||(fwaddr==FLASH_BAK_ADDR))
+@@ -109,18 +92,13 @@
+ //					  fwaddrShade=fwaddr;
+ //				    FLASH_ErasePage(fwaddr);
+ //				}
+-//				for(j=0;j<i;j++)											//u8变成u16后的字节数据					   
+-//				{
+-//					HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,(fwaddr+j*2),iapbuf[j]);//flash  为一个字节存储，16位数据必须地址加2
++//				{
+ //				}
+ //				HAL_FLASH_Lock();
+ //	}
+-//	__enable_irq();    // 开启总中断
+ //}
+ ///*****************************************************************************************/
+-///************************ OTA更新任务*****************************************************/
+ ///*****************************************************************************************/
+-////ota任务
+ //#define FILE_MD5_MAX_LEN  32
+ //#define SSL_MAX_LEN (FILE_MD5_MAX_LEN/2)
+ // uint8_t g_ota_sta=0;
+@@ -174,19 +152,16 @@
+ //	  system_data.ota_prcent=g_ota_pg_numid*100/g_ota_pg_nums;
+ //		if((g_ota_mcu_end == 0) && (g_ota_sta == 3))
+ //		{
+-//					if (1 == g_ota_pg_numid) //初始化bin_md5_calc
+ //					{
+ //						// MD5 for total bin
+ //						GAgent_MD5Init(&g_ota_md5_ctx);
+ //						memset(bin_md5_calc, 0, SSL_MAX_LEN);
+ //					}
+-//					if (0 == g_ota_sta)      //被中止  MD5 for single package
+ //					{  // 0-IDEL, 1-pass, 2-fail, 3-in progress
+ //						//DisplayString("OTA STOP BY APP",0,0,0,0);
+ //						USART_RX_STA_BAK=0;
+ //						return;
+ //					}
+-//					if ((g_ota_recv_sum+USART_RX_STA_BAK&0xFFFF) > g_ota_bin_size) //字节数大于bin总包字节数
+ //					{
+ //						//DisplayString("OTA TOTALSIZE OVERFLOW",0,0,0,0);
+ //						g_ota_sta = 2;                  //OTA FAIL
+@@ -194,7 +169,6 @@
+ //						USART_RX_STA_BAK=0;
+ //						return;
+ //					}
+-//					if (g_ota_pg_numid > g_ota_pg_nums)         //包数溢出
+ //					{
+ //						//DisplayString("OTA PGNUM OVERFLOW",0,0,0,0);
+ //						g_ota_sta = 2;                  //OTA FAIL
+@@ -203,12 +177,9 @@
+ //						return;
+ //					}
+ //					
+-//					//计算MD5
+ //					GAgent_MD5Init(&package_md5_ctx);
+ //					GAgent_MD5Update(&package_md5_ctx, COM3.rxBuf, (USART_RX_STA_BAK&0xFFFF));
+-//					GAgent_MD5Final(&package_md5_ctx, package_md5_calc);//计算单包MD5
+ //					
+-//					if(memcmp(package_md5_calc, g_ota_package_md5, SSL_MAX_LEN) != 0) //对比单包MD5
+ //					{
+ //						USART_RX_STA_BAK=0;
+ //						md5_pass = 0;
+@@ -216,13 +187,10 @@
+ //						UART1_ReportOtaPackageSta(0);
+ //						//DisplayString("OTA FAIL",0,0,0,0);
+ //					} 
+-//					else                                                              //通过MD5
+ //					{
+ //						md5_pass = 1;
+ //						g_ota_sta = 3;                  //OTA In process
+ //					}
+-//					GAgent_MD5Update(&g_ota_md5_ctx, COM3.rxBuf, (USART_RX_STA_BAK&0xFFFF));//计算总包MD5   MD5 for total bin
+-//					if (md5_pass)//更新第n包数据 
+ //					{
+ //						 
+ //						iap_write_appbin(FLASH_BAK_ADDR+g_ota_recv_sum, COM3.rxBuf, (USART_RX_STA_BAK&0xFFFF));
+@@ -232,10 +200,7 @@
+ //					}
+ //					USART_RX_STA_BAK=0;
+ //		}			     
+-//    //最后整包验证
+-//		if(g_ota_pg_nums == g_ota_pg_numid) //包数量相等
+ //		{
+-//				if (g_ota_recv_sum != g_ota_bin_size) //字节数量相等？
+ //				{
+ //							//DisplayString("OTA 1ERR",0,0,0,0);
+ //							g_ota_sta = 1;
+@@ -243,8 +208,6 @@
+ //				} 
+ //				else 
+ //				{
+-//							GAgent_MD5Final(&g_ota_md5_ctx, bin_md5_calc); //关闭测试0AT升级失败，正常开启    MD5 for total bin
+-//							if (memcmp(bin_md5_calc, g_ota_bin_md5, SSL_MAX_LEN) != 0) //对比计算总包MD5
+ //							{
+ //										md5_pass = 0;
+ //										g_ota_sta = 1;
+@@ -277,7 +240,6 @@
+ //	num=COM3.rxLen;
+ //	snd_len = num;
+ //	USART_RX_STA_BAK=num;
+-//	//开头是FE 40,结尾是FF,总长度小于30字节，才算OTA指令，防止和OTA的固件重复
+ //	if((data[0] == 0xfe)&&(data[1] == 0x40)&&(data[num-1]==0xFF)&&(num<=30)){
+ //				switch(data[2])
+ //				{
+@@ -352,10 +314,8 @@
+ //						break;
+ //				}
+ //																													
+-//		if ((snd_len != 0)&&(g_ota_bin_size<112640)) {HAL_UART_Transmit_DMA(&huart3,snd_buf,snd_len);}//不能超过110K的更新最大容量，否则不回复
+ //		snd_len = 0;data[1] =0;data[num-1]=0;COM3.rxLen=0;
+ 
+-//	}else if(OTA_Date.PackageDateReceiveReady){//固件,接收到单个固件的MD5后，下一包数据才认为是固件
+ //			OTA_Date.PackageDateReceiveReady=0;COM3.rxLen=0;
+ //			bin_update();
+ //		}
+@@ -367,8 +327,6 @@
+ //		if(work_process== idle){return;}
+ //		if(COM3.rxFlag==0) {return;}
+ //		COM3.rxFlag=0;
+-//		//开头是FE 50,结尾是FF,总长度小于30字节，才算OTA指令，防止和OTA的固件重复
+-//		if(((data[0] == 0xfe)&&(data[1] == 0x50)&&(data[COM3.rxLen-1]==0xFF)&&(COM3.rxLen<=30))||((COM3.rxLen==4096)))//来自ESP32的数据转达给触摸屏   
+ //		{
+ //				work_process=ota;system_data.ota_process=1;
+ //			 
+@@ -376,7 +334,6 @@
+ //	 
+ //				data[1] = 0x00;COM3.rxLen=0;
+ //		}
+-//		if((COM3.rxFlag)&&(work_process==ota)&&(system_data.ota_process))//来自触摸屏的数据转达给ESP32
+ //		{
+ //				 COM3.rxFlag=0;
+ //				if((COM3.rxBuf[0] == 0xfe)&&(COM3.rxBuf[1] == 0x50)&&(COM3.rxBuf[COM3.rxLen-1]==0xFF)&&(COM3.rxLen<=30))
+@@ -403,14 +360,10 @@
+ //     OTA_MCU_Task(COM3.rxBuf);	   
+ //	   OTA_screen_Task(COM3.rxBuf);
+ //	   OTA_ESP32(COM3.rxBuf);	
+-//	   fan_turn_on();        /*风扇开启*/
+-//	   motor_turn_off();     /*马达关闭*/	
+-//	   heat_control(1,off);  /*加热棒关闭*/
+-//	   SystemErrState=NoErr; /*清除错误*/	
+-//}
+-
+-
+-
+-
+-
+-
++//}
++
++
++
++
++
++
+--- 1/tw66gw02/COP/ota.h
++++ 2_git/tw66gw02/COP/ota.h
+@@ -1,9 +1,17 @@
++/**
++  ******************************************************************************
++  * @file    ota.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   OTA and IAP upgrade interface definitions.
++  ******************************************************************************
++  */
+ #ifndef __OTA_H__
+ #define __OTA_H__
+ #include "config.h"
+-//FLASH解锁键值
+ #define UPGRADEaddr1      0x08005000		// offset:20KB
+-#define FLASH_BAK_ADDR		0x08024800  	// 第一个应用程序起始地址(存放在FLASH)
++#define FLASH_BAK_ADDR		0x08024800
+ typedef struct 
+ {
+   uint8_t McuVersionSucess;
+--- 1/tw66gw02/COP/pid.c
++++ 2_git/tw66gw02/COP/pid.c
+@@ -1,39 +1,38 @@
++/**
++  ******************************************************************************
++  * @file    pid.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   PID controller implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
++/***************************************************************************************************************************************************************/ 
++PID_ValueStr PID;
++uint16_t g_bPIDRunFlag = 0;
++uint16_t iTemp=0;
++uint16_t	Pid_up=0;
++uint16_t	Pid_down=0;
++uint16_t iTemp_shiyan=0;
++uint16_t iTemp_Run=0;
++uint16_t iTemp_RunLastValue=0;		   
++uint16_t PID_Cycle=pid_run_cycle;
++uint8_t  iTemp_Run_Times=0;
+ /**
+- * @file    pid.c
+- * @brief   pid算法文件
+- * @author  niu
+- * @date    2026.02.26
+- * @version 1.0
+- * 
+- * 详细描述:该文件为PID算法文件，用于设备恒温控制使用。
+- */
+-/***************************************************************************************************************************************************************/ 
+-PID_ValueStr PID;               //定义一个结构体，这个结构体用来存算法中要用到的各种数据
+-uint16_t g_bPIDRunFlag = 0;          //PID运行标志位，PID算法不是一直在运算。而是每隔一定时间，算一次。
+-uint16_t iTemp=0;		   //马达要执行的百分百比0~100
+-uint16_t	Pid_up=0;		     //pid执行的上下限
+-uint16_t	Pid_down=0;		   //pid执行的上下限
+-uint16_t iTemp_shiyan=0;
+-uint16_t iTemp_Run=0;		   //由百分比计算要运行的时间
+-uint16_t iTemp_RunLastValue=0;		   
+-uint16_t PID_Cycle=pid_run_cycle;	//pid运行周期 s
+-uint8_t  iTemp_Run_Times=0;//进入PID运行的次数
+-/**
+- * @brief   PID_Init函数功能简述
+- * @param   none      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为PID算法初始化文件，为PID算法使用恒温控制做准备。
+- */
++  * @function PID_Init()
++  * ------------
++  * @brief    Initialize PID controller parameters.
++  * @param    None
++  * @note     None
++  */
+ void PID_Init(void)
+ {
+-    PID.uKP_Coe=50;                       //比例系数
+-    PID.uKI_Coe=20;                       //积分常数
+-    PID.uKD_Coe=15;                       //微分常数（为0不动）
+-    PID.iPriVal=0;                        //上一时刻值（为0不动）
+-    PID.iCurVal=0;                        //实际值（为0不动）
++    PID.uKP_Coe=50;
++    PID.uKI_Coe=20;
++    PID.uKD_Coe=15;
++    PID.iPriVal=0;
++    PID.iCurVal=0;
+     PID.liEkVal[2] = 0;
+     PID.liEkVal[1] = 0;
+     PID.liEkVal[0] = 0;
+@@ -43,25 +42,16 @@
+     Pid_down=0;Pid_up=100;
+ 	
+ }
+-/* ********************************************************
+- 函数名称：PID_Operation()                                  
+- 函数功能：PID运算                    
+-入口参数：当前温度                      
+- 出口参数：无（隐形输出，U(k)）
+- 函数说明：U(k)+KP*[E(k)-E(k-1)]+KI*E(k)+KD*[E(k)-2E(k-1)+E(k-2)]                                      
+-******************************************************** */
+ /**
+- * @brief   PID_Operation函数功能简述
+- * @param   in_temp 当前温度      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为PID算法操作函数，用于控制温度的恒定。
+-   算法公式：U(k)+KP*[E(k)-E(k-1)]+KI*E(k)+KD*[E(k)-2E(k-1)+E(k-2)]  
+- */
++  * @function PID_Operation()
++  * ---------------
++  * @brief    Calculate PID controller output.
++  * @param    in_temp - input parameter
++  * @note     None
++  */
+ void PID_Operation(uint16_t in_temp)
+ {
+-    long Temp[3] = {0};   //中间临时变量
++    long Temp[3] = {0};
+     static uint16_t j=0;
+     static uint16_t k=0;
+ 
+@@ -89,8 +79,7 @@
+ 		   if(j<150||k<150)
+ 		   {
+ 			
+-			Temp[0] = (signed long)PID.iSetVal - (signed long)PID.iCurVal;    //偏差<=10,计算E(k)
+-            /* 数值进行移位，注意顺序，否则会覆盖掉前面的数值 */
++			Temp[0] = (signed long)PID.iSetVal - (signed long)PID.iCurVal;
+             PID.liEkVal[2] = PID.liEkVal[1];
+             PID.liEkVal[1] = PID.liEkVal[0];
+             PID.liEkVal[0] = Temp[0];
+@@ -114,7 +103,7 @@
+ 			}   
+ 			else  iTemp=Pid_down;
+ 
+-			PID.iPriVal=iTemp*250;//用于下次PID计算，iTemp为实际执行量，PID.iPriVal为计算的量
++			PID.iPriVal=iTemp*250;
+ 			}
+ 			else if (PID.iSetVal>=PID.iCurVal)	
+ 			{
+@@ -124,7 +113,7 @@
+ 				PID.liEkVal[2] = 0;
+ 				PID.liEkVal[1] = 0;
+ 				PID.liEkVal[0] = 0;
+-				PID.iPriVal=iTemp*250;//用于下次PID计算，iTemp为实际执行量，PID.iPriVal为计算的量
++				PID.iPriVal=iTemp*250;
+ 			}
+ 			else 
+ 			{
+@@ -133,19 +122,16 @@
+ 				PID.liEkVal[2] = 0;
+ 				PID.liEkVal[1] = 0;
+ 				PID.liEkVal[0] = 0;
+-				PID.iPriVal=iTemp*250;//用于下次PID计算，iTemp为实际执行量，PID.iPriVal为计算的量
++				PID.iPriVal=iTemp*250;
+ 			}
+ 			if(iTemp>=Pid_up) iTemp = Pid_up;
+ 			if(iTemp<=Pid_down) iTemp = Pid_down;						
+ //			if(iTemp_Run_Times<=3) 
+ //			{
+-//				iTemp=Pid_up-10;//前3此计算的值不用
+-//				PID.iPriVal=iTemp*250;//用于下次PID计算，iTemp为实际执行量，PID.iPriVal为计算的量
+ //			}
+ 			
+ 			iTemp_shiyan=iTemp;
+-//			iTemp_Run=iTemp*PID_Cycle/10;//秒，扩大了10倍
+-			iTemp_Run=(float)(iTemp)*0.81;//秒   最大停止时间120S
++			iTemp_Run=(float)(iTemp)*0.81;
+ }
+ 
+ 
+--- 1/tw66gw02/COP/pid.h
++++ 2_git/tw66gw02/COP/pid.h
+@@ -1,27 +1,35 @@
+-/***************************用于定义各种接口******************************/
++/**
++  ******************************************************************************
++  * @file    pid.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   PID controller interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__PID_H__
+ #define		__PID_H__
+ #include "config.h"
+ typedef struct PID_Value
+ {
+-    long liEkVal[3];          //差值保存，给定和反馈的差值
+-    uint8_t uEkFlag[3];          //符号，1则对应的为负数，0为对应的为正数    
+-    uint8_t uKP_Coe;             //比例系数
+-    uint8_t uKI_Coe;             //积分常数
+-    uint8_t uKD_Coe;             //微分常数
+-    long iPriVal;             //上一时刻值
+-    uint16_t iSetVal;             //设定值
+-    uint16_t iCurVal;             //实际值
++    long liEkVal[3];
++    uint8_t uEkFlag[3];
++    uint8_t uKP_Coe;
++    uint8_t uKI_Coe;
++    uint8_t uKD_Coe;
++    long iPriVal;
++    uint16_t iSetVal;
++    uint16_t iCurVal;
+ }PID_ValueStr;
+ 
+-extern PID_ValueStr PID;               //定义一个结构体，这个结构体用来存算法中要用到的各种数据
+-extern uint16_t iTemp;		   //马达要执行的百分百比0~100
+-extern uint16_t	Pid_up;		   //pid执行的上下限
+-extern uint16_t	Pid_down;		   //pid执行的上下限
+-extern uint16_t g_bPIDRunFlag;          //PID运行标志位，PID算法不是一直在运算。而是每隔一定时间，算一次。
++extern PID_ValueStr PID;
++extern uint16_t iTemp;
++extern uint16_t	Pid_up;
++extern uint16_t	Pid_down;
++extern uint16_t g_bPIDRunFlag;
+ extern uint16_t iTemp_shiyan;
+-extern uint16_t iTemp_Run;		   //由百分比计算要运行的时间
+-extern uint16_t PID_Cycle;	//pid运行周期
++extern uint16_t iTemp_Run;
++extern uint16_t PID_Cycle;
+ extern uint16_t iTemp_RunLastValue;	
+ 
+ void PID_Init(void);
+--- 1/tw66gw02/COP/run.c
++++ 2_git/tw66gw02/COP/run.c
+@@ -1,30 +1,27 @@
++/**
++  ******************************************************************************
++  * @file    run.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Run state control and PID timing implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+-/**
+- * @file    run.c
+- * @brief   运行状态文件
+- * @author  niu
+- * @date    2026.02.26
+- * @version 1.0
+- * 
+- * 详细描述:该文件实现了运行状态下，设备的运行情况，是状态机中运行情况下，设备的运行逻辑和情况。
+- */
+ /***************************************************************************************************************************************************************/ 
+ /**
+- * @brief   runing_control函数功能简述
+- * @param   none      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备运行情况下的控制逻辑函数。
+- */
++  * @function runing_control()
++  * ----------------
++  * @brief    Execute run state control logic.
++  * @param    None
++  * @note     None
++  */
+ void runing_control(void)	
+ {
+ //      uint8_t i;
+ //	    uint16_t j=0x0001;
+-//	    fan_turn_on();																//风扇开启
+ //	    if(screen_data.DisplayMap.control_mode)
+ //			{
+-//				  //自动控制
+ //					for(i=0;i<8;i++)
+ //					{
+ //							if(system_data.pt1000_temp[i]>screen_data.DisplayMap.set_temp[i]){heat_control(i,off);}
+@@ -33,7 +30,6 @@
+ //			}
+ //			else
+ //			{
+-//				  //手动控制
+ //					for(i=0;i<8;i++)
+ //					{
+ //							if(screen_data.DisplayMap.mamal_control&j){
+@@ -47,13 +43,12 @@
+ //			}		
+ }
+ /**
+- * @brief   PidTimeFillIrq函数功能简述
+- * @param   none
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备运行情况下的PID计时逻辑函数，放置于外部中断中用于精准计时。
+- */
++  * @function PidTimeFillIrq()
++  * ----------------
++  * @brief    Update PID timing counters from timer interrupt.
++  * @param    None
++  * @note     None
++  */
+ void PidTimeFillIrq(void)
+ {
+ //			if(work_process==run)
+--- 1/tw66gw02/COP/run.h
++++ 2_git/tw66gw02/COP/run.h
+@@ -1,4 +1,12 @@
+-/***************************用于定义各种接口******************************/
++/**
++  ******************************************************************************
++  * @file    run.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Run state control interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__RUN_H__
+ #define		__RUN_H__
+ #include "config.h"
+--- 1/tw66gw02/COP/set.c
++++ 2_git/tw66gw02/COP/set.c
+@@ -1,22 +1,21 @@
++/**
++  ******************************************************************************
++  * @file    set.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Set state control implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+-/**
+- * @file    set.c
+- * @brief   设置状态文件
+- * @author  niu
+- * @date    2026.02.26
+- * @version 1.0
+- * 
+- * 详细描述:该文件实现了设置状态下，设备的运行情况，是状态机中设置情况下，设备的运行逻辑和情况。
+- */
+ /***************************************************************************************************************************************************************/ 
+ /**
+- * @brief   RtdTempSetControl函数功能简述
+- * @param   none      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备设置情况下的控制逻辑函数。
+- */
++  * @function RtdTempSetControl()
++  * -------------------
++  * @brief    Execute RTD temperature set-state control logic.
++  * @param    None
++  * @note     None
++  */
+ void RtdTempSetControl(void)
+ {
+      if(work_process_backups==start_up)
+--- 1/tw66gw02/COP/set.h
++++ 2_git/tw66gw02/COP/set.h
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    set.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Set state control interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__RTD_TEMP_SET_H__
+ #define		__RTD_TEMP_SET_H__
+ #include "config.h"
+--- 1/tw66gw02/COP/shutdown.c
++++ 2_git/tw66gw02/COP/shutdown.c
+@@ -1,36 +1,34 @@
++/**
++  ******************************************************************************
++  * @file    shutdown.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Shutdown state control implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+-/**
+- * @file    shutdown.c
+- * @brief   关机状态文件
+- * @author  niu
+- * @date    2026.02.26
+- * @version 1.0
+- * 
+- * 详细描述:该文件实现了关机状态下，设备的运行情况，是状态机中关机情况下，设备的运行逻辑和情况。
+- */
+ /***************************************************************************************************************************************************************/ 
+ //static uint16_t ShutdownTimeFill;
+ /**
+- * @brief   shutdown_control函数功能简述
+- * @param   none      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备关机情况下的控制逻辑函数。
+- */
++  * @function shutdown_control()
++  * ------------------
++  * @brief    Execute shutdown state control logic.
++  * @param    None
++  * @note     None
++  */
+ void shutdown_control(void)
+ {
+ 
+-		 SystemErrState=NoErr; /*清除错误*/
++		 SystemErrState=NoErr;
+ }
+ /**
+- * @brief   ShutdownTimeFillIrq函数功能简述
+- * @param   none
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备关机情况下的计时逻辑函数，放置于外部中断中用于精准计时。
+- */
++  * @function ShutdownTimeFillIrq()
++  * ---------------------
++  * @brief    Update shutdown timing counters from timer interrupt.
++  * @param    None
++  * @note     None
++  */
+ void ShutdownTimeFillIrq(void)
+ {
+ //	static uint16_t Timer1SCounter=0;
+--- 1/tw66gw02/COP/shutdown.h
++++ 2_git/tw66gw02/COP/shutdown.h
+@@ -1,4 +1,12 @@
+-/***************************用于定义各种接口******************************/
++/**
++  ******************************************************************************
++  * @file    shutdown.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Shutdown state control interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__SHUTDOWN_H__
+ #define		__SHUTDOWN_H__
+ #include "config.h"
+--- 1/tw66gw02/COP/start_up.c
++++ 2_git/tw66gw02/COP/start_up.c
+@@ -1,13 +1,13 @@
++/**
++  ******************************************************************************
++  * @file    start_up.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Startup state control implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+-/**
+- * @file    start_up.c
+- * @brief   启动状态文件
+- * @author  niu
+- * @date    2026.02.26
+- * @version 1.0
+- * 
+- * 详细描述:该文件实现了启动状态下，设备的运行情况，是状态机中启动情况下，设备的运行逻辑和情况。
+- */
+ /***************************************************************************************************************************************************************/ 
+ int StartUpStartTemp=0,StartUpRiseTemp=0;
+ uint16_t StartUpTimeFill=0;
+@@ -15,13 +15,12 @@
+ uint16_t StartUpKeepTempTimer=0;
+ //#define ThermocoupleWarningValue    120
+ /**
+- * @brief   ResetStartUpControl函数功能简述
+- * @param   none      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备启动情况下的运行控制复位函数，让设备在启动阶段各参数恢复初始默认状态。
+- */
++  * @function ResetStartUpControl()
++  * ---------------------
++  * @brief    Reset startup state control counters.
++  * @param    None
++  * @note     None
++  */
+ void ResetStartUpControl(void)
+ {
+ //		ignitor_success_flag=0;
+@@ -29,25 +28,23 @@
+ //	  StartUpKeepTempTimer=pid_run_cycle;
+ }
+ /**
+- * @brief   start_up_control函数功能简述
+- * @param   none      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备启动情况下的控制逻辑函数。
+- */
++  * @function start_up_control()
++  * ------------------
++  * @brief    Execute startup state control logic.
++  * @param    None
++  * @note     None
++  */
+ void start_up_control(void)
+ {
+ 
+ }
+ /**
+- * @brief   StartUpTimeFillIrq函数功能简述
+- * @param   none
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备启动情况下的计时逻辑函数，放置于外部中断中用于精准计时。
+- */
++  * @function StartUpTimeFillIrq()
++  * --------------------
++  * @brief    Update startup timing counters from timer interrupt.
++  * @param    None
++  * @note     None
++  */
+ void StartUpTimeFillIrq(void)
+ {
+ //	static uint16_t Timer1SCounter=0;
+--- 1/tw66gw02/COP/start_up.h
++++ 2_git/tw66gw02/COP/start_up.h
+@@ -1,4 +1,12 @@
+-/***************************用于定义各种接口******************************/
++/**
++  ******************************************************************************
++  * @file    start_up.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Startup state control interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__START_UP_H__
+ #define		__START_UP_H__
+ #include "config.h"
+--- 1/tw66gw02/COP/test.c
++++ 2_git/tw66gw02/COP/test.c
+@@ -1,23 +1,21 @@
++/**
++  ******************************************************************************
++  * @file    test.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Test state control implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+-/**
+- * @file    test.c
+- * @brief   空闲状态文件
+- * @author  niu
+- * @date    2026.02.26
+- * @version 1.0
+- * 
+- * 详细描述:该文件实现了测试状态下，设备的运行情况，是状态机中测试情况下，设备的运行逻辑和情况。
+-   更多应用于出厂前设备配件的自动测试，应用中用户自己检测设备配件的好坏情况。
+- */
+ /***************************************************************************************************************************************************************/ 
+ /**
+- * @brief   test_control函数功能简述
+- * @param   none      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备测试情况下的控制逻辑函数。
+- */
++  * @function test_control()
++  * --------------
++  * @brief    Execute test state control logic.
++  * @param    None
++  * @note     None
++  */
+ void test_control(void)
+ {
+ 
+--- 1/tw66gw02/COP/test.h
++++ 2_git/tw66gw02/COP/test.h
+@@ -1,3 +1,12 @@
++/**
++  ******************************************************************************
++  * @file    test.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Test state control interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__TEST_H__
+ #define		__TEST_H__
+ #include "config.h"
+--- 1/tw66gw02/COP/warning.c
++++ 2_git/tw66gw02/COP/warning.c
+@@ -1,27 +1,25 @@
++/**
++  ******************************************************************************
++  * @file    warning.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Warning state detection, warning control and alarm task implementation.
++  ******************************************************************************
++  */
+ #include "config.h"
+-/**
+- * @file    warning.c
+- * @brief   报警状态文件
+- * @author  niu
+- * @date    2026.02.26
+- * @version 1.0
+- * 
+- * 详细描述:该文件实现了报警状态下，设备的运行情况，是状态机中报警情况下，设备的运行逻辑和情况。
+- */
+ /***************************************************************************************************************************************************************/ 
+ ErrState SystemErrState;
+ /**
+- * @brief   WarningDetect函数功能简述
+- * @param   system_data 系统数据      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备报警检测函数。
+- */
++  * @function WarningDetect()
++  * ---------------
++  * @brief    Detect warning conditions from current system data.
++  * @param    None
++  * @note     None
++  */
+ void WarningDetect(void)
+ {	
+ //	  static uint8_t ErH_timer=0;		
+-//		//还少一个ErL报警，在StartUpControl中
+ //	 if(system_data.rtd_temp==HaveTempErr) 
+ //	 {
+ //				 work_process=warning;SystemErrState=ErrP;
+@@ -55,73 +53,57 @@
+ //	 }
+ }
+ /**
+- * @brief   WarningControl函数功能简述
+- * @param   none      
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备报警情况下的控制逻辑函数。
+- */
++  * @function WarningControl()
++  * ----------------
++  * @brief    Execute warning state control logic.
++  * @param    None
++  * @note     None
++  */
+ void WarningControl(void)
+ {
+ 
+ }
+ /**
+- * @brief   WarningTimeFillIrq函数功能简述
+- * @param   none
+- * @return  none
+- * @note    none
+- * 
+- * 详细说明：此函数为设备报警情况下的计时逻辑函数，放置于外部中断中用于精准计时。
+- */
++  * @function WarningTimeFillIrq()
++  * --------------------
++  * @brief    Update warning timing counters from timer interrupt.
++  * @param    None
++  * @note     None
++  */
+ void WarningTimeFillIrq(void)
+ {
+ 
+ }
+ 
+ /* ========================================================================== */
+-/* 本地状态变量                                                              */
+-/* ========================================================================== */
+-
+-/* 高温告警 */
++/* ========================================================================== */
++
+ //static uint8_t s_highTempAlarmActive = 0;
+ //static uint16_t s_highTempBeepCounter = 0;
+ 
+-///* 低温告警 */
+ //static uint8_t s_lowTempAlarmActive = 0;
+ //static uint16_t s_lowTempBeepCounter = 0;
+ 
+-///* 低电量告警 */
+ //static uint8_t s_lowBatteryAlarmActive = 0;
+ 
+-///* 探针错误 */
+ //static uint8_t s_probeErrorActive = 0;
+ 
+ /* ========================================================================== */
+-/* 温度告警实现                                                              */
+ /* ========================================================================== */
+ 
+ //void Task_HandleHighTempAlarm(uint16_t current_temp, uint16_t temp_high_limit)
+ //{
+ //    /**
+-//     * 高温告警处理:
+-//     * 1. 如果还未激活，启动告警显示和闪烁
+-//     * 2. 保持告警状态，直到温度恢复
+ //     * 
+-//     * 显示: "-HI" + 2Hz 闪烁
+-//     * 蜂鸣: 每2秒一次(由 AlarmPeriodic100ms 管理)
+ //     */
+ //    
+ //    if (current_temp > temp_high_limit)
+ //    {
+ //        if (!s_highTempAlarmActive)
+ //        {
+-//            /* 第一次触发告警 */
+-//            ScreenNew_TempHighFlash();    /* 显示 "-HI" 并启动2Hz闪烁 */
+ //            s_highTempAlarmActive = 1;
+ //            s_highTempBeepCounter = 0;
+ //            
+-//            /* 可以在这里添加蓝牙通知 */
+ //            /* BT_SendWarning(BT_HIGH_TEMP); */
+ //        }
+ //    }
+@@ -130,24 +112,16 @@
+ //void Task_HandleLowTempAlarm(uint16_t current_temp, uint16_t temp_low_limit)
+ //{
+ //    /**
+-//     * 低温告警处理:
+-//     * 1. 如果还未激活，启动告警显示和闪烁
+-//     * 2. 保持告警状态，直到温度恢复
+ //     * 
+-//     * 显示: "-LO" + 1Hz 闪烁
+-//     * 蜂鸣: 间歇蜂鸣(由 AlarmPeriodic100ms 管理)
+ //     */
+ //    
+ //    if (current_temp < temp_low_limit)
+ //    {
+ //        if (!s_lowTempAlarmActive)
+ //        {
+-//            /* 第一次触发告警 */
+-//            ScreenNew_TempLowFlash();     /* 显示 "-LO" 并启动1Hz闪烁 */
+ //            s_lowTempAlarmActive = 1;
+ //            s_lowTempBeepCounter = 0;
+ //            
+-//            /* 可以在这里添加蓝牙通知 */
+ //            /* BT_SendWarning(BT_LOW_TEMP); */
+ //        }
+ //    }
+@@ -156,10 +130,6 @@
+ //void Task_ClearHighTempAlarm(void)
+ //{
+ //    /**
+-//     * 清除高温告警
+-//     * - 停止闪烁
+-//     * - 恢复正常显示(温度值)
+-//     * - 停止蜂鸣
+ //     */
+ //    if (s_highTempAlarmActive)
+ //    {
+@@ -172,10 +142,6 @@
+ //void Task_ClearLowTempAlarm(void)
+ //{
+ //    /**
+-//     * 清除低温告警
+-//     * - 停止闪烁
+-//     * - 恢复正常显示(温度值)
+-//     * - 停止蜂鸣
+ //     */
+ //    if (s_lowTempAlarmActive)
+ //    {
+@@ -186,28 +152,20 @@
+ //}
+ 
+ /* ========================================================================== */
+-/* 电池告警实现                                                              */
+ /* ========================================================================== */
+ 
+ //void Task_HandleLowBatteryAlarm(uint16_t battery_voltage)
+ //{
+ //    /**
+-//     * 低电量告警处理:
+-//     * 1. 在屏幕上显示低电量符号
+-//     * 2. 启动1Hz闪烁
+-//     * 3. 发送蓝牙通知(可选)
+ //     * 
+-//     * 触发条件: battery_voltage < 1.2v
+ //     */
+ //    
+ //    if (battery_voltage < 1200)
+ //    {
+ //        if (!s_lowBatteryAlarmActive)
+ //        {
+-//            ScreenNew_BatteryLowFlash();   /* 启动低电量闪烁 */
+ //            s_lowBatteryAlarmActive = 1;
+ //            
+-//            /* 可以在这里添加蓝牙通知 */
+ //            /* BT_SendWarning(BT_LOW_BATTERY); */
+ //        }
+ //    }
+@@ -216,9 +174,6 @@
+ //void Task_ClearLowBatteryAlarm(void)
+ //{
+ //    /**
+-//     * 清除低电量告警
+-//     * - 停止闪烁
+-//     * - 关闭低电量符号
+ //     */
+ //    if (s_lowBatteryAlarmActive)
+ //    {
+@@ -228,31 +183,23 @@
+ //}
+ 
+ /* ========================================================================== */
+-/* 探针错误实现                                                              */
+ /* ========================================================================== */
+ 
+ //void Task_HandleProbeError(uint8_t error_code)
+ //{
+ //    /**
+-//     * 处理探针相关错误:
+-//     * 0 = 探针未连接 → 显示 "---"
+-//     * 1 = 连接错误 → 显示 "---" + 错误指示
+-//     * 2 = 校准失败 → 显示校准失败提示
+ //     */
+ //    
+ //    if (!s_probeErrorActive)
+ //    {
+ //        switch(error_code)
+ //        {
+-//            case 0:  /* 未连接 */
+ //                ScreenNew_ShowNoProbe();
+ //                break;
+ //                
+-//            case 1:  /* 连接错误 */
+ //                ScreenNew_ProbeError();
+ //                break;
+ //                
+-//            case 2:  /* 校准失败 */
+ //                ScreenNew_ProbeCalibrationError();
+ //                break;
+ //                
+@@ -267,7 +214,6 @@
+ //void Task_ClearProbeError(void)
+ //{
+ //    /**
+-//     * 清除探针错误显示
+ //     */
+ //    if (s_probeErrorActive)
+ //    {
+@@ -277,9 +223,13 @@
+ //}
+ 
+ /* ========================================================================== */
+-/* 周期告警检查                                                              */
+-/* ========================================================================== */
+-
++/**
++  * @function Task_AlarmPeriodic100ms()
++  * -------------------------
++  * @brief    Execute periodic 100 ms alarm processing.
++  * @param    None
++  * @note     None
++  */
+ void Task_AlarmPeriodic100ms(void)
+ {
+ 
+--- 1/tw66gw02/COP/warning.h
++++ 2_git/tw66gw02/COP/warning.h
+@@ -1,4 +1,12 @@
+-/***************************用于定义各种接口******************************/
++/**
++  ******************************************************************************
++  * @file    warning.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   Warning state and alarm interface definitions.
++  ******************************************************************************
++  */
+ #ifndef		__WARNING_H__
+ #define		__WARNING_H__
+ #include "config.h"
+@@ -6,13 +14,13 @@
+ typedef enum _ErrState
+ {
+   NoErr=0,
+-  ErrHot,//5秒内无反馈信号，则报警
+-  ErrMot,//5秒内无反馈信号，则报警
+-  ErrFan,//5秒内无反馈信号，则报警
+-  ErrP,//炉温探针短路或开路异常，则报警
+-  ErrL,	 //13分钟内点火不成功，则报警
+-  ErrH,	 //炉温探针无异常时，炉温温度值大于615F，则报警
+-	ErrBoardTemp,//板温错误
++  ErrHot,
++  ErrMot,
++  ErrFan,
++  ErrP,
++  ErrL,
++  ErrH,
++	ErrBoardTemp,
+ 	ErrThermocouple2,
+ 	ErrThermocouple1Unplug,
+ 	ErrThermocouple2Unplug,

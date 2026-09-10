@@ -1,0 +1,931 @@
+--- 3/tw66gw02/BSP/screen_c8721.c
++++ 4/tw66gw02/BSP/screen_c8721.c
+@@ -32,18 +32,28 @@
+     0x06u   /* "I" */
+ };
+ 
+-/* C thresholds: first segment at 30 C, +40 C per segment, last at >350 C.
++/* Main temperature thresholds: first segment at 30 C, +40 C per segment, last at >=350 C.
+  * F thresholds: converted from C values, rounded to nearest integer.
+- * Gauge is hidden entirely when the displayed temperature is below 30 C / 86 F.
++ * Probe thresholds: first segment at 10 C, +10 C per segment, last at >=90 C.
+ */
+-static const uint16_t s_gaugeThreshC[GAUGE_SEG_COUNT] =
++static const uint16_t s_mainGaugeThreshC[GAUGE_SEG_COUNT] =
+ {
+     30u, 70u, 110u, 150u, 190u, 230u, 270u, 310u, 350u
+ };
+ 
+-static const uint16_t s_gaugeThreshF[GAUGE_SEG_COUNT] =
++static const uint16_t s_mainGaugeThreshF[GAUGE_SEG_COUNT] =
+ {
+     86u, 158u, 230u, 302u, 374u, 446u, 518u, 590u, 662u
++};
++
++static const uint16_t s_probeGaugeThreshC[GAUGE_SEG_COUNT] =
++{
++    10u, 20u, 30u, 40u, 50u, 60u, 70u, 80u, 90u
++};
++
++static const uint16_t s_probeGaugeThreshF[GAUGE_SEG_COUNT] =
++{
++    50u, 68u, 86u, 104u, 122u, 140u, 158u, 176u, 194u
+ };
+ /**
+   * @function SCL_Write()
+@@ -260,9 +270,13 @@
+     uint8_t segOn = 0u;
+     uint8_t i;
+ 
+-    thresh = (system_data.units ==unitC) ? s_gaugeThreshC : s_gaugeThreshF;
+-
+-    /* Gauge is hidden when temperature is below the first threshold (30 C / 86 F) */
++    if (DisplayMode == DISPLAY_MODE_PROBE) {
++        thresh = (system_data.units == unitC) ? s_probeGaugeThreshC : s_probeGaugeThreshF;
++    } else {
++        thresh = (system_data.units == unitC) ? s_mainGaugeThreshC : s_mainGaugeThreshF;
++    }
++
++    /* Gauge is hidden when temperature is below the first threshold for the active source. */
+     if(displayTemp >= thresh[0])
+     {
+         for(i = 0u; i < GAUGE_SEG_COUNT; i++)
+--- 3/tw66gw02/BSP/temp.c
++++ 4/tw66gw02/BSP/temp.c
+@@ -38,7 +38,9 @@
+ static uint8_t s_comm_lo_latched[3] = {0u, 0u, 0u};
+ static uint8_t s_comm_lo_pending_cnt[3] = {0u, 0u, 0u};
+ static uint8_t s_comm_lo_release_cnt[3] = {0u, 0u, 0u};
+-#define PROBE_TEMP_C_LOW_LIMIT   (-20)
++static int16_t s_comm_raw_temp[3][10] = {{0}};
++static uint8_t s_comm_raw_temp_inited[3] = {0u, 0u, 0u};
++#define PROBE_TEMP_C_LOW_LIMIT   (0)
+ #define PROBE_TEMP_C_HIGH_LIMIT  (500)
+ #define PROBE_TEMP_C_HIGH_RELEASE (PROBE_TEMP_C_HIGH_LIMIT)
+ #define PROBE_TEMP_HI_CONFIRM_COUNT (3u)
+@@ -382,6 +384,72 @@
+     return (int16_t)raw;
+ }
+ 
++static void raw_temp_sort_asc(int16_t temp_sort[], uint8_t len)
++{
++    uint8_t i;
++    uint8_t j;
++    int16_t t;
++
++    for (i = 0u; i < len; i++)
++    {
++        for (j = (uint8_t)(i + 1u); j < len; j++)
++        {
++            if (temp_sort[i] > temp_sort[j])
++            {
++                t = temp_sort[i];
++                temp_sort[i] = temp_sort[j];
++                temp_sort[j] = t;
++            }
++        }
++    }
++}
++
++static int16_t raw_temp_filter(uint8_t idx, int16_t temp)
++{
++    int16_t temp_sort[10];
++    int32_t sum;
++    uint8_t i;
++
++    if (idx >= 3u) {
++        return temp;
++    }
++
++    if ((temp == HaveTempErr) || (temp == TempDisconnected) || (temp == TempHigh) || (temp == TempLow))
++    {
++        s_comm_raw_temp_inited[idx] = 0u;
++        return temp;
++    }
++
++    if (s_comm_raw_temp_inited[idx] == 0u)
++    {
++        s_comm_raw_temp_inited[idx] = 1u;
++        for (i = 0u; i < 10u; i++)
++        {
++            s_comm_raw_temp[idx][i] = temp;
++        }
++        return temp;
++    }
++
++    for (i = 0u; i < 9u; i++)
++    {
++        s_comm_raw_temp[idx][i] = s_comm_raw_temp[idx][i + 1u];
++    }
++    s_comm_raw_temp[idx][9] = temp;
++
++    for (i = 0u; i < 10u; i++)
++    {
++        temp_sort[i] = s_comm_raw_temp[idx][i];
++    }
++
++    raw_temp_sort_asc(temp_sort, 10u);
++
++    sum = (int32_t)temp_sort[3] + (int32_t)temp_sort[4] + (int32_t)temp_sort[5] + (int32_t)temp_sort[6];
++    if (sum >= 0) {
++        return (int16_t)((sum + 2) / 4);
++    }
++    return (int16_t)((sum - 2) / 4);
++}
++
+ static int16_t debounce_external_temp(uint8_t idx, int16_t sample)
+ {
+     if (idx >= 3u) {
+@@ -532,6 +600,7 @@
+         for (i = 0u; i < 3u; i++)
+         {
+             t = debounce_external_temp(i, s_comm_temp_c[i]);
++            t = raw_temp_filter(i, (int16_t)t);
+ 
+             if ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow))
+             {
+@@ -635,7 +704,7 @@
+         }
+     }
+     s_probe_reconnect_pending_cnt = 0u;
+-    if ((probe_f == TempHigh) || (probe_f >= 932))
++    if ((probe_f == TempHigh) || (probe_f > 932))
+     {
+         if (s_probe_hi_pending_cnt < 255u) { s_probe_hi_pending_cnt++; }
+         if (s_probe_hi_pending_cnt >= PROBE_TEMP_HI_CONFIRM_COUNT)
+@@ -693,7 +762,7 @@
+     /* HI hysteresis: keep -HI until temperature drops below release threshold. */
+     if (s_probe_hi_latched != 0u)
+     {
+-        if (probe_c >= PROBE_TEMP_C_HIGH_RELEASE)
++        if (probe_c > PROBE_TEMP_C_HIGH_RELEASE)
+         {
+             g_probe_over_hi = 1u;
+             g_probe_over_lo = 0u;
+@@ -725,7 +794,7 @@
+     }
+     if (s_probe_lo_latched != 0u)
+     {
+-        if (probe_c <= PROBE_TEMP_C_LOW_LIMIT)
++        if (probe_c < PROBE_TEMP_C_LOW_LIMIT)
+         {
+             g_probe_over_hi = 0u;
+             g_probe_over_lo = 1u;
+@@ -798,7 +867,7 @@
+         s_probe_c_filt = (int16_t)(((int32_t)s_probe_c_filt * num_old + (int32_t)probe_c * num_new) / den);
+         probe_c = s_probe_c_filt;
+     }
+-    if (probe_c >= PROBE_TEMP_C_HIGH_LIMIT)
++    if (probe_c > PROBE_TEMP_C_HIGH_LIMIT)
+     {
+         if (s_probe_hi_pending_cnt < 255u) { s_probe_hi_pending_cnt++; }
+         if (s_probe_hi_pending_cnt >= PROBE_TEMP_HI_CONFIRM_COUNT)
+@@ -823,7 +892,7 @@
+         s_probe_hi_pending_cnt = 0u;
+         g_probe_over_hi = 0u;
+     }
+-    if (probe_c <= PROBE_TEMP_C_LOW_LIMIT) {
++    if (probe_c < PROBE_TEMP_C_LOW_LIMIT) {
+         if (s_probe_lo_pending_cnt < 255u) { s_probe_lo_pending_cnt++; }
+         if (s_probe_lo_pending_cnt >= PROBE_TEMP_LO_CONFIRM_COUNT)
+         {
+--- 3/tw66gw02/BSP/wireless.c
++++ 4/tw66gw02/BSP/wireless.c
+@@ -60,11 +60,11 @@
+   */
+ static uint16_t wl_get_display_main_temp(void)
+ {
+-    if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return system_data.pt1000_temp[1]; }
+-    if (DisplayMode == DISPLAY_MODE_D_SURFACE) { return system_data.pt1000_temp[0]; }
+-    if (DisplayMode == DISPLAY_MODE_CAVITY)    { return system_data.pt1000_temp[2]; }
++    if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return (uint16_t)UI_GetAdjustedMainTemp(1u); }
++    if (DisplayMode == DISPLAY_MODE_D_SURFACE) { return (uint16_t)UI_GetAdjustedMainTemp(0u); }
++    if (DisplayMode == DISPLAY_MODE_CAVITY)    { return (uint16_t)UI_GetAdjustedMainTemp(2u); }
+     if (DisplayMode == DISPLAY_MODE_PROBE)     { return wl_get_probe_temp(); }
+-    return system_data.pt1000_temp[0];
++    return (uint16_t)UI_GetAdjustedMainTemp(0u);
+ }
+ /**
+   * @function wl_split3()
+@@ -82,6 +82,37 @@
+     *h = (uint8_t)(v / 100u);
+     *t = (uint8_t)((v / 10u) % 10u);
+     *l = (uint8_t)(v % 10u);
++}
++
++static int32_t wl_parse_s32_be(const uint8_t *p)
++{
++    uint32_t u;
++
++    u = ((uint32_t)p[0] << 24) |
++        ((uint32_t)p[1] << 16) |
++        ((uint32_t)p[2] << 8)  |
++        ((uint32_t)p[3]);
++    return (int32_t)u;
++}
++
++static void wl_put_s32_be(uint8_t *p, int32_t v)
++{
++    uint32_t u = (uint32_t)v;
++
++    p[0] = (uint8_t)(u >> 24);
++    p[1] = (uint8_t)(u >> 16);
++    p[2] = (uint8_t)(u >> 8);
++    p[3] = (uint8_t)u;
++}
++
++static int32_t wl_coeff_to_q1000000(float v)
++{
++    float scaled = v * 1000000.0f;
++
++    if (scaled > 2147483647.0f) { return 2147483647; }
++    if (scaled < -2147483648.0f) { return (int32_t)0x80000000u; }
++    if (scaled >= 0.0f) { return (int32_t)(scaled + 0.5f); }
++    return (int32_t)(scaled - 0.5f);
+ }
+ /**
+   * @function wl_send()
+@@ -371,6 +402,56 @@
+     else { wl_split3(in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; }
+     s_tx[23] = WL_TAIL;
+     wl_send(s_tx, 24u);
++}
++
++static void wl_handle_coeff_set(const uint8_t *rx, uint16_t len)
++{
++    float coeff[TEMP_COEFF_TERM_COUNT];
++    uint8_t i;
++    uint8_t ok;
++
++    if (len < 24u) {
++        return;
++    }
++
++    for (i = 0u; i < TEMP_COEFF_TERM_COUNT; i++) {
++        coeff[i] = (float)wl_parse_s32_be(&rx[3u + (uint16_t)i * 4u]) / 1000000.0f;
++    }
++
++    ok = UI_SetTempCoeff(rx[2], coeff);
++    s_tx[0] = WL_HEAD;
++    s_tx[1] = WL_CMD_COEFF_SET;
++    s_tx[2] = rx[2];
++    s_tx[3] = ok;
++    s_tx[4] = WL_TAIL;
++    wl_send(s_tx, 5u);
++}
++
++static void wl_handle_coeff_query(const uint8_t *rx, uint16_t len)
++{
++    float coeff[TEMP_COEFF_TERM_COUNT];
++    uint8_t i;
++
++    (void)len;
++
++    memset(s_tx, 0, 24u);
++    s_tx[0] = WL_HEAD;
++    s_tx[1] = WL_CMD_COEFF_QUERY;
++    s_tx[2] = rx[2];
++
++    if (UI_GetTempCoeff(rx[2], coeff) == 0u) {
++        s_tx[3] = 0u;
++        s_tx[4] = WL_TAIL;
++        wl_send(s_tx, 5u);
++        return;
++    }
++
++    s_tx[3] = 1u;
++    for (i = 0u; i < TEMP_COEFF_TERM_COUNT; i++) {
++        wl_put_s32_be(&s_tx[4u + (uint16_t)i * 4u], wl_coeff_to_q1000000(coeff[i]));
++    }
++    s_tx[24] = WL_TAIL;
++    wl_send(s_tx, 25u);
+ }
+ /**
+   * @function wl_handle_fw_info()
+@@ -425,6 +506,8 @@
+                 UI_SetBluetoothConnectionState(0u);
+             }
+             break;
++        case WL_CMD_COEFF_SET:    wl_handle_coeff_set(rx, len); break;
++        case WL_CMD_COEFF_QUERY:  wl_handle_coeff_query(rx, len); break;
+         case WL_CMD_FW_INFO:       wl_handle_fw_info(rx, len); break;
+         default:                   wl_ack_cmd2(rx[1], rx[2]); break;
+     }
+--- 3/tw66gw02/BSP/wireless.h
++++ 4/tw66gw02/BSP/wireless.h
+@@ -28,6 +28,8 @@
+ #define WL_CMD_QUERY_ACT_ALL        0x0Eu
+ #define WL_CMD_BT_STATUS            0x24u
+ #define WL_CMD_FW_INFO              0x5Fu
++#define WL_CMD_COEFF_SET            0x60u
++#define WL_CMD_COEFF_QUERY          0x61u
+ 
+ #define WL_TEMP_MIN                 175u
+ #define WL_TEMP_MAX                 455u
+--- 3/tw66gw02/COP/main_control.c
++++ 4/tw66gw02/COP/main_control.c
+@@ -16,12 +16,7 @@
+ volatile uint8_t g_probe_over_hi = 0u;
+ volatile uint8_t g_probe_over_lo = 0u;
+ 
+-enum {
+-    BT_OFF = 0,
+-    BT_PAIRING = 1,
+-    BT_CONNECTED = 2,
+-    BT_RECONNECTING = 3
+-};
++
+ 
+ 
+ 
+@@ -49,6 +44,12 @@
+ static int16_t s_fit_prev_c[4] = {0, 0, 0, 0};
+ static int16_t s_fit_trend_acc_c[4] = {0, 0, 0, 0};
+ static uint8_t s_fit_prev_valid[4] = {0u, 0u, 0u, 0u};
++static float s_temp_coeff[TEMP_COEFF_CHANNEL_COUNT][TEMP_COEFF_TERM_COUNT] =
++{
++    {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}, /* D surface: y = x by default */
++    {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}, /* O surface: y = x by default */
++    {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}  /* Cavity: y = x by default */
++};
+ 
+ static void BluetoothHwPowerOn(void);
+ static void BluetoothHwPowerOff(void);
+@@ -124,6 +125,34 @@
+         return c;
+     }
+     return (int16_t)(((int32_t)c * 9) / 5 + 32);
++}
++
++static int16_t RoundFloatToInt16(float v)
++{
++    if (v > 32767.0f) { return 32767; }
++    if (v < -32768.0f) { return -32768; }
++    if (v >= 0.0f) { return (int16_t)(v + 0.5f); }
++    return (int16_t)(v - 0.5f);
++}
++
++static int16_t ApplyMainTempCoefficient(uint8_t src_idx, int16_t raw_temp)
++{
++    float x;
++    float y;
++
++    if ((src_idx >= TEMP_COEFF_CHANNEL_COUNT) || (IsMainTempInvalid(raw_temp) != 0u)) {
++        return raw_temp;
++    }
++
++    x = (float)TempToC(raw_temp);
++    y = (((s_temp_coeff[src_idx][0] * x + s_temp_coeff[src_idx][1]) * x +
++          s_temp_coeff[src_idx][2]) * x + s_temp_coeff[src_idx][3]) * x +
++          s_temp_coeff[src_idx][4];
++
++    if (y > 500.0f) { return TempHigh; }
++    if (y < 0.0f) { return TempLow; }
++
++    return TempFromC(RoundFloatToInt16(y));
+ }
+ 
+ 
+@@ -214,197 +243,197 @@
+     return 0u;
+ }
+ 
+-/**
+-  * @function CalcFittedTemp()
+-  * ----------------
+-  * @brief    Calculate fitted display temperature using probe and main channels.
+-  * @param    src_idx - input parameter
+-  * @param    raw_temp - input parameter
+-  * @param    out_display_temp - input parameter
+-  * @note     None
+-  */
+-static uint8_t CalcFittedTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_display_temp)
+-{
+-    // Probe temperature in Celsius used as fusion anchor.
+-    int16_t probe;
+-    // Main-channel temperatures converted to Celsius for distance checks.
+-    int16_t t0, t1, t2;
+-    // Absolute distance between a main channel and probe.
+-    int16_t d;
+-    // Weighted sum accumulator for fused output.
+-    int32_t wsum;
+-    // Total weight accumulator for fused output.
+-    int32_t w;
+-    int16_t src_c;
+-    int16_t src_step = 0;
+-    uint8_t trend_single = 0u;
+-    uint8_t trend_peer_ok = 0u;
+-
+-    if (out_display_temp == 0) {
+-        return 0u;
+-    }
+-    if (src_idx > 3u) {
+-        return 0u;
+-    }
+-    src_c = TempToC(raw_temp);
+-    if (src_c >= FIT_TEMP_C_THRESHOLD) {
+-        *out_display_temp = raw_temp;
+-        return 1u;
+-    }
+-
+-    /* If one channel keeps rising/falling by 4C, prefer standalone display for that channel.
+-     * Exception: if peers move in same direction and remain within original trigger diff,
+-     * keep this channel in fitting. */
+-    if (s_fit_prev_valid[src_idx] != 0u) {
+-        src_step = (int16_t)(src_c - s_fit_prev_c[src_idx]);
+-        if (src_step > 0) {
+-            if (s_fit_trend_acc_c[src_idx] >= 0) { s_fit_trend_acc_c[src_idx] = (int16_t)(s_fit_trend_acc_c[src_idx] + src_step); }
+-            else { s_fit_trend_acc_c[src_idx] = src_step; }
+-        } else if (src_step < 0) {
+-            if (s_fit_trend_acc_c[src_idx] <= 0) { s_fit_trend_acc_c[src_idx] = (int16_t)(s_fit_trend_acc_c[src_idx] + src_step); }
+-            else { s_fit_trend_acc_c[src_idx] = src_step; }
+-        } else {
+-            s_fit_trend_acc_c[src_idx] = 0;
+-        }
+-    } else {
+-        s_fit_trend_acc_c[src_idx] = 0;
+-    }
+-    s_fit_prev_c[src_idx] = src_c;
+-    s_fit_prev_valid[src_idx] = 1u;
+-
+-    if ((s_fit_trend_acc_c[src_idx] >= 4) || (s_fit_trend_acc_c[src_idx] <= -4)) {
+-        trend_single = 1u;
+-    }
+-
+-    if ((0u) && (trend_single != 0u) && (src_step != 0)) {
+-        if (src_idx <= 2u) {
+-            uint8_t i;
+-            for (i = 0u; i < 3u; i++) {
+-                int16_t peer;
+-                int16_t peer_step;
+-                int16_t dpeer;
+-                if ((i == src_idx) || (IsMainTempInvalid(system_data.pt1000_temp[i]) != 0u) || (s_fit_prev_valid[i] == 0u)) {
+-                    continue;
+-                }
+-                peer = TempToC(system_data.pt1000_temp[i]);
+-                peer_step = (int16_t)(peer - s_fit_prev_c[i]);
+-                dpeer = (src_c >= peer) ? (src_c - peer) : (int16_t)(peer - src_c);
+-                if (((src_step > 0) && (peer_step > 0)) || ((src_step < 0) && (peer_step < 0))) {
+-                    if (dpeer <= FIT_MAIN_OUTLIER_DIFF_C) {
+-                        trend_peer_ok = 1u;
+-                        break;
+-                    }
+-                }
+-            }
+-        } else {
+-            int16_t t[3];
+-            uint8_t vcnt = 0u;
+-            if (IsMainTempInvalid(system_data.pt1000_temp[0]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[0]); }
+-            if (IsMainTempInvalid(system_data.pt1000_temp[1]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[1]); }
+-            if (IsMainTempInvalid(system_data.pt1000_temp[2]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[2]); }
+-            if (vcnt >= 2u) {
+-                int16_t ref;
+-                int16_t ref_prev;
+-                int16_t ref_step;
+-                int16_t dref;
+-                if (vcnt == 2u) {
+-                    ref = (int16_t)(((int32_t)t[0] + (int32_t)t[1]) / 2);
+-                } else {
+-                    if (t[0] > t[1]) { int16_t x = t[0]; t[0] = t[1]; t[1] = x; }
+-                    if (t[1] > t[2]) { int16_t x = t[1]; t[1] = t[2]; t[2] = x; }
+-                    if (t[0] > t[1]) { int16_t x = t[0]; t[0] = t[1]; t[1] = x; }
+-                    ref = t[1];
+-                }
+-                ref_prev = ref;
+-                if ((s_fit_prev_valid[0] != 0u) && (IsMainTempInvalid(system_data.pt1000_temp[0]) == 0u) &&
+-                    (s_fit_prev_valid[1] != 0u) && (IsMainTempInvalid(system_data.pt1000_temp[1]) == 0u)) {
+-                    if (vcnt == 2u) {
+-                        ref_prev = (int16_t)(((int32_t)s_fit_prev_c[0] + (int32_t)s_fit_prev_c[1]) / 2);
+-                    } else {
+-                        int16_t p[3];
+-                        p[0] = s_fit_prev_c[0];
+-                        p[1] = s_fit_prev_c[1];
+-                        p[2] = s_fit_prev_c[2];
+-                        if (p[0] > p[1]) { int16_t x = p[0]; p[0] = p[1]; p[1] = x; }
+-                        if (p[1] > p[2]) { int16_t x = p[1]; p[1] = p[2]; p[2] = x; }
+-                        if (p[0] > p[1]) { int16_t x = p[0]; p[0] = p[1]; p[1] = x; }
+-                        ref_prev = p[1];
+-                    }
+-                }
+-                ref_step = (int16_t)(ref - ref_prev);
+-                dref = (src_c >= ref) ? (src_c - ref) : (int16_t)(ref - src_c);
+-                if ((((src_step > 0) && (ref_step > 0)) || ((src_step < 0) && (ref_step < 0))) &&
+-                    (dref <= FIT_OUTLIER_DIFF_C)) {
+-                    trend_peer_ok = 1u;
+-                }
+-            }
+-        }
+-
+-        if (trend_peer_ok == 0u) {
+-            *out_display_temp = raw_temp;
+-            return 1u;
+-        }
+-    }
+-
+-    // First apply main-channel consensus correction; if applied, finish immediately.
+-    if (CalcMainConsensusTemp(src_idx, raw_temp, out_display_temp) != 0u) {
+-        return 1u;
+-    }
+-
+-    // Fusion requires valid output pointer, connected probe, and no probe over-range alarms.
+-    if ((g_probe_connected == 0u) || (g_probe_over_hi != 0u) || (g_probe_over_lo != 0u)) {
+-        return 0u;
+-    }
+-    // Probe channel must contain a valid temperature sample.
+-    if (IsMainTempInvalid(system_data.pt1000_temp[3]) != 0u) {
+-        return 0u;
+-    }
+-
+-    // Convert probe to Celsius so fusion thresholds are unit-independent.
+-    probe = TempToC(system_data.pt1000_temp[3]);
+-    // Disable fusion at high temperature region to avoid cross-channel bias under large gradients.
+-    if (probe >= FIT_TEMP_C_THRESHOLD) {
+-        return 0u;
+-    }
+-
+-    // Convert all main channels to Celsius for outlier gating against probe.
+-    t0 = TempToC(system_data.pt1000_temp[0]);
+-    t1 = TempToC(system_data.pt1000_temp[1]);
+-    t2 = TempToC(system_data.pt1000_temp[2]);
+-
+-    // Start with probe as strongest contributor.
+-    wsum = (int32_t)probe * 3; /* probe weight highest */
+-    w = 3;
+-
+-    // Include main channel 0 only when close enough to probe; otherwise keep source standalone if it is channel 0.
+-    if (IsMainTempInvalid(system_data.pt1000_temp[0]) == 0u) {
+-        d = (t0 >= probe) ? (t0 - probe) : (int16_t)(probe - t0);
+-        if (d <= FIT_OUTLIER_DIFF_C) { wsum += t0; w++; }
+-        else if (src_idx == 0u) { *out_display_temp = raw_temp; return 1u; }
+-    }
+-    // Include main channel 1 only when close enough to probe; otherwise keep source standalone if it is channel 1.
+-    if (IsMainTempInvalid(system_data.pt1000_temp[1]) == 0u) {
+-        d = (t1 >= probe) ? (t1 - probe) : (int16_t)(probe - t1);
+-        if (d <= FIT_OUTLIER_DIFF_C) { wsum += t1; w++; }
+-        else if (src_idx == 1u) { *out_display_temp = raw_temp; return 1u; }
+-    }
+-    // Include main channel 2 only when close enough to probe; otherwise keep source standalone if it is channel 2.
+-    if (IsMainTempInvalid(system_data.pt1000_temp[2]) == 0u) {
+-        d = (t2 >= probe) ? (t2 - probe) : (int16_t)(probe - t2);
+-        if (d <= FIT_OUTLIER_DIFF_C) { wsum += t2; w++; }
+-        else if (src_idx == 2u) { *out_display_temp = raw_temp; return 1u; }
+-    }
+-
+-    // If no main channel joined, return raw source as standalone output.
+-    if (w <= 3) {
+-        *out_display_temp = raw_temp; /* all main channels outlier -> standalone */
+-        return 1u;
+-    }
+-
+-    // Output weighted average converted back to current display unit.
+-    *out_display_temp = TempFromC((int16_t)(wsum / w));
+-    return 1u;
+-}
++///**
++//  * @function CalcFittedTemp()
++//  * ----------------
++//  * @brief    Calculate fitted display temperature using probe and main channels.
++//  * @param    src_idx - input parameter
++//  * @param    raw_temp - input parameter
++//  * @param    out_display_temp - input parameter
++//  * @note     None
++//  */
++//static uint8_t CalcFittedTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_display_temp)
++//{
++//    // Probe temperature in Celsius used as fusion anchor.
++//    int16_t probe;
++//    // Main-channel temperatures converted to Celsius for distance checks.
++//    int16_t t0, t1, t2;
++//    // Absolute distance between a main channel and probe.
++//    int16_t d;
++//    // Weighted sum accumulator for fused output.
++//    int32_t wsum;
++//    // Total weight accumulator for fused output.
++//    int32_t w;
++//    int16_t src_c;
++//    int16_t src_step = 0;
++//    uint8_t trend_single = 0u;
++//    uint8_t trend_peer_ok = 0u;
++
++//    if (out_display_temp == 0) {
++//        return 0u;
++//    }
++//    if (src_idx > 3u) {
++//        return 0u;
++//    }
++//    src_c = TempToC(raw_temp);
++//    if (src_c >= FIT_TEMP_C_THRESHOLD) {
++//        *out_display_temp = raw_temp;
++//        return 1u;
++//    }
++
++//    /* If one channel keeps rising/falling by 4C, prefer standalone display for that channel.
++//     * Exception: if peers move in same direction and remain within original trigger diff,
++//     * keep this channel in fitting. */
++//    if (s_fit_prev_valid[src_idx] != 0u) {
++//        src_step = (int16_t)(src_c - s_fit_prev_c[src_idx]);
++//        if (src_step > 0) {
++//            if (s_fit_trend_acc_c[src_idx] >= 0) { s_fit_trend_acc_c[src_idx] = (int16_t)(s_fit_trend_acc_c[src_idx] + src_step); }
++//            else { s_fit_trend_acc_c[src_idx] = src_step; }
++//        } else if (src_step < 0) {
++//            if (s_fit_trend_acc_c[src_idx] <= 0) { s_fit_trend_acc_c[src_idx] = (int16_t)(s_fit_trend_acc_c[src_idx] + src_step); }
++//            else { s_fit_trend_acc_c[src_idx] = src_step; }
++//        } else {
++//            s_fit_trend_acc_c[src_idx] = 0;
++//        }
++//    } else {
++//        s_fit_trend_acc_c[src_idx] = 0;
++//    }
++//    s_fit_prev_c[src_idx] = src_c;
++//    s_fit_prev_valid[src_idx] = 1u;
++
++//    if ((s_fit_trend_acc_c[src_idx] >= 4) || (s_fit_trend_acc_c[src_idx] <= -4)) {
++//        trend_single = 1u;
++//    }
++
++//    if ((0u) && (trend_single != 0u) && (src_step != 0)) {
++//        if (src_idx <= 2u) {
++//            uint8_t i;
++//            for (i = 0u; i < 3u; i++) {
++//                int16_t peer;
++//                int16_t peer_step;
++//                int16_t dpeer;
++//                if ((i == src_idx) || (IsMainTempInvalid(system_data.pt1000_temp[i]) != 0u) || (s_fit_prev_valid[i] == 0u)) {
++//                    continue;
++//                }
++//                peer = TempToC(system_data.pt1000_temp[i]);
++//                peer_step = (int16_t)(peer - s_fit_prev_c[i]);
++//                dpeer = (src_c >= peer) ? (src_c - peer) : (int16_t)(peer - src_c);
++//                if (((src_step > 0) && (peer_step > 0)) || ((src_step < 0) && (peer_step < 0))) {
++//                    if (dpeer <= FIT_MAIN_OUTLIER_DIFF_C) {
++//                        trend_peer_ok = 1u;
++//                        break;
++//                    }
++//                }
++//            }
++//        } else {
++//            int16_t t[3];
++//            uint8_t vcnt = 0u;
++//            if (IsMainTempInvalid(system_data.pt1000_temp[0]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[0]); }
++//            if (IsMainTempInvalid(system_data.pt1000_temp[1]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[1]); }
++//            if (IsMainTempInvalid(system_data.pt1000_temp[2]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[2]); }
++//            if (vcnt >= 2u) {
++//                int16_t ref;
++//                int16_t ref_prev;
++//                int16_t ref_step;
++//                int16_t dref;
++//                if (vcnt == 2u) {
++//                    ref = (int16_t)(((int32_t)t[0] + (int32_t)t[1]) / 2);
++//                } else {
++//                    if (t[0] > t[1]) { int16_t x = t[0]; t[0] = t[1]; t[1] = x; }
++//                    if (t[1] > t[2]) { int16_t x = t[1]; t[1] = t[2]; t[2] = x; }
++//                    if (t[0] > t[1]) { int16_t x = t[0]; t[0] = t[1]; t[1] = x; }
++//                    ref = t[1];
++//                }
++//                ref_prev = ref;
++//                if ((s_fit_prev_valid[0] != 0u) && (IsMainTempInvalid(system_data.pt1000_temp[0]) == 0u) &&
++//                    (s_fit_prev_valid[1] != 0u) && (IsMainTempInvalid(system_data.pt1000_temp[1]) == 0u)) {
++//                    if (vcnt == 2u) {
++//                        ref_prev = (int16_t)(((int32_t)s_fit_prev_c[0] + (int32_t)s_fit_prev_c[1]) / 2);
++//                    } else {
++//                        int16_t p[3];
++//                        p[0] = s_fit_prev_c[0];
++//                        p[1] = s_fit_prev_c[1];
++//                        p[2] = s_fit_prev_c[2];
++//                        if (p[0] > p[1]) { int16_t x = p[0]; p[0] = p[1]; p[1] = x; }
++//                        if (p[1] > p[2]) { int16_t x = p[1]; p[1] = p[2]; p[2] = x; }
++//                        if (p[0] > p[1]) { int16_t x = p[0]; p[0] = p[1]; p[1] = x; }
++//                        ref_prev = p[1];
++//                    }
++//                }
++//                ref_step = (int16_t)(ref - ref_prev);
++//                dref = (src_c >= ref) ? (src_c - ref) : (int16_t)(ref - src_c);
++//                if ((((src_step > 0) && (ref_step > 0)) || ((src_step < 0) && (ref_step < 0))) &&
++//                    (dref <= FIT_OUTLIER_DIFF_C)) {
++//                    trend_peer_ok = 1u;
++//                }
++//            }
++//        }
++
++//        if (trend_peer_ok == 0u) {
++//            *out_display_temp = raw_temp;
++//            return 1u;
++//        }
++//    }
++
++//    // First apply main-channel consensus correction; if applied, finish immediately.
++//    if (CalcMainConsensusTemp(src_idx, raw_temp, out_display_temp) != 0u) {
++//        return 1u;
++//    }
++
++//    // Fusion requires valid output pointer, connected probe, and no probe over-range alarms.
++//    if ((g_probe_connected == 0u) || (g_probe_over_hi != 0u) || (g_probe_over_lo != 0u)) {
++//        return 0u;
++//    }
++//    // Probe channel must contain a valid temperature sample.
++//    if (IsMainTempInvalid(system_data.pt1000_temp[3]) != 0u) {
++//        return 0u;
++//    }
++
++//    // Convert probe to Celsius so fusion thresholds are unit-independent.
++//    probe = TempToC(system_data.pt1000_temp[3]);
++//    // Disable fusion at high temperature region to avoid cross-channel bias under large gradients.
++//    if (probe >= FIT_TEMP_C_THRESHOLD) {
++//        return 0u;
++//    }
++
++//    // Convert all main channels to Celsius for outlier gating against probe.
++//    t0 = TempToC(system_data.pt1000_temp[0]);
++//    t1 = TempToC(system_data.pt1000_temp[1]);
++//    t2 = TempToC(system_data.pt1000_temp[2]);
++
++//    // Start with probe as strongest contributor.
++//    wsum = (int32_t)probe * 3; /* probe weight highest */
++//    w = 3;
++
++//    // Include main channel 0 only when close enough to probe; otherwise keep source standalone if it is channel 0.
++//    if (IsMainTempInvalid(system_data.pt1000_temp[0]) == 0u) {
++//        d = (t0 >= probe) ? (t0 - probe) : (int16_t)(probe - t0);
++//        if (d <= FIT_OUTLIER_DIFF_C) { wsum += t0; w++; }
++//        else if (src_idx == 0u) { *out_display_temp = raw_temp; return 1u; }
++//    }
++//    // Include main channel 1 only when close enough to probe; otherwise keep source standalone if it is channel 1.
++//    if (IsMainTempInvalid(system_data.pt1000_temp[1]) == 0u) {
++//        d = (t1 >= probe) ? (t1 - probe) : (int16_t)(probe - t1);
++//        if (d <= FIT_OUTLIER_DIFF_C) { wsum += t1; w++; }
++//        else if (src_idx == 1u) { *out_display_temp = raw_temp; return 1u; }
++//    }
++//    // Include main channel 2 only when close enough to probe; otherwise keep source standalone if it is channel 2.
++//    if (IsMainTempInvalid(system_data.pt1000_temp[2]) == 0u) {
++//        d = (t2 >= probe) ? (t2 - probe) : (int16_t)(probe - t2);
++//        if (d <= FIT_OUTLIER_DIFF_C) { wsum += t2; w++; }
++//        else if (src_idx == 2u) { *out_display_temp = raw_temp; return 1u; }
++//    }
++
++//    // If no main channel joined, return raw source as standalone output.
++//    if (w <= 3) {
++//        *out_display_temp = raw_temp; /* all main channels outlier -> standalone */
++//        return 1u;
++//    }
++
++//    // Output weighted average converted back to current display unit.
++//    *out_display_temp = TempFromC((int16_t)(wsum / w));
++//    return 1u;
++//}
+ 
+ /**
+   * @function SysDataInit()
+@@ -458,23 +487,17 @@
+ void UI_CycleDisplayMode(void)
+ {
+     DisplayMode_t next = DisplayMode;
+-    uint8_t no_main_temp;
+-
+-    no_main_temp = (IsMainChannelDisconnected(system_data.pt1000_temp[0]) != 0u) &&
+-                   (IsMainChannelDisconnected(system_data.pt1000_temp[1]) != 0u) &&
+-                   (IsMainChannelDisconnected(system_data.pt1000_temp[2]) != 0u);
+-    if (no_main_temp != 0u) {
+-        return;
+-    }
+-
+-    if (DisplayMode == DISPLAY_MODE_O_SURFACE) {
++
++    if (DisplayMode == DISPLAY_MODE_PROBE) {
++        next = DISPLAY_MODE_O_SURFACE;
++    } else if (DisplayMode == DISPLAY_MODE_O_SURFACE) {
+         next = DISPLAY_MODE_D_SURFACE;
+     } else if (DisplayMode == DISPLAY_MODE_D_SURFACE) {
+         next = DISPLAY_MODE_CAVITY;
+     } else if (DisplayMode == DISPLAY_MODE_CAVITY) {
+         next = g_probe_connected ? DISPLAY_MODE_PROBE : DISPLAY_MODE_O_SURFACE;
+     } else {
+-        next = DISPLAY_MODE_O_SURFACE;
++        next = g_probe_connected ? DISPLAY_MODE_PROBE : DISPLAY_MODE_O_SURFACE;
+     }
+ 
+     DisplayMode = next;
+@@ -584,6 +607,42 @@
+ uint8_t UI_IsProbeConnected(void)
+ {
+     return g_probe_connected;
++}
++
++int16_t UI_GetAdjustedMainTemp(uint8_t src_idx)
++{
++    if (src_idx >= TEMP_COEFF_CHANNEL_COUNT) {
++        return HaveTempErr;
++    }
++    return ApplyMainTempCoefficient(src_idx, system_data.pt1000_temp[src_idx]);
++}
++
++uint8_t UI_SetTempCoeff(uint8_t src_idx, const float coeff[TEMP_COEFF_TERM_COUNT])
++{
++    uint8_t i;
++
++    if ((src_idx >= TEMP_COEFF_CHANNEL_COUNT) || (coeff == 0)) {
++        return 0u;
++    }
++
++    for (i = 0u; i < TEMP_COEFF_TERM_COUNT; i++) {
++        s_temp_coeff[src_idx][i] = coeff[i];
++    }
++    return 1u;
++}
++
++uint8_t UI_GetTempCoeff(uint8_t src_idx, float coeff[TEMP_COEFF_TERM_COUNT])
++{
++    uint8_t i;
++
++    if ((src_idx >= TEMP_COEFF_CHANNEL_COUNT) || (coeff == 0)) {
++        return 0u;
++    }
++
++    for (i = 0u; i < TEMP_COEFF_TERM_COUNT; i++) {
++        coeff[i] = s_temp_coeff[src_idx][i];
++    }
++    return 1u;
+ }
+ 
+ /**
+@@ -731,8 +790,8 @@
+         case DISPLAY_MODE_O_SURFACE:
+             ch_temp = system_data.pt1000_temp[1];
+             if (ApplyTempSpecial(ch_temp) == 0u) {
+-                if (CalcFittedTemp(1u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
+-                else { s_display_temp = ch_temp; }
++                fitted_temp = ApplyMainTempCoefficient(1u, ch_temp);
++                if (ApplyTempSpecial(fitted_temp) == 0u) { s_display_temp = fitted_temp; }
+ 						
+             }
+             break;
+@@ -740,8 +799,8 @@
+         case DISPLAY_MODE_D_SURFACE:
+             ch_temp = system_data.pt1000_temp[0];
+             if (ApplyTempSpecial(ch_temp) == 0u) {
+-                if (CalcFittedTemp(0u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
+-                else { s_display_temp = ch_temp; }
++                fitted_temp = ApplyMainTempCoefficient(0u, ch_temp);
++                if (ApplyTempSpecial(fitted_temp) == 0u) { s_display_temp = fitted_temp; }
+ 						
+             }
+             break;
+@@ -749,8 +808,8 @@
+         case DISPLAY_MODE_CAVITY:
+             ch_temp = system_data.pt1000_temp[2];
+             if (ApplyTempSpecial(ch_temp) == 0u) {
+-                if (CalcFittedTemp(2u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
+-                else { s_display_temp = ch_temp; }
++                fitted_temp = ApplyMainTempCoefficient(2u, ch_temp);
++                if (ApplyTempSpecial(fitted_temp) == 0u) { s_display_temp = fitted_temp; }
+ 		
+             }
+             break;
+@@ -767,8 +826,7 @@
+                 s_display_temp = 0;
+             } else {
+                 ch_temp = (int16_t)system_data.pt1000_temp[3];
+-                if (CalcFittedTemp(3u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
+-                else { s_display_temp = ch_temp; }
++                s_display_temp = ch_temp;
+ 							 
+             }
+             break;
+--- 3/tw66gw02/COP/main_control.h
++++ 4/tw66gw02/COP/main_control.h
+@@ -19,8 +19,15 @@
+ #define FIT_MAIN_DYNAMIC_STEP_C          (1)
+ #define FIT_MAIN_DYNAMIC_CONFIRM_COUNT   (1u)
+ #define PROBE_REINSERT_MIN_OFF_TICKS_100MS (5u)
++#define TEMP_COEFF_CHANNEL_COUNT          (3u)
++#define TEMP_COEFF_TERM_COUNT             (5u)
+ 
+-
++enum {
++    BT_OFF = 0,
++    BT_PAIRING = 1,
++    BT_CONNECTED = 2,
++    BT_RECONNECTING = 3
++};
+ 
+ void MainControl(void);
+ void SysDataInit(void);
+@@ -34,5 +41,8 @@
+ uint8_t UI_GetDisplaySpecial(void);
+ uint8_t UI_GetBluetoothIconState(void);
+ uint8_t UI_IsProbeConnected(void);
++int16_t UI_GetAdjustedMainTemp(uint8_t src_idx);
++uint8_t UI_SetTempCoeff(uint8_t src_idx, const float coeff[TEMP_COEFF_TERM_COUNT]);
++uint8_t UI_GetTempCoeff(uint8_t src_idx, float coeff[TEMP_COEFF_TERM_COUNT]);
+ #endif
+ 
+--- 3/tw66gw02/Core/Src/main.c
++++ 4/tw66gw02/Core/Src/main.c
+@@ -105,7 +105,7 @@
+ 	
+  SCH_Add_Task(Key_Scan, 0, 10);
+  SCH_Add_Task(DisplayTask, 0 , 10); 
+- SCH_Add_Task(TempGetTask, 0 , 900);
++ SCH_Add_Task(TempGetTask, 0 , 500);
+  SCH_Add_Task(MainControl, 0 , 100);
+ // SCH_Add_Task(WirelessTask, 0, 20);
+  

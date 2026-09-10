@@ -1,0 +1,42 @@
+{
+  "folders": [
+    {
+      "name": "主线 main",
+      "path": "01_固件工程/main"
+    },
+    {
+      "name": "版本与索引",
+      "path": "00_项目索引"
+    },
+    {
+      "name": "开发 snapshot-12",
+      "path": "01_固件工程/development/snapshot-12_secure-ota"
+    },
+    {
+      "name": "开发 snapshot-13",
+      "path": "01_固件工程/development/snapshot-13_poweroff-v104"
+    },
+    {
+      "name": "开发 snapshot-14",
+      "path": "01_固件工程/development/snapshot-14_refactor-from-10"
+    },
+    {
+      "path": "02_需求与协议"
+    },
+    {
+      "path": "03_硬件资料"
+    },
+    {
+      "path": "04_测试与联调"
+    },
+    {
+      "path": "05_发布与交付"
+    },
+    {
+      "path": "06_工具与参考"
+    }
+  ],
+  "settings": {
+    "files.autoGuessEncoding": true
+  }
+}

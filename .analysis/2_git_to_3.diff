@@ -1,0 +1,962 @@
+--- 2_git/tw66gw02/BSP/key.c
++++ 3/tw66gw02/BSP/key.c
+@@ -22,6 +22,10 @@
+ {
+     int32_t t = (int32_t)value;
+ 
++    if ((value == HaveTempErr) || (value == TempDisconnected) || (value == TempHigh) || (value == TempLow)) {
++        return value;
++    }
++
+     if (toUnit == unitF) {
+         t = (t * 9) / 5 + 32;
+     } else {
+@@ -58,9 +62,12 @@
+ static uint8_t IsDisplayDashOnlyAlarm(void)
+ {
+     uint8_t inv0, inv1, inv2;
+-    inv0 = (uint8_t)(system_data.pt1000_temp[0] == HaveTempErr);
+-    inv1 = (uint8_t)(system_data.pt1000_temp[1] == HaveTempErr);
+-    inv2 = (uint8_t)(system_data.pt1000_temp[2] == HaveTempErr);
++    inv0 = (uint8_t)((system_data.pt1000_temp[0] == HaveTempErr) ||
++                     (system_data.pt1000_temp[0] == TempDisconnected));
++    inv1 = (uint8_t)((system_data.pt1000_temp[1] == HaveTempErr) ||
++                     (system_data.pt1000_temp[1] == TempDisconnected));
++    inv2 = (uint8_t)((system_data.pt1000_temp[2] == HaveTempErr) ||
++                     (system_data.pt1000_temp[2] == TempDisconnected));
+     return (uint8_t)(inv0 && inv1 && inv2);
+ }
+ /**
+@@ -197,7 +204,7 @@
+             break;
+ 
+         default:
+-            if ((IsDisplayDashOnlyAlarm() == 0u) && (g_probe_connected != 0u)) {
++            if (IsDisplayDashOnlyAlarm() == 0u) {
+                 UI_CycleDisplayMode();
+             }
+             UI_NotifyLocalInteraction();
+@@ -220,7 +227,8 @@
+             break;
+ 
+         default:
+-            if ((IsDisplayDashOnlyAlarm() != 0u) || (UI_GetDisplaySpecial() == 3u)) {
++            if (((IsDisplayDashOnlyAlarm() != 0u) || (UI_GetDisplaySpecial() == 3u)) &&
++                (UI_IsProbeConnected() == 0u)) {
+                 UI_NotifyLocalInteraction();
+                 break;
+             }
+@@ -264,8 +272,8 @@
+             break;
+ 
+         default:
+-            /* Bluetooth button >=1s: enter pairing (triggered while pressed). */
+-            UI_RequestBluetoothPairing();
++            /* Bluetooth button >=1s: toggle pairing/power-off. */
++            UI_RequestBluetoothToggle();
+             UI_NotifyLocalInteraction();
+             break;
+     }
+@@ -290,16 +298,5 @@
+   */
+ void Key1_very_long_press(void)
+ {
+-    switch (work_process)
+-    {
+-        case idle:
+-        case shutdown:
+-            break;
+-
+-        default:
+-            /* Bluetooth button >=3s: power off BT (triggered while pressed). */
+-            UI_RequestBluetoothPowerOff();
+-            UI_NotifyLocalInteraction();
+-            break;
+-    }
+-}
++    /* Bluetooth is handled uniformly at the 1s long-press threshold. */
++}
+--- 2_git/tw66gw02/BSP/screen_c8721.c
++++ 3/tw66gw02/BSP/screen_c8721.c
+@@ -88,6 +88,7 @@
+         for (g = 0u; g < 16u; g++) {
+             CF_DisplayBuf[g + s * CF_SEG_NUM] =
+                 (Screen_Data.DisplayMapTable[g] & (1u << s)) ? CF_LUMI_FULL : CF_LUMI_OFF;
++					
+         }
+     }
+ }
+--- 2_git/tw66gw02/BSP/temp.c
++++ 3/tw66gw02/BSP/temp.c
+@@ -23,24 +23,35 @@
+ static uint8_t s_probe_hi_latched = 0u;
+ static uint8_t s_probe_hi_pending_cnt = 0u;
+ static uint8_t s_probe_hi_release_cnt = 0u;
++static uint8_t s_probe_lo_latched = 0u;
++static uint8_t s_probe_lo_pending_cnt = 0u;
++static uint8_t s_probe_lo_release_cnt = 0u;
+ static uint16_t s_probe_f_prev = 0u;
+ static uint8_t s_probe_f_prev_valid = 0u;
+ static uint8_t s_probe_drop_glitch_cnt = 0u;
+ static uint8_t s_probe_disconnect_pending_cnt = 0u;
+ static uint8_t s_probe_reconnect_pending_cnt = 0u;
+ static uint16_t s_probe_temp_hist[10] = {0u};
++static uint8_t s_comm_hi_latched[3] = {0u, 0u, 0u};
++static uint8_t s_comm_hi_pending_cnt[3] = {0u, 0u, 0u};
++static uint8_t s_comm_hi_release_cnt[3] = {0u, 0u, 0u};
++static uint8_t s_comm_lo_latched[3] = {0u, 0u, 0u};
++static uint8_t s_comm_lo_pending_cnt[3] = {0u, 0u, 0u};
++static uint8_t s_comm_lo_release_cnt[3] = {0u, 0u, 0u};
+ #define PROBE_TEMP_C_LOW_LIMIT   (-20)
+-#define PROBE_TEMP_C_HIGH_LIMIT  (455)
+-#define PROBE_TEMP_C_HIGH_RELEASE (445)
++#define PROBE_TEMP_C_HIGH_LIMIT  (500)
++#define PROBE_TEMP_C_HIGH_RELEASE (PROBE_TEMP_C_HIGH_LIMIT)
+ #define PROBE_TEMP_HI_CONFIRM_COUNT (3u)
+ #define PROBE_TEMP_HI_RELEASE_CONFIRM_COUNT (2u)
++#define PROBE_TEMP_LO_CONFIRM_COUNT (3u)
++#define PROBE_TEMP_LO_RELEASE_CONFIRM_COUNT (2u)
+ #define PROBE_DISCONNECT_CONFIRM_COUNT (3u)
+ #define PROBE_RECONNECT_CONFIRM_COUNT (2u)
+ #define BATTERY_LOW_MV_THRESHOLD   (1100u)
+ #define BATTERY_RECOVER_MV_THRESHOLD (1200u)
+ #define BATTERY_DEBOUNCE_COUNT     (20u)
+ 
+-/* PT1000 lookup table: -25C..455C, step 5C, value scaled by 10 (10000 = 1000.0 ohm) */
++/* PT1000 lookup table: -25C..500C, step 5C, value scaled by 10 (10000 = 1000.0 ohm) */
+ static const uint16_t RTD_TAB_PT1000[] =
+ {
+     9020,9216,9413,9609,9805,
+@@ -53,7 +64,8 @@
+     21205,21383,21560,21738,21915,22092,22268,22444,22620,22796,
+     22971,23146,23321,23495,23670,23844,24017,24191,24364,24536,
+     24709,24881,25053,25224,25396,25567,25737,25908,26078,26248,
+-    26417,26587
++    26417,26587,26770,26937,27104,27271,27437,27604,27769,27934,
++    28098
+ };
+ 
+ /**
+@@ -122,7 +134,7 @@
+   */
+ float PT1000_CalculateTemperature(uint16_t fR)
+ {
+-    const int16_t temp_min = -20;
++    const int16_t temp_min = -25;
+     const int16_t step = 5;
+     const uint8_t tab_last = (uint8_t)(sizeof(RTD_TAB_PT1000) / sizeof(RTD_TAB_PT1000[0]) - 1u);
+     uint8_t cBottom, cTop, i;
+@@ -138,7 +150,7 @@
+ 
+     if (fR > RTD_TAB_PT1000[tab_last])
+     {
+-        return 455.0f;
++        return 500.0f;
+     }
+ 
+     cBottom = 0u;
+@@ -179,9 +191,9 @@
+   * @param    channel - input parameter
+   * @note     None
+   */
+-uint16_t Temp_Get(uint8_t channel) 
+-{
+-	uint16_t temp;
++int16_t Temp_Get(uint8_t channel)
++{
++	int16_t temp;
+ 	uint32_t R_Value,vol;
+ 	vol=(uint32_t)ch_env[channel].vol; 
+   
+@@ -192,19 +204,19 @@
+ 	else
+ 	{
+ 		R_Value=20000*(uint32_t)vol/(4096-(uint32_t)vol);
+-		/* Distinguish unplug/error from over-temperature. */
+-		if (R_Value < 9020u)
++		/* Distinguish open/error from out-of-range temperature. */
++		if (R_Value < 9216u)
+ 		{
+-			temp = TempErr;
++			temp = TempLow;
+ 		}
+-		else if (R_Value > 26587u)
++		else if (R_Value > 28098u)
+ 		{
+ 			temp = TempHigh;
+ 		}
+ 		else
+ 		{
+-			temp=(uint16_t)PT1000_CalculateTemperature((uint16_t)R_Value);
+-			temp=temp*9/5+32;
++            int16_t temp_c = (int16_t)PT1000_CalculateTemperature((uint16_t)R_Value);
++			temp = (int16_t)(((int32_t)temp_c * 9) / 5 + 32);
+ 		}
+ 	}
+ 	return	temp;
+@@ -327,13 +339,13 @@
+ }
+ 
+ /**
+-  * @function parse_be32_to_int16_c()
++  * @function parse_be32_raw_c()
+   * -----------------------
+-  * @brief    Parse a big-endian 32-bit temperature payload into Celsius.
++  * @brief    Parse a big-endian 32-bit temperature payload into Celsius or disconnected sentinel.
+   * @param    buf - input parameter
+   * @note     None
+   */
+-static int16_t parse_be32_to_int16_c(const uint8_t *buf)
++static int32_t parse_be32_raw_c(const uint8_t *buf)
+ {
+     int32_t raw;
+ 
+@@ -345,12 +357,100 @@
+     /* Source value is scaled by 100. */
+     raw /= 100;
+ 
+-    /* Only this function decides whether source value is unplugged/invalid. */
+-    if ((raw == -10) || (raw == 14) || (raw > 455) || (raw < -20)) {
+-        return HaveTempErr;
+-    }
++    if ((raw == TempDisconnected) || (raw == -10) || (raw == 14)) {
++        return TempDisconnected;
++    }
++
++    return raw;
++}
++
++/**
++  * @function normalize_external_temp_c()
++  * -------------------------------
++  * @brief    Normalize external channel temperature and sentinel values.
++  * @param    raw - input parameter
++  * @note     None
++  */
++static int16_t normalize_external_temp_c(int32_t raw)
++{
++    if (raw == TempDisconnected) {
++        return TempDisconnected;
++    }
++    if (raw >= PROBE_TEMP_C_HIGH_LIMIT) { return TempHigh; }
++    if (raw <= PROBE_TEMP_C_LOW_LIMIT) { return TempLow; }
+ 
+     return (int16_t)raw;
++}
++
++static int16_t debounce_external_temp(uint8_t idx, int16_t sample)
++{
++    if (idx >= 3u) {
++        return sample;
++    }
++
++    if ((sample == HaveTempErr) || (sample == TempDisconnected)) {
++        s_comm_hi_latched[idx] = 0u;
++        s_comm_hi_pending_cnt[idx] = 0u;
++        s_comm_hi_release_cnt[idx] = 0u;
++        s_comm_lo_latched[idx] = 0u;
++        s_comm_lo_pending_cnt[idx] = 0u;
++        s_comm_lo_release_cnt[idx] = 0u;
++        return sample;
++    }
++
++    if (s_comm_hi_latched[idx] != 0u) {
++        if (sample == TempHigh) {
++            s_comm_hi_release_cnt[idx] = 0u;
++            return TempHigh;
++        }
++        if (s_comm_hi_release_cnt[idx] < 255u) { s_comm_hi_release_cnt[idx]++; }
++        if (s_comm_hi_release_cnt[idx] < PROBE_TEMP_HI_RELEASE_CONFIRM_COUNT) {
++            return TempHigh;
++        }
++        s_comm_hi_latched[idx] = 0u;
++        s_comm_hi_pending_cnt[idx] = 0u;
++        s_comm_hi_release_cnt[idx] = 0u;
++    }
++
++    if (s_comm_lo_latched[idx] != 0u) {
++        if (sample == TempLow) {
++            s_comm_lo_release_cnt[idx] = 0u;
++            return TempLow;
++        }
++        if (s_comm_lo_release_cnt[idx] < 255u) { s_comm_lo_release_cnt[idx]++; }
++        if (s_comm_lo_release_cnt[idx] < PROBE_TEMP_LO_RELEASE_CONFIRM_COUNT) {
++            return TempLow;
++        }
++        s_comm_lo_latched[idx] = 0u;
++        s_comm_lo_pending_cnt[idx] = 0u;
++        s_comm_lo_release_cnt[idx] = 0u;
++    }
++
++    if (sample == TempHigh) {
++        s_comm_lo_pending_cnt[idx] = 0u;
++        if (s_comm_hi_pending_cnt[idx] < 255u) { s_comm_hi_pending_cnt[idx]++; }
++        if (s_comm_hi_pending_cnt[idx] >= PROBE_TEMP_HI_CONFIRM_COUNT) {
++            s_comm_hi_latched[idx] = 1u;
++            s_comm_hi_release_cnt[idx] = 0u;
++            return TempHigh;
++        }
++        return PROBE_TEMP_C_HIGH_LIMIT;
++    }
++
++    if (sample == TempLow) {
++        s_comm_hi_pending_cnt[idx] = 0u;
++        if (s_comm_lo_pending_cnt[idx] < 255u) { s_comm_lo_pending_cnt[idx]++; }
++        if (s_comm_lo_pending_cnt[idx] >= PROBE_TEMP_LO_CONFIRM_COUNT) {
++            s_comm_lo_latched[idx] = 1u;
++            s_comm_lo_release_cnt[idx] = 0u;
++            return TempLow;
++        }
++        return PROBE_TEMP_C_LOW_LIMIT;
++    }
++
++    s_comm_hi_pending_cnt[idx] = 0u;
++    s_comm_lo_pending_cnt[idx] = 0u;
++    return sample;
+ }
+ 
+ /**
+@@ -363,6 +463,9 @@
+ static void update_three_temps_from_uart2(void)
+ {
+     uint8_t tx_req[8] = {0xAA, 0x55, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
++    int32_t raw0;
++    int32_t raw1;
++    int32_t raw2;
+ 
+     /* Use blocking TX on USART2 to avoid DMA state-machine lockups. */
+     (void)HAL_UART_Transmit(&huart2, tx_req, (uint16_t)sizeof(tx_req), 20u);
+@@ -378,9 +481,19 @@
+         return;
+     }
+ 
+-    s_comm_temp_c[0] = parse_be32_to_int16_c(&COM2.rxBuf[3]);
+-    s_comm_temp_c[1] = parse_be32_to_int16_c(&COM2.rxBuf[7]);
+-    s_comm_temp_c[2] = parse_be32_to_int16_c(&COM2.rxBuf[11]);
++    raw0 = parse_be32_raw_c(&COM2.rxBuf[3]);
++    raw1 = parse_be32_raw_c(&COM2.rxBuf[7]);
++    raw2 = parse_be32_raw_c(&COM2.rxBuf[11]);
++
++    if ((raw0 == 0) && (raw1 == 0) && (raw2 == 0)) {
++        s_comm_temp_c[0] = TempDisconnected;
++        s_comm_temp_c[1] = TempDisconnected;
++        s_comm_temp_c[2] = TempDisconnected;
++    } else {
++        s_comm_temp_c[0] = normalize_external_temp_c(raw0);
++        s_comm_temp_c[1] = normalize_external_temp_c(raw1);
++        s_comm_temp_c[2] = normalize_external_temp_c(raw2);
++    }
+ 
+     s_comm_temp_valid = 1u;
+ }
+@@ -408,8 +521,8 @@
+ {
+     uint8_t i;
+     int32_t t;
+-    uint16_t probe_f;
+-    uint16_t probe_f_raw;
++    int16_t probe_f;
++    int16_t probe_f_raw;
+     int16_t probe_c;
+     uint16_t battery_mV;
+ 
+@@ -418,25 +531,25 @@
+     {
+         for (i = 0u; i < 3u; i++)
+         {
+-            t = s_comm_temp_c[i];
+-
+-            if (t == HaveTempErr)
++            t = debounce_external_temp(i, s_comm_temp_c[i]);
++
++            if ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow))
+             {
+-                system_data.pt1000_temp[i] = HaveTempErr;
++                system_data.pt1000_temp[i] = (int16_t)t;
+                 continue;
+             }
+ 
+             if (system_data.units == unitC)
+             {
+                 if (t < PROBE_TEMP_C_LOW_LIMIT) { t = PROBE_TEMP_C_LOW_LIMIT; }
+-                if (t > 455) { t = 455; }
++                if (t > PROBE_TEMP_C_HIGH_LIMIT) { t = PROBE_TEMP_C_HIGH_LIMIT; }
+                 system_data.pt1000_temp[i] = (int16_t)t;
+             }
+             else
+             {
+                 t = (t * 9) / 5 + 32;
+                 if (t < -4) { t = -4; }
+-                if (t > 851) { t = 851; }
++                if (t > 932) { t = 932; }
+                 system_data.pt1000_temp[i] = (int16_t)t;
+             }
+         }
+@@ -449,9 +562,9 @@
+     Get_Filter_ADC12bitResult();
+ 
+     probe_f_raw = Temp_Get(0u);
+-    if ((probe_f_raw != TempErr) && (probe_f_raw != TempHigh))
+-    {
+-        probe_f = Temp_Handle(s_probe_temp_hist, 10u, probe_f_raw);
++    if ((probe_f_raw != TempErr) && (probe_f_raw != TempHigh) && (probe_f_raw != TempLow) && (probe_f_raw >= 0))
++    {
++        probe_f = (int16_t)Temp_Handle(s_probe_temp_hist, 10u, (uint16_t)probe_f_raw);
+     }
+     else
+     {
+@@ -461,10 +574,10 @@
+     /* High-temperature ADC drop glitch guard:
+      * if previous reading is >=350C and current reading suddenly drops a lot,
+      * ignore short transient drops to avoid false plunge. */
+-    if ((probe_f != TempErr) && (probe_f != TempHigh) && (probe_f < 851u))
++    if ((probe_f != TempErr) && (probe_f != TempHigh) && (probe_f != TempLow) && (probe_f >= 0) && (probe_f < 932))
+     {
+         if ((s_probe_f_prev_valid != 0u) && (s_probe_f_prev >= 662u) &&
+-            (((probe_f + 120u) < s_probe_f_prev) || ((probe_f + 72u) < s_probe_f_prev)))
++            (((probe_f + 120) < s_probe_f_prev) || ((probe_f + 72) < s_probe_f_prev)))
+         {
+             if (s_probe_drop_glitch_cnt < 255u) { s_probe_drop_glitch_cnt++; }
+             if (s_probe_drop_glitch_cnt < 3u)
+@@ -503,6 +616,9 @@
+         s_probe_hi_latched = 0u;
+         s_probe_hi_pending_cnt = 0u;
+         s_probe_hi_release_cnt = 0u;
++        s_probe_lo_latched = 0u;
++        s_probe_lo_pending_cnt = 0u;
++        s_probe_lo_release_cnt = 0u;
+         s_probe_f_prev_valid = 0u;
+         s_probe_drop_glitch_cnt = 0u;
+         s_probe_disconnect_pending_cnt = 0u;
+@@ -519,7 +635,7 @@
+         }
+     }
+     s_probe_reconnect_pending_cnt = 0u;
+-    if ((probe_f == TempHigh) || (probe_f >= 851u))
++    if ((probe_f == TempHigh) || (probe_f >= 932))
+     {
+         if (s_probe_hi_pending_cnt < 255u) { s_probe_hi_pending_cnt++; }
+         if (s_probe_hi_pending_cnt >= PROBE_TEMP_HI_CONFIRM_COUNT)
+@@ -530,6 +646,9 @@
+             g_probe_over_lo = 0u;
+             s_probe_c_filt_valid = 0u;
+             s_probe_hi_release_cnt = 0u;
++            s_probe_lo_latched = 0u;
++            s_probe_lo_pending_cnt = 0u;
++            s_probe_lo_release_cnt = 0u;
+             if (system_data.units == unitC) {
+                 system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+             } else {
+@@ -543,12 +662,38 @@
+         s_probe_hi_pending_cnt = 0u;
+     }
+ 
++    g_probe_connected = 1u;
++    if (probe_f == TempLow)
++    {
++        if (s_probe_lo_pending_cnt < 255u) { s_probe_lo_pending_cnt++; }
++        if (s_probe_lo_pending_cnt >= PROBE_TEMP_LO_CONFIRM_COUNT)
++        {
++            s_probe_lo_latched = 1u;
++            g_probe_over_hi = 0u;
++            g_probe_over_lo = 1u;
++            s_probe_c_filt_valid = 0u;
++            s_probe_hi_latched = 0u;
++            s_probe_hi_pending_cnt = 0u;
++            s_probe_hi_release_cnt = 0u;
++            s_probe_lo_release_cnt = 0u;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
++            }
++        }
++        return;
++    }
++    else
++    {
++        s_probe_lo_pending_cnt = 0u;
++    }
++
+     probe_c = (int16_t)((((int32_t)probe_f - 32) * 5) / 9);
+-    g_probe_connected = 1u;
+     /* HI hysteresis: keep -HI until temperature drops below release threshold. */
+     if (s_probe_hi_latched != 0u)
+     {
+-        if (probe_c > PROBE_TEMP_C_HIGH_RELEASE)
++        if (probe_c >= PROBE_TEMP_C_HIGH_RELEASE)
+         {
+             g_probe_over_hi = 1u;
+             g_probe_over_lo = 0u;
+@@ -575,6 +720,38 @@
+         s_probe_hi_latched = 0u;
+         s_probe_hi_pending_cnt = 0u;
+         s_probe_hi_release_cnt = 0u;
++        s_probe_f_prev_valid = 0u;
++        s_probe_drop_glitch_cnt = 0u;
++    }
++    if (s_probe_lo_latched != 0u)
++    {
++        if (probe_c <= PROBE_TEMP_C_LOW_LIMIT)
++        {
++            g_probe_over_hi = 0u;
++            g_probe_over_lo = 1u;
++            s_probe_lo_release_cnt = 0u;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
++            }
++            return;
++        }
++        if (s_probe_lo_release_cnt < 255u) { s_probe_lo_release_cnt++; }
++        if (s_probe_lo_release_cnt < PROBE_TEMP_LO_RELEASE_CONFIRM_COUNT)
++        {
++            g_probe_over_hi = 0u;
++            g_probe_over_lo = 1u;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
++            }
++            return;
++        }
++        s_probe_lo_latched = 0u;
++        s_probe_lo_pending_cnt = 0u;
++        s_probe_lo_release_cnt = 0u;
+         s_probe_f_prev_valid = 0u;
+         s_probe_drop_glitch_cnt = 0u;
+     }
+@@ -629,6 +806,10 @@
+             s_probe_hi_latched = 1u;
+             s_probe_hi_release_cnt = 0u;
+             g_probe_over_hi = 1u;
++            g_probe_over_lo = 0u;
++            s_probe_lo_latched = 0u;
++            s_probe_lo_pending_cnt = 0u;
++            s_probe_lo_release_cnt = 0u;
+             if (system_data.units == unitC) {
+                 system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+             } else {
+@@ -642,9 +823,23 @@
+         s_probe_hi_pending_cnt = 0u;
+         g_probe_over_hi = 0u;
+     }
+-    if (probe_c < PROBE_TEMP_C_LOW_LIMIT) {
+-        g_probe_over_lo = 1u;
++    if (probe_c <= PROBE_TEMP_C_LOW_LIMIT) {
++        if (s_probe_lo_pending_cnt < 255u) { s_probe_lo_pending_cnt++; }
++        if (s_probe_lo_pending_cnt >= PROBE_TEMP_LO_CONFIRM_COUNT)
++        {
++            s_probe_lo_latched = 1u;
++            s_probe_lo_release_cnt = 0u;
++            g_probe_over_hi = 0u;
++            g_probe_over_lo = 1u;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
++            }
++            return;
++        }
+     } else {
++        s_probe_lo_pending_cnt = 0u;
+         g_probe_over_lo = 0u;
+     }
+ 
+--- 2_git/tw66gw02/BSP/temp.h
++++ 3/tw66gw02/BSP/temp.h
+@@ -15,6 +15,8 @@
+ #define USR_ADC_CH_NR	2
+ #define  TempErr 999
+ #define  TempHigh 998
++#define  TempLow 997
++#define  TempDisconnected (-30)
+ typedef struct channel_evn_s {
+ 	uint16_t max;
+ 	uint16_t min;
+--- 2_git/tw66gw02/BSP/wireless.c
++++ 3/tw66gw02/BSP/wireless.c
+@@ -15,25 +15,7 @@
+  * Frame: [0]=0xFE, [1]=CMD, [...payload...], [last]=0xFF
+  */
+ 
+-#define WL_HEAD                     0xFEu
+-#define WL_TAIL                     0xFFu
+-#define WL_TX_MAX                   64u
+-
+-#define WL_CMD_POWER                0x01u
+-#define WL_CMD_TEMP_UP              0x03u
+-#define WL_CMD_TEMP_DOWN            0x04u
+-#define WL_CMD_SET_TEMP             0x05u
+-#define WL_CMD_JUMP_SET             0x06u
+-#define WL_CMD_QUERY_PROBE          0x07u
+-#define WL_CMD_UNIT                 0x09u
+-#define WL_CMD_QUERY_STATUS         0x0Bu
+-#define WL_CMD_QUERY_SET_ALL        0x0Du
+-#define WL_CMD_QUERY_ACT_ALL        0x0Eu
+-#define WL_CMD_BT_STATUS            0x24u
+-#define WL_CMD_FW_INFO              0x5Fu
+-
+-#define WL_TEMP_MIN                 175u
+-#define WL_TEMP_MAX                 455u
++
+ 
+ static uint8_t s_tx[WL_TX_MAX];
+ static uint8_t s_bt_status = 0u;
+@@ -51,6 +33,11 @@
+     }
+     return system_data.pt1000_temp[3];
+ }
++
++static uint8_t wl_is_special_temp(uint16_t t)
++{
++    return ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) ? 1u : 0u;
++}
+ /**
+   * @function wl_get_temp_by_channel()
+   * ------------------------
+@@ -60,7 +47,7 @@
+   */
+ static uint16_t wl_get_temp_by_channel(uint8_t ch)
+ {
+-    if (ch == 0x01u) { return system_data.pt1000_temp[3]; } /* probe1 in legacy protocol */
++    if (ch == 0x01u) { return wl_get_probe_temp(); }        /* probe1 in legacy protocol */
+     if (ch == 0x02u) { return HaveTempErr; }                /* probe2 unsupported */
+     return HaveTempErr;
+ }
+@@ -261,7 +248,7 @@
+     (void)len;
+ 
+     p = wl_get_temp_by_channel(rx[2]);
+-    if (p == HaveTempErr) { h = 0x09u; t = 0x06u; l = 0x00u; }
++    if (wl_is_special_temp(p) != 0u) { h = 0x09u; t = 0x06u; l = 0x00u; }
+     else { wl_split3(p, &h, &t, &l); }
+ 
+     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_PROBE; s_tx[2] = rx[2];
+@@ -319,8 +306,9 @@
+     s_tx[2] = 0x01u;
+     s_tx[3] = (system_data.units == unitF) ? 0x01u : 0x02u;
+     s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u;
+-    wl_split3(in_t, &h, &t, &l); s_tx[8] = h; s_tx[9] = t; s_tx[10] = l;
+-    if (p1 == HaveTempErr) { s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u; s_tx[14] = 0x02u; }
++    if (wl_is_special_temp(in_t) != 0u) { s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u; }
++    else { wl_split3(in_t, &h, &t, &l); s_tx[8] = h; s_tx[9] = t; s_tx[10] = l; }
++    if (wl_is_special_temp(p1) != 0u) { s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u; s_tx[14] = 0x02u; }
+     else { wl_split3(p1, &h, &t, &l); s_tx[11] = h; s_tx[12] = t; s_tx[13] = l; s_tx[14] = 0x00u; }
+     s_tx[15] = WL_TAIL;
+     wl_send(s_tx, 16u);
+@@ -372,14 +360,15 @@
+     p1 = wl_get_probe_temp();
+ 
+     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_ACT_ALL;
+-    if (p1 == HaveTempErr) { s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; }
++    if (wl_is_special_temp(p1) != 0u) { s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; }
+     else { wl_split3(p1, &h, &t, &l); s_tx[2] = h; s_tx[3] = t; s_tx[4] = l; }
+     s_tx[5] = 0x09u; s_tx[6] = 0x06u; s_tx[7] = 0x00u;
+     s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u;
+     s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u;
+     s_tx[14] = 0x09u; s_tx[15] = 0x06u; s_tx[16] = 0x00u;
+     s_tx[17] = 0x09u; s_tx[18] = 0x06u; s_tx[19] = 0x00u;
+-    wl_split3(in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l;
++    if (wl_is_special_temp(in_t) != 0u) { s_tx[20] = 0x09u; s_tx[21] = 0x06u; s_tx[22] = 0x00u; }
++    else { wl_split3(in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; }
+     s_tx[23] = WL_TAIL;
+     wl_send(s_tx, 24u);
+ }
+--- 2_git/tw66gw02/BSP/wireless.h
++++ 3/tw66gw02/BSP/wireless.h
+@@ -12,6 +12,26 @@
+ 
+ #include "config.h"
+ 
++#define WL_HEAD                     0xFEu
++#define WL_TAIL                     0xFFu
++#define WL_TX_MAX                   64u
++
++#define WL_CMD_POWER                0x01u
++#define WL_CMD_TEMP_UP              0x03u
++#define WL_CMD_TEMP_DOWN            0x04u
++#define WL_CMD_SET_TEMP             0x05u
++#define WL_CMD_JUMP_SET             0x06u
++#define WL_CMD_QUERY_PROBE          0x07u
++#define WL_CMD_UNIT                 0x09u
++#define WL_CMD_QUERY_STATUS         0x0Bu
++#define WL_CMD_QUERY_SET_ALL        0x0Du
++#define WL_CMD_QUERY_ACT_ALL        0x0Eu
++#define WL_CMD_BT_STATUS            0x24u
++#define WL_CMD_FW_INFO              0x5Fu
++
++#define WL_TEMP_MIN                 175u
++#define WL_TEMP_MAX                 455u
++
+ void Wireless_Init(void);
+ void WirelessTask(void);
+ 
+--- 2_git/tw66gw02/COP/main_control.c
++++ 3/tw66gw02/COP/main_control.c
+@@ -23,14 +23,7 @@
+     BT_RECONNECTING = 3
+ };
+ 
+-#define IDLE_AUTO_SHUTDOWN_TICKS_100MS  (3000u)
+-#define FIT_TEMP_C_THRESHOLD             (50)
+-#define FIT_OUTLIER_DIFF_C               (4)
+-#define FIT_MAIN_OUTLIER_DIFF_C          (4)
+-#define FIT_MAIN_OUTLIER_HOLD_COUNT      (2u)
+-#define FIT_MAIN_DYNAMIC_STEP_C          (1)
+-#define FIT_MAIN_DYNAMIC_CONFIRM_COUNT   (1u)
+-#define PROBE_REINSERT_MIN_OFF_TICKS_100MS (5u)
++
+ 
+ static uint8_t s_bt_state = BT_OFF;
+ static uint8_t s_bt_icon_on = 0u;
+@@ -43,7 +36,7 @@
+ 
+ static int16_t s_display_temp = 0;
+ /* 0:none, 1:-HI, 2:-LO, 3:--- */
+-static uint8_t s_display_special = 0u;
++static uint8_t s_display_special = 3u;
+ 
+ static uint16_t s_idle_ticks_100ms = 0u;
+ static _work_process s_last_work_process = idle;
+@@ -69,7 +62,35 @@
+   */
+ static uint8_t IsMainTempInvalid(int16_t t)
+ {
+-    if (t == HaveTempErr) {
++    if ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) {
++        return 1u;
++    }
++    return 0u;
++}
++
++static uint8_t IsMainChannelDisconnected(int16_t t)
++{
++    if ((t == HaveTempErr) || (t == TempDisconnected)) {
++        return 1u;
++    }
++    return 0u;
++}
++
++static uint8_t ApplyTempSpecial(int16_t t)
++{
++    if (t == TempHigh) {
++        s_display_special = 1u;
++        s_display_temp = 0;
++        return 1u;
++    }
++    if (t == TempLow) {
++        s_display_special = 2u;
++        s_display_temp = 0;
++        return 1u;
++    }
++    if ((t == HaveTempErr) || (t == TempDisconnected)) {
++        s_display_special = 3u;
++        s_display_temp = 0;
+         return 1u;
+     }
+     return 0u;
+@@ -406,6 +427,8 @@
+     s_bt_connected_input = 0u;
+     work_process = start_up;
+     system_data.units = unitC;
++    s_display_temp = 0;
++    s_display_special = 3u;
+     for (i = 0u; i < 9u; i++) {
+         system_data.pt1000_temp[i] = HaveTempErr;
+     }
+@@ -437,9 +460,9 @@
+     DisplayMode_t next = DisplayMode;
+     uint8_t no_main_temp;
+ 
+-    no_main_temp = (IsMainTempInvalid(system_data.pt1000_temp[0]) != 0u) &&
+-                   (IsMainTempInvalid(system_data.pt1000_temp[1]) != 0u) &&
+-                   (IsMainTempInvalid(system_data.pt1000_temp[2]) != 0u);
++    no_main_temp = (IsMainChannelDisconnected(system_data.pt1000_temp[0]) != 0u) &&
++                   (IsMainChannelDisconnected(system_data.pt1000_temp[1]) != 0u) &&
++                   (IsMainChannelDisconnected(system_data.pt1000_temp[2]) != 0u);
+     if (no_main_temp != 0u) {
+         return;
+     }
+@@ -481,6 +504,22 @@
+ {
+     s_bt_poweroff_req = 1u;
+     BluetoothHwPowerOff();
++}
++
++/**
++  * @function UI_RequestBluetoothToggle()
++  * -----------------------------
++  * @brief    Toggle Bluetooth pairing/power-off from one long-press action.
++  * @param    None
++  * @note     None
++  */
++void UI_RequestBluetoothToggle(void)
++{
++    if ((s_bt_state == BT_OFF) && (s_bt_hw_on == 0u)) {
++        UI_RequestBluetoothPairing();
++    } else {
++        UI_RequestBluetoothPowerOff();
++    }
+ }
+ 
+ /**
+@@ -672,13 +711,18 @@
+     int16_t fitted_temp;
+ 
+     s_display_special = 0u;
+-    no_main_temp = (IsMainTempInvalid(system_data.pt1000_temp[0]) != 0u) &&
+-                   (IsMainTempInvalid(system_data.pt1000_temp[1]) != 0u) &&
+-                   (IsMainTempInvalid(system_data.pt1000_temp[2]) != 0u);
+-
+-    if (no_main_temp != 0u) {
++    no_main_temp = (IsMainChannelDisconnected(system_data.pt1000_temp[0]) != 0u) &&
++                   (IsMainChannelDisconnected(system_data.pt1000_temp[1]) != 0u) &&
++                   (IsMainChannelDisconnected(system_data.pt1000_temp[2]) != 0u);
++
++    if ((no_main_temp != 0u) && (g_probe_connected != 0u)) {
++        DisplayMode = DISPLAY_MODE_PROBE;
++    }
++
++    if ((no_main_temp != 0u) && !((DisplayMode == DISPLAY_MODE_PROBE) && (g_probe_connected != 0u))) {
+         s_display_special = 3u;
+         s_display_temp = 0;
++        DisplayMode = DISPLAY_MODE_D_SURFACE;
+         return;
+     }
+ 
+@@ -686,10 +730,7 @@
+     {
+         case DISPLAY_MODE_O_SURFACE:
+             ch_temp = system_data.pt1000_temp[1];
+-            if (IsMainTempInvalid(ch_temp) != 0u) {
+-                s_display_special = 3u;
+-                s_display_temp = 0;
+-            } else {
++            if (ApplyTempSpecial(ch_temp) == 0u) {
+                 if (CalcFittedTemp(1u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
+                 else { s_display_temp = ch_temp; }
+ 						
+@@ -698,10 +739,7 @@
+ 
+         case DISPLAY_MODE_D_SURFACE:
+             ch_temp = system_data.pt1000_temp[0];
+-            if (IsMainTempInvalid(ch_temp) != 0u) {
+-                s_display_special = 3u;
+-                s_display_temp = 0;
+-            } else {
++            if (ApplyTempSpecial(ch_temp) == 0u) {
+                 if (CalcFittedTemp(0u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
+                 else { s_display_temp = ch_temp; }
+ 						
+@@ -710,10 +748,7 @@
+ 
+         case DISPLAY_MODE_CAVITY:
+             ch_temp = system_data.pt1000_temp[2];
+-            if (IsMainTempInvalid(ch_temp) != 0u) {
+-                s_display_special = 3u;
+-                s_display_temp = 0;
+-            } else {
++            if (ApplyTempSpecial(ch_temp) == 0u) {
+                 if (CalcFittedTemp(2u, ch_temp, &fitted_temp) != 0u) { s_display_temp = fitted_temp; }
+                 else { s_display_temp = ch_temp; }
+ 		
+@@ -722,7 +757,8 @@
+ 
+         case DISPLAY_MODE_PROBE:
+             if (g_probe_connected == 0u) {
+-                s_display_temp = (int16_t)system_data.pt1000_temp[0];
++                s_display_special = 3u;
++                s_display_temp = 0;
+             } else if (g_probe_over_hi != 0u) {
+                 s_display_special = 1u;
+                 s_display_temp = 0;
+@@ -761,10 +797,6 @@
+ 	
+     probe_now = g_probe_connected;
+ 
+-    if (probe_now == 0u) {
+-        DisplayMode = DISPLAY_MODE_D_SURFACE;
+-    }
+-
+     KeyRespose(Key0_short_press, Key1_short_press, Key0_long_press, Key1_long_press, Key0_very_long_press, Key1_very_long_press);
+ 
+     probe_was_absent_long = (s_probe_absent_ticks_100ms >= PROBE_REINSERT_MIN_OFF_TICKS_100MS) ? 1u : 0u;
+--- 2_git/tw66gw02/COP/main_control.h
++++ 3/tw66gw02/COP/main_control.h
+@@ -10,12 +10,25 @@
+ #ifndef		__MAIN_CONTROL_H__
+ #define		__MAIN_CONTROL_H__
+ #include "config.h"
++
++#define IDLE_AUTO_SHUTDOWN_TICKS_100MS  (3000u)
++#define FIT_TEMP_C_THRESHOLD             (50)
++#define FIT_OUTLIER_DIFF_C               (4)
++#define FIT_MAIN_OUTLIER_DIFF_C          (4)
++#define FIT_MAIN_OUTLIER_HOLD_COUNT      (2u)
++#define FIT_MAIN_DYNAMIC_STEP_C          (1)
++#define FIT_MAIN_DYNAMIC_CONFIRM_COUNT   (1u)
++#define PROBE_REINSERT_MIN_OFF_TICKS_100MS (5u)
++
++
++
+ void MainControl(void);
+ void SysDataInit(void);
+ void UI_NotifyLocalInteraction(void);
+ void UI_CycleDisplayMode(void);
+ void UI_RequestBluetoothPairing(void);
+ void UI_RequestBluetoothPowerOff(void);
++void UI_RequestBluetoothToggle(void);
+ void UI_SetBluetoothConnectionState(uint8_t connected);
+ int16_t UI_GetDisplayTemp(void);
+ uint8_t UI_GetDisplaySpecial(void);
+--- 2_git/tw66gw02/Core/Src/main.c
++++ 3/tw66gw02/Core/Src/main.c
+@@ -98,17 +98,14 @@
+   /* USER CODE BEGIN 2 */
+   
+ 	SysDataInit();
++	Temp_Get_Init();
+ 	Screen_C8721_Init();
+-	Temp_Get_Init();
+   com_init();
+   Wireless_Init();
+-//  MainControl();
+-//  DisplayTask();
+-
+ 	
+  SCH_Add_Task(Key_Scan, 0, 10);
+  SCH_Add_Task(DisplayTask, 0 , 10); 
+- SCH_Add_Task(TempGetTask, 0 , 500);
++ SCH_Add_Task(TempGetTask, 0 , 900);
+  SCH_Add_Task(MainControl, 0 , 100);
+ // SCH_Add_Task(WirelessTask, 0, 20);
+  
+@@ -122,6 +119,7 @@
+ 
+     /* USER CODE BEGIN 3 */
+ 	 SCH_Dispatch_Tasks();
++		
+   }
+   /* USER CODE END 3 */
+ }
+--- 2_git/tw66gw02/MDK-ARM/tw66gw02.sct
++++ 3/tw66gw02/MDK-ARM/tw66gw02.sct
+@@ -0,0 +1,16 @@
++; *************************************************************
++; *** Scatter-Loading Description File generated by uVision ***
++; *************************************************************
++
++LR_IROM1 0x08000000 0x00010000  {    ; load region size_region
++  ER_IROM1 0x08000000 0x00010000  {  ; load address = execution address
++   *.o (RESET, +First)
++   *(InRoot$$Sections)
++   .ANY (+RO)
++   .ANY (+XO)
++  }
++  RW_IRAM1 0x20000000 0x00002000  {  ; RW data
++   .ANY (+RW +ZI)
++  }
++}
++

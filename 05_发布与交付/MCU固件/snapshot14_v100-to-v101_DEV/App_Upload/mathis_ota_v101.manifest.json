@@ -1,0 +1,12 @@
+﻿{
+    "format":  "mathis-dev-ota-v1",
+    "warning":  "DEVELOPMENT OTA - NOT FOR PRODUCTION; RSA verification and anti-rollback are disabled",
+    "target_version":  101,
+    "application_size":  24020,
+    "signature_size":  384,
+    "artifact_size":  24404,
+    "crc32_iso_hdlc":  "0xC556BAA5",
+    "sha256":  "d3d96e56743123cbb024f2d253272fd4930a883fd845a5a0425a8a7429deae1e",
+    "application_base":  "0x08001800",
+    "development_signature_placeholder":  true
+}

@@ -1,0 +1,316 @@
+--- 10/tw66gw02/BSP/config.h
++++ 11/tw66gw02/BSP/config.h
+@@ -150,3 +150,4 @@
+ 
+ 
+ 
++
+--- 10/tw66gw02/BuildOtaArtifacts.ps1
++++ 11/tw66gw02/BuildOtaArtifacts.ps1
+@@ -16,20 +16,6 @@
+ 
+ function Invoke-AppBuild([int]$Version, [string]$Label) {
+     $template = Get-Content (Join-Path $mdkDir 'tw66gw02.uvprojx') -Raw -Encoding UTF8
+-    $disabledAfterMake = @'
+-          <AfterMake>
+-            <RunUserProg1>0</RunUserProg1>
+-            <RunUserProg2>0</RunUserProg2>
+-            <UserProg1Name></UserProg1Name>
+-            <UserProg2Name></UserProg2Name>
+-            <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
+-            <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
+-            <nStopA1X>0</nStopA1X>
+-            <nStopA2X>0</nStopA2X>
+-          </AfterMake>
+-'@
+-    $template = [regex]::Replace($template, '(?s)          <AfterMake>.*?          </AfterMake>',
+-                                 $disabledAfterMake, 1)
+     $temporaryOutput = ".\tw66gw02_ota_$Label\"
+     $template = $template.Replace('<OutputDirectory>.\tw66gw02\</OutputDirectory>',
+                                   "<OutputDirectory>$temporaryOutput</OutputDirectory>")
+@@ -120,66 +106,21 @@
+     $otaFile = Join-Path $outputDir "mathis_ota_v$OtaVersion.ota"
+     [IO.File]::WriteAllBytes($otaFile, $artifact)
+     $crc = Get-Crc32 $artifact
+-    $sha256Provider = [Security.Cryptography.SHA256]::Create()
+-    try {
+-        $sha256 = -join ($sha256Provider.ComputeHash($artifact) | ForEach-Object { $_.ToString('x2') })
+-    }
+-    finally {
+-        $sha256Provider.Dispose()
+-    }
+     $manifest = [ordered]@{
+         format = 'mathis-dev-ota-v1'
+-        warning = 'DEVELOPMENT OTA - NOT FOR PRODUCTION; RSA verification and anti-rollback are disabled'
+         target_version = $OtaVersion
+         application_size = $appBytes.Length
+         signature_size = 384
+         artifact_size = $artifact.Length
+         crc32_iso_hdlc = ('0x{0:X8}' -f $crc)
+-        sha256 = $sha256
+         application_base = '0x08001800'
+         development_signature_placeholder = $true
+     }
+-    $manifestPath = Join-Path $outputDir "mathis_ota_v$OtaVersion.manifest.json"
+-    $manifest | ConvertTo-Json | Set-Content -Encoding UTF8 $manifestPath
+-
+-    # Produce a physically separated hand-off tree so a raw application image
+-    # cannot be confused with either the complete factory image or App OTA file.
+-    $releaseRoot = Join-Path $outputDir "Release_v${FactoryVersion}_to_v${OtaVersion}"
+-    $factoryDelivery = Join-Path $releaseRoot 'Factory_Flash'
+-    $appDelivery = Join-Path $releaseRoot 'App_Upload'
+-    $debugDelivery = Join-Path $releaseRoot 'Debug_Only'
+-    New-Item -ItemType Directory -Force -Path $factoryDelivery,$appDelivery,$debugDelivery | Out-Null
+-    Copy-Item -Force $factoryHex,$factoryBin -Destination $factoryDelivery
+-    Copy-Item -Force $otaFile,$manifestPath -Destination $appDelivery
+-    Copy-Item -Force $factory.Bin,$factory.Hex,$ota.Bin,$ota.Hex -Destination $debugDelivery
+-
+-    $deliveryFiles = @(
+-        Join-Path $factoryDelivery (Split-Path -Leaf $factoryHex)
+-        Join-Path $factoryDelivery (Split-Path -Leaf $factoryBin)
+-        Join-Path $appDelivery (Split-Path -Leaf $otaFile)
+-        Join-Path $appDelivery (Split-Path -Leaf $manifestPath)
+-    )
+-    $checksumLines = foreach ($deliveryFile in $deliveryFiles) {
+-        $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $deliveryFile).Hash.ToLowerInvariant()
+-        $relativeDeliveryPath = $deliveryFile.Substring($releaseRoot.Length + 1)
+-        "$hash  $relativeDeliveryPath"
+-    }
+-    [IO.File]::WriteAllLines((Join-Path $releaseRoot 'SHA256SUMS.txt'), $checksumLines,
+-                             [Text.UTF8Encoding]::new($false))
+-    $releaseNote = @"
+-Mathis development OTA v$FactoryVersion -> v$OtaVersion
+-DEVELOPMENT ONLY - RSA verification and anti-rollback are disabled.
+-
+-Factory_Flash: full-chip erase, then program mathis_factory_v$FactoryVersion.hex with Keil.
+-App_Upload: bundle mathis_ota_v$OtaVersion.ota and use the adjacent manifest values.
+-Debug_Only: relocated application-only images; never use these as factory images or App artifacts.
+-"@
+-    [IO.File]::WriteAllText((Join-Path $releaseRoot 'README.txt'), $releaseNote,
+-                            [Text.UTF8Encoding]::new($false))
++    $manifest | ConvertTo-Json | Set-Content -Encoding UTF8 `
++        (Join-Path $outputDir "mathis_ota_v$OtaVersion.manifest.json")
+     Write-Host "Factory image: $factoryHex"
+     Write-Host "Factory binary: $factoryBin (program at 0x08000000)"
+     Write-Host "OTA artifact: $otaFile ($($artifact.Length) bytes, CRC $('0x{0:X8}' -f $crc))"
+-    Write-Host "Separated delivery: $releaseRoot"
+ }
+ finally {
+     if (Test-Path -LiteralPath $generatedProject) { Remove-Item -LiteralPath $generatedProject -Force }
+--- 10/tw66gw02/BuildStartupDiagnostic.ps1
++++ 11/tw66gw02/BuildStartupDiagnostic.ps1
+@@ -16,20 +16,6 @@
+ 
+ try {
+     $template = Get-Content (Join-Path $mdkDir 'tw66gw02.uvprojx') -Raw -Encoding UTF8
+-    $disabledAfterMake = @'
+-          <AfterMake>
+-            <RunUserProg1>0</RunUserProg1>
+-            <RunUserProg2>0</RunUserProg2>
+-            <UserProg1Name></UserProg1Name>
+-            <UserProg2Name></UserProg2Name>
+-            <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
+-            <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
+-            <nStopA1X>0</nStopA1X>
+-            <nStopA2X>0</nStopA2X>
+-          </AfterMake>
+-'@
+-    $template = [regex]::Replace($template, '(?s)          <AfterMake>.*?          </AfterMake>',
+-                                 $disabledAfterMake, 1)
+     $template = $template.Replace('<OutputDirectory>.\tw66gw02\</OutputDirectory>',
+                                   '<OutputDirectory>.\tw66gw02_direct\</OutputDirectory>')
+     $template = $template.Replace(
+--- 10/tw66gw02/COP/main_control.c
++++ 11/tw66gw02/COP/main_control.c
+@@ -992,3 +992,4 @@
+ 
+ 
+ 
++
+--- 10/tw66gw02/COP/ota.h
++++ 11/tw66gw02/COP/ota.h
+@@ -10,8 +10,15 @@
+ #ifndef __OTA_H__
+ #define __OTA_H__
+ #include "config.h"
+-#define UPGRADEaddr1      0x08005000		// offset:20KB
+-#define FLASH_BAK_ADDR		0x08024800
++#include "ota_layout.h"
++
++/*
++ * Deprecated YMODEM/DGUS OTA interface retained only for source compatibility.
++ * The active code path is ota_update.c plus the dedicated bootloader.  Keep
++ * these legacy aliases inside the valid STM32F030C8 64 KiB flash map.
++ */
++#define UPGRADEaddr1      OTA_APP_BASE
++#define FLASH_BAK_ADDR    OTA_STAGE_BASE
+ typedef struct 
+ {
+   uint8_t McuVersionSucess;
+--- 10/tw66gw02/Core/Src/gpio.c
++++ 11/tw66gw02/Core/Src/gpio.c
+@@ -54,7 +54,11 @@
+   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
+ 
+   /*Configure GPIO pin Output Level */
+-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_3|GPIO_PIN_8, GPIO_PIN_RESET);
++  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_8, GPIO_PIN_RESET);
++
++  /* PB3 is the board power-hold latch.  It was already asserted by the
++     bootloader and must not glitch low while GPIO ownership moves to the app. */
++  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+ 
+   /*Configure GPIO pin Output Level */
+   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11|GPIO_PIN_12, GPIO_PIN_RESET);
+--- 10/tw66gw02/tests/test_ota_artifacts.py
++++ 11/tw66gw02/tests/test_ota_artifacts.py
+@@ -1,5 +1,4 @@
+ import json
+-import hashlib
+ import pathlib
+ import struct
+ import zlib
+@@ -70,6 +69,11 @@
+     artifact = (ARTIFACTS / "mathis_ota_v101.ota").read_bytes()
+     boot = (ROOT / "Bootloader" / "build" / "mathis_bootloader.bin").read_bytes()
+     factory_bin = (ARTIFACTS / "mathis_factory_v100.bin").read_bytes()
++    keil_factory_bin = (ARTIFACTS / "keil_factory_v100.bin").read_bytes()
++    direct = (ARTIFACTS / "diagnostic_direct_v100.bin").read_bytes()
++    min_boot = (ROOT / "Bootloader" / "build_min" / "mathis_min_bootloader.bin").read_bytes()
++    min_factory = (ARTIFACTS / "diagnostic_minboot_factory_v100.bin").read_bytes()
++    gpio_alive = (ARTIFACTS / "diagnostic_gpio_alive.bin").read_bytes()
+     manifest = json.loads((ARTIFACTS / "mathis_ota_v101.manifest.json").read_text(encoding="utf-8-sig"))
+ 
+     assert len(app100) <= APP_MAX and len(app101) <= APP_MAX
+@@ -81,7 +85,6 @@
+     assert artifact[:-384] == app101 and artifact[-384:] == bytes(384)
+     assert manifest["artifact_size"] == len(artifact)
+     assert manifest["crc32_iso_hdlc"] == f"0x{zlib.crc32(artifact) & 0xFFFFFFFF:08X}"
+-    assert manifest["sha256"] == hashlib.sha256(artifact).hexdigest()
+ 
+     boot_stack, boot_reset = struct.unpack_from("<II", boot)
+     assert 0x20000000 < boot_stack <= 0x20002000
+@@ -90,37 +93,19 @@
+     assert factory_bin[: len(boot)] == boot
+     assert factory_bin[len(boot) : 0x1800] == bytes([0xFF]) * (0x1800 - len(boot))
+     assert factory_bin[0x1800:] == app100
+-    keil_factory_path = ARTIFACTS / "keil_factory_v100.bin"
+-    if keil_factory_path.exists():
+-        keil_factory_bin = keil_factory_path.read_bytes()
+-        # fromelf --bincombined pads the unused tail of the fixed 6 KiB boot
+-        # execution region with 0x00, while BuildOtaArtifacts leaves erased
+-        # flash as 0xFF. Both representations program equivalent content.
+-        assert keil_factory_bin[: len(boot)] == boot
+-        assert set(keil_factory_bin[len(boot) : 0x1800]) <= {0x00, 0xFF}
+-        assert keil_factory_bin[0x1800:] == app100
+-
+-    direct_path = ARTIFACTS / "diagnostic_direct_v100.bin"
+-    min_boot_path = ROOT / "Bootloader" / "build_min" / "mathis_min_bootloader.bin"
+-    min_factory_path = ARTIFACTS / "diagnostic_minboot_factory_v100.bin"
+-    gpio_path = ARTIFACTS / "diagnostic_gpio_alive.bin"
+-    if all(path.exists() for path in (direct_path, min_boot_path, min_factory_path, gpio_path)):
+-        direct = direct_path.read_bytes()
+-        min_boot = min_boot_path.read_bytes()
+-        min_factory = min_factory_path.read_bytes()
+-        gpio_alive = gpio_path.read_bytes()
+-        direct_stack, direct_reset = struct.unpack_from("<II", direct)
+-        assert 0x20000000 < direct_stack <= 0x20001FF0
+-        assert 0x08000000 <= (direct_reset & ~1) < 0x08000000 + len(direct)
+-        min_stack, min_reset = struct.unpack_from("<II", min_boot)
+-        assert 0x20000000 < min_stack <= 0x20002000
+-        assert 0x08000000 <= (min_reset & ~1) < 0x08000000 + len(min_boot)
+-        assert min_factory[: len(min_boot)] == min_boot
+-        assert min_factory[len(min_boot) : 0x1800] == bytes([0xFF]) * (0x1800 - len(min_boot))
+-        assert min_factory[0x1800:] == app100
+-        gpio_stack, gpio_reset = struct.unpack_from("<II", gpio_alive)
+-        assert 0x20000000 < gpio_stack <= 0x20002000
+-        assert 0x08000000 <= (gpio_reset & ~1) < 0x08000000 + len(gpio_alive)
++    assert keil_factory_bin == factory_bin
++    direct_stack, direct_reset = struct.unpack_from("<II", direct)
++    assert 0x20000000 < direct_stack <= 0x20001FF0
++    assert 0x08000000 <= (direct_reset & ~1) < 0x08000000 + len(direct)
++    min_stack, min_reset = struct.unpack_from("<II", min_boot)
++    assert 0x20000000 < min_stack <= 0x20002000
++    assert 0x08000000 <= (min_reset & ~1) < 0x08000000 + len(min_boot)
++    assert min_factory[: len(min_boot)] == min_boot
++    assert min_factory[len(min_boot) : 0x1800] == bytes([0xFF]) * (0x1800 - len(min_boot))
++    assert min_factory[0x1800:] == app100
++    gpio_stack, gpio_reset = struct.unpack_from("<II", gpio_alive)
++    assert 0x20000000 < gpio_stack <= 0x20002000
++    assert 0x08000000 <= (gpio_reset & ~1) < 0x08000000 + len(gpio_alive)
+ 
+     factory = parse_hex(ARTIFACTS / "mathis_factory_v100.hex")
+     assert min(factory) == 0x08000000
+--- 10/tw66gw02/Bootloader/bootloader.sct
++++ 11/tw66gw02/Bootloader/bootloader.sct
+@@ -1,14 +0,0 @@
+-; STM32F030C8 development OTA bootloader: 6 KiB at flash base.
+-LR_BOOT 0x08000000 0x00001800
+-{
+-  ER_BOOT 0x08000000 0x00001800
+-  {
+-    *.o (RESET, +First)
+-    *(InRoot$$Sections)
+-    .ANY (+RO)
+-  }
+-  RW_BOOT 0x20000000 0x00002000
+-  {
+-    .ANY (+RW +ZI)
+-  }
+-}
+--- 10/tw66gw02/MDK-ARM/tw66gw02_app.sct
++++ 11/tw66gw02/MDK-ARM/tw66gw02_app.sct
+@@ -1,15 +0,0 @@
+-; Relocated OTA application. SRAM[0..0xBF] is reserved for vector remap and
+-; SRAM[0x1FF0..0x1FFF] is reserved for the development boot trace.
+-LR_APP 0x08001800 0x00006A80
+-{
+-  ER_APP 0x08001800 0x00006A80
+-  {
+-    *.o (RESET, +First)
+-    *(InRoot$$Sections)
+-    .ANY (+RO)
+-  }
+-  RW_APP 0x200000C0 0x00001F30
+-  {
+-    .ANY (+RW +ZI)
+-  }
+-}
+--- 10/tw66gw02/MDK-ARM/tw66gw02_direct.sct
++++ 11/tw66gw02/MDK-ARM/tw66gw02_direct.sct
+@@ -1,14 +0,0 @@
+-; Direct-start diagnostic application without the OTA bootloader.
+-LR_DIRECT 0x08000000 0x0000F800
+-{
+-  ER_DIRECT 0x08000000 0x0000F800
+-  {
+-    *.o (RESET, +First)
+-    *(InRoot$$Sections)
+-    .ANY (+RO)
+-  }
+-  RW_DIRECT 0x20000000 0x00001FF0
+-  {
+-    .ANY (+RW +ZI)
+-  }
+-}
+--- 10/tw66gw02/MDK-ARM/tw66gw02_factory.sct
++++ 11/tw66gw02/MDK-ARM/tw66gw02_factory.sct
+@@ -1,18 +0,0 @@
+-; Complete factory image: embedded bootloader plus relocated application.
+-LR_FACTORY 0x08000000 0x00008400
+-{
+-  ER_BOOT_IMAGE 0x08000000 FIXED 0x00001800
+-  {
+-    boot_image.o (BOOT_IMAGE, +First)
+-  }
+-  ER_APP 0x08001800 FIXED 0x00006A80
+-  {
+-    *.o (RESET, +First)
+-    *(InRoot$$Sections)
+-    .ANY (+RO)
+-  }
+-  RW_APP 0x200000C0 0x00001F30
+-  {
+-    .ANY (+RW +ZI)
+-  }
+-}

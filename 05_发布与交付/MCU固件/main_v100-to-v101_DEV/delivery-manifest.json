@@ -1,0 +1,116 @@
+{
+  "id": "main_v100-to-v101_DEV",
+  "snapshot_date": "2026-09-10",
+  "classification": "DEV / 非量产交付",
+  "source_project": "01_固件工程/main",
+  "git_base_head": "1c249a8f6466f04a8de34710f95f3cd1ec19260e",
+  "git_head_is_exact_build_commit": false,
+  "source_fingerprint_file": "source-fingerprint.json",
+  "source_fingerprint_sha256": "0a6a4f149f13d4f4d9cf418cf600d39e798b93f6790bd8f4d29dad511f0ab599",
+  "source_association": "本次清理后重新构建并通过 OTA 检查；当前源码指纹对应本次构建。",
+  "factory_version": 100,
+  "ota_version": 101,
+  "protocol_version": "待核实；公共 BLE 文档 v0.4 Draft 不等同于本包已验证协议版本",
+  "application_base": "0x08001800",
+  "bootloader_partition_kib": 6,
+  "bootloader_iteration": "development / RSA verification disabled",
+  "boot_api_version": "未在 manifest 声明",
+  "slot_kib": 27,
+  "hardware": "工程目标 STM32F030C8；板卡修订号及 MCU/BLE/手机 APP 适配组合待实机核实",
+  "build_tools": "Keil uVision / ARM Compiler 5.06 update 7；历史 Bootloader 原构建环境仅有现存脚本/日志依据",
+  "validation": {
+    "date": "2026-09-10",
+    "ota_size_sha256_crc32": "PASS",
+    "ota_payload_matches_application": "PASS",
+    "factory_boot_partition_and_application": "PASS",
+    "signature": "384-byte zero DEV placeholder checked",
+    "hardware": "PENDING",
+    "application_base": "0x08001800"
+  },
+  "files": [
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/App_Upload/mathis_ota_v101.manifest.json",
+      "file": "App_Upload/mathis_ota_v101.manifest.json",
+      "bytes": 483,
+      "sha256": "32dbd34c823153e6ac60136f8fb36efa8c21d5b507d6e77134d7a36611bc28d6"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/App_Upload/mathis_ota_v101.ota",
+      "file": "App_Upload/mathis_ota_v101.ota",
+      "bytes": 23268,
+      "sha256": "7d72822aa7ad78dde1265e720eed1b003e81f5e70d59e33c9e1a09ce0bb41b8e"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v100.bin",
+      "file": "Debug_Only/mathis_app_v100.bin",
+      "bytes": 22884,
+      "sha256": "4d01c033d78148155f91179886934ec99d3b6d07941f0197c9dfe7235690f935"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v100.hex",
+      "file": "Debug_Only/mathis_app_v100.hex",
+      "bytes": 64422,
+      "sha256": "bdd885ab8a2848ce575e92d2e5abafd87129305c336e2419ffaf2e7afbee4951"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v101.bin",
+      "file": "Debug_Only/mathis_app_v101.bin",
+      "bytes": 22884,
+      "sha256": "264edd6ab3f59db8ec053f99466a049a042cb05782a79bb82af354b4f9a095ac"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v101.hex",
+      "file": "Debug_Only/mathis_app_v101.hex",
+      "bytes": 64422,
+      "sha256": "8c8f7a046c7fe2a42d3dccf20bc4f94e188d82c26841e5efbc4d93ccbde18956"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/Factory_Flash/mathis_factory_v100.bin",
+      "file": "Factory_Flash/mathis_factory_v100.bin",
+      "bytes": 29028,
+      "sha256": "58aa52601bd24d483e4c036a313cfa4de805237aed065668713f36d1897bcc8b"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/Factory_Flash/mathis_factory_v100.hex",
+      "file": "Factory_Flash/mathis_factory_v100.hex",
+      "bytes": 70564,
+      "sha256": "9f49ed81f977a9933972ac98a29362de664c421164daf127c98f7111336217b8"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/README.txt",
+      "file": "README.txt",
+      "bytes": 360,
+      "sha256": "d37b68ca7c1b49fa98b91ebab87d39b38386ab66bf57643115b820d709ddc703"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/Release_v100_to_v101/SHA256SUMS.txt",
+      "file": "Verification/Original_release_SHA256SUMS.txt",
+      "bytes": 416,
+      "sha256": "dcbd57d921e9ecfdfe61205c36fd7e8c64e834f708a8bd8999672cfaf4388505"
+    },
+    {
+      "source": "01_固件工程/main/Bootloader/build/mathis_bootloader.bin",
+      "file": "Bootloader/mathis_bootloader.bin",
+      "bytes": 2168,
+      "sha256": "ea727f03af6c89408c97cede7acf97115dd70354f0c8ba0f2081883ea2d7a497"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/build_v100.log",
+      "file": "Verification/build_v100.log",
+      "bytes": 1858,
+      "sha256": "e2936a2c8c8599a87b10218ac757892db733901d53bb609905176f00aa78e6d7"
+    },
+    {
+      "source": "01_固件工程/main/OTA_Artifacts/build_v101.log",
+      "file": "Verification/build_v101.log",
+      "bytes": 1858,
+      "sha256": "1b6948e97e185810b8b99637515bf89278140a2a576467c756cc92c53e7290c5"
+    },
+    {
+      "source": "00_项目索引/证据/第四步/main_ota_test.log",
+      "file": "Verification/main_ota_test.log",
+      "bytes": 160,
+      "sha256": "67f264bb337ed92d458f7c3d55cd4f72d6dd177451dd89aa8888bf86809446fa"
+    }
+  ]
+}

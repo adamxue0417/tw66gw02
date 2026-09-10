@@ -1,0 +1,14 @@
+{
+  "before_files": 1951,
+  "before_bytes": 574897480,
+  "after_rebuild_files": 915,
+  "after_rebuild_bytes": 268446773,
+  "reduction_in_selected_intermediates_bytes": 306450707,
+  "backup_zip_bytes": 155746125,
+  "reduction_less_backup_bytes": 150704582,
+  "scope": "Only .o/.crf/.d in the explicitly selected compiler output directories; not total disk free-space measurement",
+  "restored_samples": [
+    "01_固件工程/main/Bootloader/build/boot_main.o",
+    "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/Bootloader/build/boot_main.o"
+  ]
+}

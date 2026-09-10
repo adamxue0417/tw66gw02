@@ -1,0 +1,103 @@
+{
+  "keil": [
+    {
+      "project": "main",
+      "references": 54,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "1",
+      "references": 50,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "2",
+      "project_file_missing": true
+    },
+    {
+      "project": "3",
+      "references": 50,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "4",
+      "references": 50,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "5",
+      "references": 50,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "6",
+      "references": 51,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "7",
+      "references": 50,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "8",
+      "references": 50,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "9",
+      "references": 56,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "10",
+      "references": 54,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "11",
+      "references": 54,
+      "missing": [
+        "01_固件工程/history/snapshot-11_powerhold-incomplete/tw66gw02/MDK-ARM/tw66gw02_factory.sct"
+      ],
+      "missing_generated_build_inputs": [
+        "01_固件工程/history/snapshot-11_powerhold-incomplete/tw66gw02/MDK-ARM/boot_image.o"
+      ]
+    },
+    {
+      "project": "12",
+      "references": 54,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    },
+    {
+      "project": "13",
+      "references": 54,
+      "missing": [],
+      "missing_generated_build_inputs": [
+        "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/MDK-ARM/boot_image.o"
+      ]
+    },
+    {
+      "project": "14",
+      "references": 55,
+      "missing": [],
+      "missing_generated_build_inputs": []
+    }
+  ],
+  "eide": {
+    "references": 65,
+    "missing": []
+  },
+  "note": "Final state after main boot image preparation. Missing generated .o inputs are listed separately from source/linker configuration. Snapshot-2 project and snapshot-11 linker gaps are pre-existing."
+}

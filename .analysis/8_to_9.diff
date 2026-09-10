@@ -1,0 +1,1788 @@
+--- 8/tw66gw02/BSP/config.h
++++ 9/tw66gw02/BSP/config.h
+@@ -29,6 +29,9 @@
+ #include "screen_c8721.h"
+ //COP
+ #include "main_control.h"
++#include "ota.h"
++#include "ota_layout.h"
++#include "ota_metadata.h"
+ //#include "idle.h"
+ //#include "test.h"
+ #include "start_up.h"
+@@ -36,9 +39,7 @@
+ //#include "set.h"
+ #include "shutdown.h"
+ #include "warning.h"
+-//#include "ota.h"
+ //#include "pid.h"
+-//#include "gagent_md5.h"
+ //OS
+ #include "TaskScheduler.h"
+ /****************************************************************************************************************/
+--- 8/tw66gw02/BSP/wireless.c
++++ 9/tw66gw02/BSP/wireless.c
+@@ -1,4 +1,4 @@
+-/** Mathis BLE framed protocol. OTA types are intentionally unsupported. */
++/** Mathis BLE framed protocol with stop-and-wait OTA transport. */
+ #include "config.h"
+ 
+ #define TX_QUEUE_DEPTH              (4u)
+@@ -9,6 +9,7 @@
+ typedef struct {
+     uint8_t data[20];
+     uint8_t length;
++    uint8_t type;
+ } TxEntry;
+ 
+ typedef struct {
+@@ -28,6 +29,8 @@
+ static uint8_t s_tx_head;
+ static uint8_t s_tx_tail;
+ static uint8_t s_tx_count;
++static uint8_t s_ota_was_paused;
++static uint8_t s_ota_purge_pending;
+ static CoeffPending s_pending[TEMP_COEFF_CHANNEL_COUNT];
+ MathisBleDebug g_mathis_ble_debug;
+ 
+@@ -160,7 +163,9 @@
+     }
+     g_mathis_ble_debug.frames_ok++;
+     if (frame[2] == MATHIS_TYPE_CMD) { HandleCommand(&frame[6], payload_length); }
+-    /* 0x10..0x13 OTA and all unknown types are deliberately ignored. */
++    else if ((frame[2] >= MATHIS_TYPE_OTA_BEGIN) && (frame[2] <= MATHIS_TYPE_OTA_ABORT)) {
++        Ota_HandleMessage(frame[2], &frame[6], payload_length);
++    }
+     return 1u;
+ }
+ 
+@@ -257,24 +262,40 @@
+     return 0u;
+ }
+ 
+-static uint8_t QueueFrame(const uint8_t *data, uint8_t length)
++static uint8_t QueueFrame(const uint8_t *data, uint8_t length, uint8_t type)
+ {
+     if ((length > sizeof(s_tx_queue[0].data)) || (s_tx_count >= TX_QUEUE_DEPTH)) { return 0u; }
+-    memcpy(s_tx_queue[s_tx_tail].data, data, length); s_tx_queue[s_tx_tail].length = length;
++    memcpy(s_tx_queue[s_tx_tail].data, data, length); s_tx_queue[s_tx_tail].length = length; s_tx_queue[s_tx_tail].type = type;
+     s_tx_tail = (uint8_t)((s_tx_tail + 1u) % TX_QUEUE_DEPTH); s_tx_count++;
+     return 1u;
+ }
+ 
++static void QueueOtaStatus(void)
++{
++    uint8_t payload[6];
++    uint8_t payload_length;
++    uint8_t frame[14];
++    uint16_t crc;
++    if ((s_tx_count >= TX_QUEUE_DEPTH) || (Ota_PollStatus(payload, &payload_length) == 0U)) { return; }
++    frame[0] = MATHIS_START_BYTE; frame[1] = MATHIS_START_BYTE;
++    frame[2] = MATHIS_TYPE_OTA_STATUS; frame[3] = s_tx_sequence++;
++    frame[4] = payload_length; frame[5] = 0U;
++    memcpy(&frame[6], payload, payload_length);
++    crc = Mathis_Crc16(&frame[2], (uint16_t)(4U + payload_length));
++    frame[6U + payload_length] = (uint8_t)crc;
++    frame[7U + payload_length] = (uint8_t)(crc >> 8);
++    (void)QueueFrame(frame, (uint8_t)(payload_length + 8U), MATHIS_TYPE_OTA_STATUS);
++}
++
+ static int16_t EncodeTemperature(const MathisTelemetrySnapshot *snapshot, uint8_t channel)
+ {
+-    int32_t value;
+     uint8_t mask = (uint8_t)(1u << channel);
+     if ((snapshot->high_mask & mask) != 0u) { return 2000; }
+     if ((snapshot->low_mask & mask) != 0u) { return 3000; }
+     if ((snapshot->valid_mask & mask) == 0u) { return 4000; }
+-    value = snapshot->temp_c[channel];
+-    if (snapshot->units == unitF) { value = (value * 9 + ((value >= 0) ? 2 : -2)) / 5 + 32; }
+-    return (int16_t)value;
++    /* Mathis BLE v0.4 always carries calibrated whole-number Celsius.
++     * The unit flag is a display preference only. */
++    return snapshot->temp_c[channel];
+ }
+ 
+ static void QueueTelemetry(void)
+@@ -297,7 +318,7 @@
+     }
+     frame[15] = snapshot.battery_percent; frame[16] = FW_RELEASE_NUMBER; frame[17] = snapshot.error_code;
+     crc = Mathis_Crc16(&frame[2], 16u); frame[18] = (uint8_t)crc; frame[19] = (uint8_t)(crc >> 8);
+-    if (QueueFrame(frame, sizeof(frame)) != 0u) {
++    if (QueueFrame(frame, sizeof(frame), MATHIS_TYPE_TELEMETRY) != 0u) {
+         s_tx_sequence++;
+         g_mathis_ble_debug.telemetry_queued++;
+     }
+@@ -305,10 +326,13 @@
+ 
+ static void ServiceTransmit(void)
+ {
++    uint8_t type;
+     if ((s_tx_count == 0u) || (huart1.gState != HAL_UART_STATE_READY)) { return; }
++    type = s_tx_queue[s_tx_head].type;
+     if (HAL_UART_Transmit_DMA(&huart1, s_tx_queue[s_tx_head].data, s_tx_queue[s_tx_head].length) == HAL_OK) {
+         s_tx_head = (uint8_t)((s_tx_head + 1u) % TX_QUEUE_DEPTH); s_tx_count--;
+         g_mathis_ble_debug.telemetry_tx_started++;
++        if (type == MATHIS_TYPE_TELEMETRY) { Ota_NotifyTelemetryTransmitted(); }
+     }
+ }
+ 
+@@ -316,8 +340,10 @@
+ {
+     s_rx_count = 0u; s_rx_expected = 0u; s_connected = 0u;
+     s_tx_sequence = 0u; s_telemetry_ticks = 0u; s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
++    s_ota_was_paused = 0U; s_ota_purge_pending = 0U;
+     memset(&g_mathis_ble_debug, 0, sizeof(g_mathis_ble_debug));
+     ClearPending(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
++    Ota_Init();
+ }
+ 
+ void WirelessTask(void)
+@@ -339,8 +365,25 @@
+             if (++s_pending[channel].age >= COEFF_TIMEOUT_TICKS_20MS) { memset(&s_pending[channel], 0, sizeof(s_pending[channel])); }
+         }
+     }
+-    if (s_connected != 0u) {
++    Ota_Task20ms();
++    if ((Ota_TelemetryPaused() != 0U) && (s_ota_was_paused == 0U)) {
++        /* Do not reuse a queue entry while UART DMA may still reference it. */
++        s_ota_purge_pending = 1U;
++        s_ota_was_paused = 1U;
++    } else if (Ota_TelemetryPaused() == 0U) {
++        s_ota_was_paused = 0U; s_ota_purge_pending = 0U;
++    }
++    if ((s_ota_purge_pending != 0U) && (huart1.gState == HAL_UART_STATE_READY)) {
++        /* At the state transition all logical entries predate OTA and are
++         * telemetry, so it is now safe to drop them and prioritize READY. */
++        s_tx_head = 0U; s_tx_tail = 0U; s_tx_count = 0U; s_ota_purge_pending = 0U;
++    }
++    if (s_ota_purge_pending == 0U) { QueueOtaStatus(); }
++    if ((s_connected != 0u) && (Ota_TelemetryPaused() == 0U)) {
+         if (++s_telemetry_ticks >= TELEMETRY_PERIOD_TICKS_20MS) { s_telemetry_ticks = 0u; QueueTelemetry(); }
+     }
+     ServiceTransmit();
+-}
++    if ((Ota_ResetPending() != 0U) && (s_tx_count == 0U) && (huart1.gState == HAL_UART_STATE_READY)) {
++        NVIC_SystemReset();
++    }
++}
+--- 8/tw66gw02/BSP/wireless.h
++++ 9/tw66gw02/BSP/wireless.h
+@@ -1,4 +1,4 @@
+-/** Mathis BLE application protocol over the pre-configured EMB1061 UART. */
++/** Mathis BLE application protocol over the pre-configured EMB1082 UART. */
+ #ifndef __WIRELESS_H__
+ #define __WIRELESS_H__
+ 
+--- 8/tw66gw02/COP/main_control.c
++++ 9/tw66gw02/COP/main_control.c
+@@ -8,7 +8,6 @@
+   ******************************************************************************
+   */
+ #include "config.h"
+-#include <stddef.h>
+ 
+ _work_process work_process,work_process_backups;
+ _system_data  system_data;
+@@ -32,11 +31,6 @@
+ static uint32_t s_idle_ticks_100ms = 0u;
+ 
+ #define IDLE_AUTO_SHUTDOWN_TICKS_100MS (36000u)
+-#define CONFIG_PAGE_A_ADDR              (0x0800F800u)
+-#define CONFIG_PAGE_B_ADDR              (0x0800FC00u)
+-#define CONFIG_MAGIC                    (0x4D415448u)
+-#define CONFIG_VERSION                  (1u)
+-#define CONFIG_COMMIT                   (0xA55Au)
+ 
+ static int16_t s_display_temp = 0;
+ /* 0:none, 1:-HI, 2:-LO, 3:--- */
+@@ -52,92 +46,26 @@
+     {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}  /* Cavity: y = x by default */
+ };
+ 
+-typedef struct {
+-    uint32_t magic;
+-    uint16_t version;
+-    uint16_t length;
+-    uint32_t sequence;
+-    uint8_t units;
+-    uint8_t reserved[3];
+-    float coeff[TEMP_COEFF_CHANNEL_COUNT][TEMP_COEFF_TERM_COUNT];
+-    uint16_t crc;
+-    uint16_t commit;
+-} PersistedConfig;
+-
+-static uint32_t s_config_sequence = 0u;
+-static uint32_t s_config_active_page = 0u;
+-
+ static void BluetoothHwPowerOn(void);
+ static void BluetoothHwPowerOff(void);
+ 
+-static uint16_t ConfigCrc16(const uint8_t *data, uint16_t length)
+-{
+-    uint16_t crc = 0xFFFFu;
+-    uint16_t i;
+-    uint8_t bit;
+-    for (i = 0u; i < length; i++) {
+-        crc ^= (uint16_t)data[i] << 8;
+-        for (bit = 0u; bit < 8u; bit++) {
+-            crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u) : (uint16_t)(crc << 1);
+-        }
+-    }
+-    return crc;
+-}
+-
+-static uint8_t ConfigRecordValid(const PersistedConfig *cfg)
+-{
+-    if ((cfg->magic != CONFIG_MAGIC) || (cfg->version != CONFIG_VERSION) ||
+-        (cfg->length != sizeof(PersistedConfig)) || (cfg->commit != CONFIG_COMMIT) ||
+-        ((cfg->units != unitC) && (cfg->units != unitF))) { return 0u; }
+-    return (ConfigCrc16((const uint8_t *)cfg, (uint16_t)offsetof(PersistedConfig, crc)) == cfg->crc) ? 1u : 0u;
+-}
+-
+ static void ConfigLoad(void)
+ {
+-    const PersistedConfig *a = (const PersistedConfig *)CONFIG_PAGE_A_ADDR;
+-    const PersistedConfig *b = (const PersistedConfig *)CONFIG_PAGE_B_ADDR;
+-    const PersistedConfig *selected = 0;
+-    uint8_t va = ConfigRecordValid(a);
+-    uint8_t vb = ConfigRecordValid(b);
+-    if ((va != 0u) && (vb != 0u)) { selected = ((int32_t)(b->sequence - a->sequence) > 0) ? b : a; }
+-    else if (va != 0u) { selected = a; }
+-    else if (vb != 0u) { selected = b; }
+-    if (selected != 0) {
+-        system_data.units = selected->units;
+-        memcpy(s_temp_coeff, selected->coeff, sizeof(s_temp_coeff));
+-        s_config_sequence = selected->sequence;
+-        s_config_active_page = (selected == a) ? CONFIG_PAGE_A_ADDR : CONFIG_PAGE_B_ADDR;
++    OtaPersistentConfig cfg;
++    if ((OtaMetadataRead(OTA_RECORD_CONFIG, &cfg, sizeof(cfg)) != 0U) &&
++        ((cfg.units == unitC) || (cfg.units == unitF))) {
++        system_data.units = cfg.units;
++        memcpy(s_temp_coeff, cfg.coeff, sizeof(s_temp_coeff));
+     }
+ }
+ 
+ static uint8_t ConfigSave(void)
+ {
+-    PersistedConfig cfg;
+-    FLASH_EraseInitTypeDef erase;
+-    uint32_t page_error = 0u;
+-    uint32_t target;
+-    uint16_t offset;
+-    const uint16_t *src = (const uint16_t *)&cfg;
++    OtaPersistentConfig cfg;
+     memset(&cfg, 0xFF, sizeof(cfg));
+-    cfg.magic = CONFIG_MAGIC; cfg.version = CONFIG_VERSION; cfg.length = sizeof(PersistedConfig);
+-    cfg.sequence = s_config_sequence + 1u; cfg.units = system_data.units;
++    cfg.units = system_data.units;
+     memcpy(cfg.coeff, s_temp_coeff, sizeof(s_temp_coeff));
+-    cfg.crc = ConfigCrc16((const uint8_t *)&cfg, (uint16_t)offsetof(PersistedConfig, crc));
+-    cfg.commit = CONFIG_COMMIT;
+-    target = (s_config_active_page == CONFIG_PAGE_A_ADDR) ? CONFIG_PAGE_B_ADDR : CONFIG_PAGE_A_ADDR;
+-    erase.TypeErase = FLASH_TYPEERASE_PAGES; erase.PageAddress = target; erase.NbPages = 1u;
+-    if (HAL_FLASH_Unlock() != HAL_OK) { return 0u; }
+-    if (HAL_FLASHEx_Erase(&erase, &page_error) != HAL_OK) { HAL_FLASH_Lock(); return 0u; }
+-    for (offset = 0u; offset < (uint16_t)offsetof(PersistedConfig, commit); offset += 2u) {
+-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, target + offset, src[offset / 2u]) != HAL_OK) {
+-            HAL_FLASH_Lock(); return 0u;
+-        }
+-    }
+-    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, target + (uint32_t)offsetof(PersistedConfig, commit), cfg.commit) != HAL_OK) {
+-        HAL_FLASH_Lock(); return 0u;
+-    }
+-    HAL_FLASH_Lock(); s_config_sequence = cfg.sequence; s_config_active_page = target;
+-    return 1u;
++    return OtaMetadataWrite(OTA_RECORD_CONFIG, &cfg, sizeof(cfg));
+ }
+ 
+ /**
+--- 8/tw66gw02/COP/ota.c
++++ 9/tw66gw02/COP/ota.c
+@@ -1,369 +1,229 @@
+-/**
+-  ******************************************************************************
+-  * @file    ota.c
+-  * @author 
+-  * @version V1.0
+-  * @date
+-  * @brief   OTA and IAP upgrade implementation.
+-  ******************************************************************************
+-  */
+-//#include "config.h"
+-//_OTA_Date OTA_Date;
+-///**
+-// * @author  niu
+-// * @date    2026.02.26
+-// * @version 1.0
+-// * 
+-// */
+-///***************************************************************************************************************************************************************/ 
+-///**
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void FLASH_ErasePage(uint32_t addr)
+-//{
+-//    uint32_t PageError = 0;
+-//    
+-//    FLASH_EraseInitTypeDef  FlashEraseInit = 
+-//    {
+-//        .TypeErase = FLASH_TYPEERASE_PAGES,
+-//        .PageAddress = addr,
+-//        .NbPages = 1,
+-//    };
+-//    HAL_FLASHEx_Erase(&FlashEraseInit,&PageError);
+-//}
+-///**
+-// * @param   none      
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void recv_bin_success(void)
+-//{
+-//	uint8_t i;
+-//	uint16_t	flashBUF[2];
+-//	
+-//	flashBUF[0] = 0x1a1a;
+-//	flashBUF[1] = 0x2b2b;
+-//	HAL_FLASH_Unlock();
+-
+-//	}
+-//	HAL_FLASH_Lock();
+-//}
+-///**
+-// * @param   none      
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void download_success(void)
+-//{
+-//	recv_bin_success();
+-//}
+-///**
+-// * @param   none      
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void SoftReset(void)
+-//{  
+-//}
+-///**
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void iap_write_appbin(uint32_t appxaddr,uint8_t *appbuf,uint32_t appsize)
+-//{
+-//	uint16_t t;
+-//	uint16_t i=0,j;
+-//  static uint16_t iapbuf[1024];
+-//  static uint32_t fwaddrShade=FLASH_BAK_ADDR;
+-//	for(t=0;t<appsize;t+=2)
+-//	{						    
+-//				iapbuf[i++]=((uint16_t)appbuf[1]<<8)+(uint16_t)appbuf[0];
+-//	}
+-//	{
+-//				HAL_FLASH_Unlock();
+-//		    if(((fwaddr-fwaddrShade)==2048)||(fwaddr==FLASH_BAK_ADDR))
+-//				{
+-//					  fwaddrShade=fwaddr;
+-//				    FLASH_ErasePage(fwaddr);
+-//				}
+-//				{
+-//				}
+-//				HAL_FLASH_Lock();
+-//	}
+-//}
+-///*****************************************************************************************/
+-///*****************************************************************************************/
+-//#define FILE_MD5_MAX_LEN  32
+-//#define SSL_MAX_LEN (FILE_MD5_MAX_LEN/2)
+-// uint8_t g_ota_sta=0;
+-// uint32_t g_ota_recv_sum=0;    
+-// uint16_t g_ota_pg_numid=0;
+-// uint16_t g_ota_pg_ok_cnt=0;
+-// uint16_t g_ota_pg_nums=0;
+-// uint32_t g_ota_bin_size=0;
+-// uint8_t  g_ota_mcu_end=0;
+-// uint32_t USART_RX_STA_BAK=0;
+-// uint8_t g_direct_iap=0;
+-// uint8_t g_ota_esp_start=0;
+-// uint16_t g_ota_esp_cnt=0;
+-// uint8_t md5_pass = 1;
+-// uint8_t  OtaUpDateFail=0;
+-// MD5_CTX g_ota_md5_ctx;
+-// MD5_CTX package_md5_ctx;
+-// uint8_t g_ota_bin_md5[SSL_MAX_LEN] = {0};
+-// uint8_t g_ota_package_md5[SSL_MAX_LEN] = {0};
+-// uint8_t bin_md5_calc[SSL_MAX_LEN];
+-// uint8_t package_md5_calc[SSL_MAX_LEN] = {0};
+-//// FE 40 04 + 1B-RESULT + 1B-PackageNum + FF
+-//// RESULT: 1-pass, 2-fail
+-//void UART1_ReportOtaPackageSta(uint8_t md5_res)
+-//{
+-//	uint8_t buf[8] = {0xFE, 0x40, 0x04, 0x01, 0x01, 0xFF};// Pass
+-
+-//	if (md5_res != 1) {
+-//		buf[3] = 2;// Fail
+-//	}
+-
+-//	buf[4] = g_ota_pg_numid;
+-
+-//	HAL_UART_Transmit_DMA(&huart3,buf,6);
+-
+-
+-//}
+-
+-//void UART1_ReportOtaBinSta(uint8_t md5_res)
+-//{
+-//	uint8_t buf[5] = {0xFE, 0x40, 0x05, 0x02, 0xFF};// Pass
+-
+-////	if (md5_res != 1) {
+-////		buf[3] = 2;// Fail
+-////	}
+-//  buf[3] = md5_res;
+-//	HAL_UART_Transmit_DMA(&huart3,buf,5);
+-//}
+-//void bin_update(void)
+-//{
+-//	  system_data.ota_prcent=g_ota_pg_numid*100/g_ota_pg_nums;
+-//		if((g_ota_mcu_end == 0) && (g_ota_sta == 3))
+-//		{
+-//					{
+-//						// MD5 for total bin
+-//						GAgent_MD5Init(&g_ota_md5_ctx);
+-//						memset(bin_md5_calc, 0, SSL_MAX_LEN);
+-//					}
+-//					{  // 0-IDEL, 1-pass, 2-fail, 3-in progress
+-//						//DisplayString("OTA STOP BY APP",0,0,0,0);
+-//						USART_RX_STA_BAK=0;
+-//						return;
+-//					}
+-//					{
+-//						//DisplayString("OTA TOTALSIZE OVERFLOW",0,0,0,0);
+-//						g_ota_sta = 2;                  //OTA FAIL
+-//						UART1_ReportOtaPackageSta(0);
+-//						USART_RX_STA_BAK=0;
+-//						return;
+-//					}
+-//					{
+-//						//DisplayString("OTA PGNUM OVERFLOW",0,0,0,0);
+-//						g_ota_sta = 2;                  //OTA FAIL
+-//						UART1_ReportOtaPackageSta(0);
+-//						USART_RX_STA_BAK=0;
+-//						return;
+-//					}
+-//					
+-//					GAgent_MD5Init(&package_md5_ctx);
+-//					GAgent_MD5Update(&package_md5_ctx, COM3.rxBuf, (USART_RX_STA_BAK&0xFFFF));
+-//					
+-//					{
+-//						USART_RX_STA_BAK=0;
+-//						md5_pass = 0;
+-//						g_ota_sta = 2;                  //OTA FAIL
+-//						UART1_ReportOtaPackageSta(0);
+-//						//DisplayString("OTA FAIL",0,0,0,0);
+-//					} 
+-//					{
+-//						md5_pass = 1;
+-//						g_ota_sta = 3;                  //OTA In process
+-//					}
+-//					{
+-//						 
+-//						iap_write_appbin(FLASH_BAK_ADDR+g_ota_recv_sum, COM3.rxBuf, (USART_RX_STA_BAK&0xFFFF));
+-//			 
+-//						g_ota_recv_sum += USART_RX_STA_BAK&0xFFFF;
+-//						UART1_ReportOtaPackageSta(1);
+-//					}
+-//					USART_RX_STA_BAK=0;
+-//		}			     
+-//		{
+-//				{
+-//							//DisplayString("OTA 1ERR",0,0,0,0);
+-//							g_ota_sta = 1;
+-//							UART1_ReportOtaBinSta(2);// Fail (fe 40 5 2 ff)
+-//				} 
+-//				else 
+-//				{
+-//							{
+-//										md5_pass = 0;
+-//										g_ota_sta = 1;
+-//										OtaUpDateFail=1;
+-//										UART1_ReportOtaBinSta(2);// Fail (fe 40 5 2 ff)
+-//										//DisplayString("OTA 2ERR",0,0,0,0);
+-//							} 
+-//							else
+-//							{
+-//										md5_pass = 1;
+-//										g_ota_esp_start=1;
+-//										g_ota_sta = 2;
+-//										UART1_ReportOtaBinSta(1);// Pass
+-//										//delay_ms(1000);
+-//										g_ota_mcu_end = 0;
+-//										download_success();// Mark Flag in Flash
+-//										SoftReset();
+-//							}
+-//				}
+-//	 }
+-//}
+-//void OTA_MCU_Task(uint8_t *data)
+-//{
+-//	uint8_t snd_len = 0;
+-//	uint32_t num=0;
+-//  uint8_t snd_buf[95];
+-//	if(work_process == idle){return;}
+-//	if (COM3.rxFlag ==0) {return;}
+-//	COM3.rxFlag=0;
+-//	num=COM3.rxLen;
+-//	snd_len = num;
+-//	USART_RX_STA_BAK=num;
+-//	if((data[0] == 0xfe)&&(data[1] == 0x40)&&(data[num-1]==0xFF)&&(num<=30)){
+-//				switch(data[2])
+-//				{
+-//					// FE 40 01 01 FF
+-//					case 0x01:
+-//						switch(data[3])
+-//						{
+-//							case 0x01:// OTA Start
+-
+-//								if (g_direct_iap >= 2) {
+-//									g_direct_iap = 3;
+-//								} else {
+-//									g_direct_iap = 1;
+-//								}
+-//								work_process=ota;system_data.ota_process=0;								
+-//								g_ota_sta = 3;
+-//								g_ota_mcu_end = 0;
+-//								g_ota_recv_sum = 0;
+-//								g_ota_pg_numid = 0;
+-//								g_ota_pg_nums = 0;
+-//								g_ota_bin_size = 0;
+-//								g_ota_pg_ok_cnt = 0;
+-//								memcpy(snd_buf, data, num);
+-//								break;
+-//							case 0x02://OTA End
+-//								g_ota_mcu_end = 1;
+-//								memcpy(snd_buf, data, num);
+-//								break;
+-//							default:
+-//								//g_ota_mcu_end = 0;	
+-//								snd_len = 0;
+-//							break;
+-//						}
+-//						break;
+-//					// FE 40 02 + 3B-Size + 1B-TotalPackagesNum + MD5 + FF
+-//					case 0x02:// Total Packages & MD5
+-//						g_ota_pg_nums = data[6];
+-//						g_ota_bin_size = (data[3]<<16) + (data[4]<<8) + data[5];
+-//						memcpy(g_ota_bin_md5, data+7, SSL_MAX_LEN);
+-//						memcpy(snd_buf, data, num);
+-//						break;
+-//					// After Recved 03 ACK, APP will send the package data
+-//					case 0x03:// Divided Package & MD5    FE 40 03 + 1B-PackageNum + MD5 + FF
+-//						g_ota_pg_numid = data[3];
+-////					if(g_ota_pg_numid==2)
+-////					OTA_Date.PackageDateReceiveFlash=0;	
+-//						memcpy(g_ota_package_md5, data+4, SSL_MAX_LEN);
+-//						g_ota_esp_cnt	= (uint16_t)data[20]; //UpdatePercent=(u16)data[20];
+-//						OTA_Date.PackageDateReceiveReady=1;
+-//						memcpy(snd_buf, data, num);
+-//						break;
+-//					
+-//					case 0x06:// Query OTA Sta   FE 40 06 01 FF
+-//						memcpy(snd_buf, data, num);
+-//						snd_buf[3] = g_ota_sta;// 0-idle, 1-pass, 2-fail, 3-in progress
+-//						break;
+-//					
+-//					case 0x07:// Force to Stop OTA   FE 40 07 01 FF
+-//						g_ota_sta = 2;
+-//						if (g_direct_iap >= 2) {
+-//							g_direct_iap = 4;
+-//						}
+-//						g_ota_recv_sum = 0;
+-//						g_ota_pg_numid = 0;
+-//						g_ota_pg_nums = 0;
+-//						g_ota_bin_size = 0;
+-//						g_ota_pg_ok_cnt = 0;
+-//						memcpy(snd_buf, data, num);
+-//						break;
+-//					default:
+-//						snd_len = 0;
+-//						break;
+-//				}
+-//																													
+-//		snd_len = 0;data[1] =0;data[num-1]=0;COM3.rxLen=0;
+-
+-//			OTA_Date.PackageDateReceiveReady=0;COM3.rxLen=0;
+-//			bin_update();
+-//		}
+-//	else if((work_process==ota)&&(system_data.ota_process==0)){COM3.rxLen=0;}
+-//}
+-
+-//void OTA_screen_Task(uint8_t *data)
+-//{
+-//		if(work_process== idle){return;}
+-//		if(COM3.rxFlag==0) {return;}
+-//		COM3.rxFlag=0;
+-//		{
+-//				work_process=ota;system_data.ota_process=1;
+-//			 
+-//				HAL_UART_Transmit(&huart3, data, COM3.rxLen, 1000);
+-//	 
+-//				data[1] = 0x00;COM3.rxLen=0;
+-//		}
+-//		{
+-//				 COM3.rxFlag=0;
+-//				if((COM3.rxBuf[0] == 0xfe)&&(COM3.rxBuf[1] == 0x50)&&(COM3.rxBuf[COM3.rxLen-1]==0xFF)&&(COM3.rxLen<=30))
+-//				{
+-//					   HAL_UART_Transmit_DMA(&huart3,COM3.rxBuf,COM3.rxLen);
+-//						 COM3.rxBuf[0]=0;
+-//						 COM3.rxLen=0;
+-//				}
+-//		}
+-//		//if((TouchScreenState==ota_mode)&&(SystemData.ota_process==1)){COM5.RX_Cnt=0;}
+-//}
+-//void OTA_ESP32(uint8_t *data)
+-//{
+-// if(COM3.rxFlag==0) {return;}
+-// COM3.rxFlag=0;
+-// COM3.rxLen=0;
+-// if(data[1]!=0x34) return;
+-// if(data[2]!=0XFF) {system_data.ota_prcent = data[2];}
+-//}
+-
+-
+-//void ota_control(void)
+-//{
+-//     OTA_MCU_Task(COM3.rxBuf);	   
+-//	   OTA_screen_Task(COM3.rxBuf);
+-//	   OTA_ESP32(COM3.rxBuf);	
+-//}
+-
+-
+-
+-
+-
+-
++#include "config.h"
++#include "ota.h"
++#include "ota_layout.h"
++#include "ota_crc.h"
++#include "ota_metadata.h"
++#include <string.h>
++
++#define OTA_ACCEPTED_CHUNK_SIZE 128U
++#define OTA_TIMEOUT_TICKS       3000U
++#define OTA_CONFIRM_TICKS       1500U
++#define OTA_STATUS_QUEUE_DEPTH  4U
++
++typedef char OtaProtocolPayloadLimitCheck[
++    ((OTA_PROTOCOL_CHUNK_DATA_MAX + OTA_CHUNK_OFFSET_SIZE) <= MATHIS_MAX_PAYLOAD) ? 1 : -1];
++typedef char OtaAcceptedChunkLimitCheck[
++    (OTA_ACCEPTED_CHUNK_SIZE <= OTA_PROTOCOL_CHUNK_DATA_MAX) ? 1 : -1];
++
++typedef struct { uint8_t length; uint8_t data[6]; } OtaStatusEntry;
++
++static OtaPersistentState s_persist;
++static OtaStatusEntry s_status_queue[OTA_STATUS_QUEUE_DEPTH];
++static uint8_t s_status_head, s_status_tail, s_status_count;
++static uint16_t s_timeout_ticks, s_confirm_ticks;
++static uint32_t s_last_offset;
++static uint16_t s_last_length;
++static uint8_t s_reset_pending, s_telemetry_transmitted;
++
++static uint32_t read_le32(const uint8_t *data)
++{
++    return (uint32_t)data[0] | ((uint32_t)data[1] << 8) |
++           ((uint32_t)data[2] << 16) | ((uint32_t)data[3] << 24);
++}
++
++static void queue_status(uint8_t status, uint32_t extra, uint8_t extra_length)
++{
++    OtaStatusEntry *entry;
++    uint8_t i;
++    if (s_status_count >= OTA_STATUS_QUEUE_DEPTH) { return; }
++    entry = &s_status_queue[s_status_tail];
++    entry->data[0] = status; entry->length = (uint8_t)(1U + extra_length);
++    for (i = 0U; i < extra_length; ++i) { entry->data[1U + i] = (uint8_t)(extra >> (8U * i)); }
++    s_status_tail = (uint8_t)((s_status_tail + 1U) % OTA_STATUS_QUEUE_DEPTH); ++s_status_count;
++}
++
++static uint8_t persist_state(void)
++{
++    ++s_persist.generation;
++    return OtaMetadataWrite(OTA_RECORD_STATE, &s_persist, sizeof(s_persist));
++}
++
++static uint8_t erase_staging(void)
++{
++    FLASH_EraseInitTypeDef erase;
++    uint32_t page_error = 0U;
++    erase.TypeErase = FLASH_TYPEERASE_PAGES; erase.PageAddress = OTA_SLOT_B_BASE; erase.NbPages = OTA_SLOT_PAGE_COUNT;
++    if (HAL_FLASH_Unlock() != HAL_OK) { return 0U; }
++    if (HAL_FLASHEx_Erase(&erase, &page_error) != HAL_OK) { HAL_FLASH_Lock(); return 0U; }
++    HAL_FLASH_Lock(); return 1U;
++}
++
++static uint8_t write_chunk(uint32_t offset, const uint8_t *data, uint16_t length)
++{
++    uint16_t i, halfword;
++    uint32_t address = OTA_SLOT_B_BASE + offset;
++    if (HAL_FLASH_Unlock() != HAL_OK) { return 0U; }
++    for (i = 0U; i < length; i += 2U) {
++        halfword = data[i];
++        halfword |= ((i + 1U) < length) ? ((uint16_t)data[i + 1U] << 8) : 0xFF00U;
++        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, address + i, halfword) != HAL_OK) {
++            HAL_FLASH_Lock(); return 0U;
++        }
++    }
++    HAL_FLASH_Lock(); return (memcmp((const void *)address, data, length) == 0) ? 1U : 0U;
++}
++
++static uint8_t battery_percent(void)
++{
++    if (g_battery_mv <= 1100U) { return 0U; }
++    if (g_battery_mv >= 1500U) { return 100U; }
++    return (uint8_t)(((uint32_t)(g_battery_mv - 1100U) * 100U) / 400U);
++}
++
++static void reset_download_state(void)
++{
++    s_persist.state = OTA_PERSIST_IDLE;
++    s_persist.expected_artifact_size = 0U; s_persist.expected_crc32 = 0U; s_persist.next_offset = 0U;
++    (void)persist_state(); s_timeout_ticks = 0U;
++}
++
++static void abort_transfer(uint8_t reason)
++{
++    reset_download_state(); queue_status(OTA_STATUS_ABORTED, reason, 1U);
++}
++
++static void handle_begin(const uint8_t *payload, uint16_t length)
++{
++    uint32_t image_size;
++    if (length != 9U) { queue_status(OTA_STATUS_STORAGE, 0U, 0U); return; }
++    if ((s_persist.state != OTA_PERSIST_IDLE) && (s_persist.state != OTA_PERSIST_CONFIRMED)) {
++        queue_status(OTA_STATUS_BUSY, 0U, 0U); return;
++    }
++    if ((g_battery_low != 0U) || (battery_percent() < 30U)) { queue_status(OTA_STATUS_POWER, 0U, 0U); return; }
++    if (work_process != idle) { queue_status(OTA_STATUS_BUSY, 0U, 0U); return; }
++    image_size = read_le32(payload);
++    if ((image_size <= OTA_RSA_SIGNATURE_SIZE) || (image_size > OTA_SLOT_SIZE)) {
++        queue_status(OTA_STATUS_VERIFY_FAIL, OTA_FAIL_TOO_LARGE, 1U); return;
++    }
++    if (erase_staging() == 0U) { queue_status(OTA_STATUS_STORAGE, 0U, 0U); return; }
++    s_persist.state = OTA_PERSIST_DOWNLOADING;
++    s_persist.expected_artifact_size = image_size; s_persist.expected_crc32 = read_le32(&payload[4]);
++    s_persist.target_firmware_version = payload[8]; s_persist.next_offset = 0U;
++    s_last_offset = 0xFFFFFFFFUL; s_last_length = 0U; s_timeout_ticks = 0U;
++    if (persist_state() == 0U) {
++        s_persist.state = OTA_PERSIST_IDLE; s_persist.expected_artifact_size = 0U;
++        s_persist.expected_crc32 = 0U; s_persist.next_offset = 0U;
++        queue_status(OTA_STATUS_STORAGE, 0U, 0U); return;
++    }
++    queue_status(OTA_STATUS_READY, OTA_ACCEPTED_CHUNK_SIZE, 2U);
++}
++
++static void handle_chunk(const uint8_t *payload, uint16_t length)
++{
++    uint32_t offset;
++    uint16_t data_length;
++    if ((s_persist.state != OTA_PERSIST_DOWNLOADING) || (length <= OTA_CHUNK_OFFSET_SIZE)) {
++        queue_status(OTA_STATUS_BAD_OFFSET, 0U, 0U); return;
++    }
++    offset = read_le32(payload); data_length = (uint16_t)(length - OTA_CHUNK_OFFSET_SIZE);
++    if ((data_length > OTA_ACCEPTED_CHUNK_SIZE) || ((offset + data_length) > s_persist.expected_artifact_size)) {
++        queue_status(OTA_STATUS_BAD_OFFSET, 0U, 0U); return;
++    }
++    if (offset != s_persist.next_offset) {
++        if ((offset == s_last_offset) && (data_length == s_last_length) &&
++            (memcmp((const void *)(OTA_SLOT_B_BASE + offset), &payload[4], data_length) == 0)) {
++            queue_status(OTA_STATUS_ACK, s_persist.next_offset, 4U);
++        } else { queue_status(OTA_STATUS_BAD_OFFSET, 0U, 0U); }
++        return;
++    }
++    if (write_chunk(offset, &payload[4], data_length) == 0U) { queue_status(OTA_STATUS_STORAGE, 0U, 0U); return; }
++    s_last_offset = offset; s_last_length = data_length; s_persist.next_offset += data_length; s_timeout_ticks = 0U;
++    queue_status(OTA_STATUS_ACK, s_persist.next_offset, 4U);
++}
++
++static void verify_failed(uint8_t reason)
++{
++    queue_status(OTA_STATUS_VERIFY_FAIL, reason, 1U);
++    reset_download_state();
++}
++
++static void handle_commit(const uint8_t *payload, uint16_t length)
++{
++    OtaImageHeader header;
++    OtaVerifyResult verify;
++    uint32_t commit_crc;
++    if ((s_persist.state != OTA_PERSIST_DOWNLOADING) || (length != 4U)) {
++        verify_failed(OTA_FAIL_UNKNOWN); return;
++    }
++    commit_crc = read_le32(payload);
++    if ((commit_crc != s_persist.expected_crc32) || (s_persist.next_offset != s_persist.expected_artifact_size) ||
++        (OtaCrc32((const void *)OTA_SLOT_B_BASE, s_persist.expected_artifact_size) != commit_crc)) {
++        verify_failed(OTA_FAIL_CRC); return;
++    }
++    if ((OTA_BOOT_API->magic != OTA_BOOT_API_MAGIC) || (OTA_BOOT_API->abi_version != OTA_BOOT_API_VERSION) ||
++        (OTA_BOOT_API->verify_artifact == 0)) { verify_failed(OTA_FAIL_SIGNATURE); return; }
++    verify = OTA_BOOT_API->verify_artifact(OTA_SLOT_B_BASE, s_persist.expected_artifact_size,
++                                           commit_crc, s_persist.highest_security_version, &header);
++    if ((verify != OTA_VERIFY_OK) || (header.firmware_version != s_persist.target_firmware_version)) {
++        verify_failed((verify == OTA_VERIFY_ROLLBACK) ? OTA_FAIL_ROLLBACK : OTA_FAIL_SIGNATURE); return;
++    }
++    s_persist.state = OTA_PERSIST_VERIFIED_PENDING_SWAP;
++    s_persist.slot_b.artifact_size = s_persist.expected_artifact_size; s_persist.slot_b.artifact_crc32 = commit_crc;
++    s_persist.slot_b.security_version = header.security_version; s_persist.slot_b.firmware_version = header.firmware_version;
++    s_persist.slot_b.valid = 1U;
++    if (persist_state() == 0U) {
++        s_persist.state = OTA_PERSIST_IDLE; s_persist.expected_artifact_size = 0U;
++        s_persist.expected_crc32 = 0U; s_persist.next_offset = 0U;
++        queue_status(OTA_STATUS_STORAGE, 0U, 0U); return;
++    }
++    queue_status(OTA_STATUS_VERIFY_OK, 0U, 0U); queue_status(OTA_STATUS_APPLYING, 0U, 0U); s_reset_pending = 1U;
++}
++
++void Ota_Init(void)
++{
++    memset(&s_persist, 0, sizeof(s_persist));
++    if (OtaMetadataRead(OTA_RECORD_STATE, &s_persist, sizeof(s_persist)) == 0U) { s_persist.state = OTA_PERSIST_IDLE; }
++    s_status_head = s_status_tail = s_status_count = 0U; s_timeout_ticks = s_confirm_ticks = 0U;
++    s_reset_pending = s_telemetry_transmitted = 0U; s_last_offset = 0xFFFFFFFFUL; s_last_length = 0U;
++}
++
++void Ota_HandleMessage(uint8_t type, const uint8_t *payload, uint16_t length)
++{
++    if ((payload == 0) && (length != 0U)) { return; }
++    if (type == MATHIS_TYPE_OTA_BEGIN) { handle_begin(payload, length); }
++    else if (type == MATHIS_TYPE_OTA_CHUNK) { handle_chunk(payload, length); }
++    else if (type == MATHIS_TYPE_OTA_COMMIT) { handle_commit(payload, length); }
++    else if ((type == MATHIS_TYPE_OTA_ABORT) && (length == 0U)) { abort_transfer(0U); }
++}
++
++void Ota_Task20ms(void)
++{
++    IWDG->KR = 0xAAAAU;
++    if ((s_persist.state == OTA_PERSIST_DOWNLOADING) && (++s_timeout_ticks >= OTA_TIMEOUT_TICKS)) {
++        abort_transfer(OTA_FAIL_TIMEOUT);
++    }
++    if (s_persist.state == OTA_PERSIST_INSTALLED_PENDING_CONFIRM) {
++        if (s_confirm_ticks < OTA_CONFIRM_TICKS) { ++s_confirm_ticks; }
++        if ((s_confirm_ticks >= OTA_CONFIRM_TICKS) && (s_telemetry_transmitted != 0U)) {
++            s_persist.state = OTA_PERSIST_CONFIRMED; s_persist.boot_attempts = 0U;
++            s_persist.highest_security_version = s_persist.slot_a.security_version; (void)persist_state();
++        }
++    }
++}
++
++uint8_t Ota_PollStatus(uint8_t *payload, uint8_t *length)
++{
++    OtaStatusEntry *entry;
++    if ((payload == 0) || (length == 0) || (s_status_count == 0U)) { return 0U; }
++    entry = &s_status_queue[s_status_head]; memcpy(payload, entry->data, entry->length); *length = entry->length;
++    s_status_head = (uint8_t)((s_status_head + 1U) % OTA_STATUS_QUEUE_DEPTH); --s_status_count; return 1U;
++}
++
++uint8_t Ota_TelemetryPaused(void)
++{
++    return ((s_persist.state == OTA_PERSIST_DOWNLOADING) ||
++            (s_persist.state == OTA_PERSIST_VERIFIED_PENDING_SWAP)) ? 1U : 0U;
++}
++
++uint8_t Ota_ResetPending(void) { return s_reset_pending; }
++void Ota_NotifyTelemetryTransmitted(void) { s_telemetry_transmitted = 1U; }
+--- 8/tw66gw02/COP/ota.h
++++ 9/tw66gw02/COP/ota.h
+@@ -1,51 +1,45 @@
+-/**
+-  ******************************************************************************
+-  * @file    ota.h
+-  * @author 
+-  * @version V1.0
+-  * @date
+-  * @brief   OTA and IAP upgrade interface definitions.
+-  ******************************************************************************
+-  */
+-#ifndef __OTA_H__
+-#define __OTA_H__
+-#include "config.h"
+-#define UPGRADEaddr1      0x08005000		// offset:20KB
+-#define FLASH_BAK_ADDR		0x08024800
+-typedef struct 
+-{
+-  uint8_t McuVersionSucess;
+-	uint8_t WifiYmodeSucess;
+-//	u32 g_ota_recv_sum;
+-  uint16_t g_ota_pg_numid; 
+-	uint8_t g_ota_pg_nums;
+-	uint8_t  McuRestart;
+-	uint8_t  YModemFlag;
+-	uint32_t FileZise;    
+-	uint32_t PackageSize;
+-	uint8_t PackageDateReceiveFlash;
+-	uint8_t PackageDateReceiveReady;
+-	uint8_t PackagALLReceiveFlash;
+-	uint8_t SucessFlag;
+-	uint8_t iapMode;
+-	uint16_t crcSum;
+-	uint8_t OTAStartFlag;	
+-}_OTA_Date;
+-extern _OTA_Date OTA_Date;
+-void FLASH_ErasePage(uint32_t addr);
+-void SoftReset(void);
+-void download_success(void);
+-void iap_write_appbin(uint32_t appxaddr,uint8_t *appbuf,uint32_t appsize);
+-void iap_write_data_to_TouchScreen(uint16_t screenaddr, uint8_t *appbuf, uint8_t appsize);
+-void iap_write_32_data_to_TouchScreen(uint16_t fwid);
+-void iap_wirte_data_from_TouchScreen(uint16_t fwid);
+-void check_data_from_TouchScreen(void);
+-void ota_read_OK_from_TouchScreen(uint8_t* w_32_status);
+-void re_TouchScreen(void);
+-void stop_DGUS(void);
+-void update_date_to_TouchScreen(uint8_t updata_mode,uint8_t* snd_buf);
+-void ota_control(void);
++#ifndef MATHIS_OTA_H
++#define MATHIS_OTA_H
++
++#include <stdint.h>
++
++#define MATHIS_TYPE_OTA_BEGIN   0x10U
++#define MATHIS_TYPE_OTA_CHUNK   0x11U
++#define MATHIS_TYPE_OTA_COMMIT  0x12U
++#define MATHIS_TYPE_OTA_ABORT   0x13U
++#define MATHIS_TYPE_OTA_STATUS  0x90U
++
++/* OTA_CHUNK payload is [offset:u32][data].  The complete Mathis payload is
++ * capped at 236 bytes, leaving at most 232 bytes of image data in v1. */
++#define OTA_CHUNK_OFFSET_SIZE       4U
++#define OTA_PROTOCOL_CHUNK_DATA_MAX 232U
++
++#define OTA_STATUS_IDLE         0x00U
++#define OTA_STATUS_READY        0x01U
++#define OTA_STATUS_TRANSFERRING 0x02U
++#define OTA_STATUS_ACK          0x03U
++#define OTA_STATUS_VERIFY_OK    0x04U
++#define OTA_STATUS_VERIFY_FAIL  0x05U
++#define OTA_STATUS_APPLYING     0x06U
++#define OTA_STATUS_ABORTED      0x07U
++#define OTA_STATUS_POWER        0x08U
++#define OTA_STATUS_STORAGE      0x09U
++#define OTA_STATUS_BUSY         0x0AU
++#define OTA_STATUS_BAD_OFFSET   0x0BU
++
++#define OTA_FAIL_CRC            0x01U
++#define OTA_FAIL_SIGNATURE      0x02U
++#define OTA_FAIL_TOO_LARGE      0x03U
++#define OTA_FAIL_TIMEOUT        0x04U
++#define OTA_FAIL_ROLLBACK       0x05U
++#define OTA_FAIL_UNKNOWN        0xFFU
++
++void Ota_Init(void);
++void Ota_Task20ms(void);
++void Ota_HandleMessage(uint8_t type, const uint8_t *payload, uint16_t length);
++uint8_t Ota_PollStatus(uint8_t *payload, uint8_t *length);
++uint8_t Ota_TelemetryPaused(void);
++uint8_t Ota_ResetPending(void);
++void Ota_NotifyTelemetryTransmitted(void);
++
+ #endif
+-
+-
+-
+--- 8/tw66gw02/MDK-ARM/startup_stm32f030x8.s
++++ 9/tw66gw02/MDK-ARM/startup_stm32f030x8.s
+@@ -30,7 +30,7 @@
+ ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
+ ; </h>
+ 
+-Stack_Size		EQU     0x400
++Stack_Size		EQU     0xE00
+ 
+                 AREA    STACK, NOINIT, READWRITE, ALIGN=3
+ Stack_Mem       SPACE   Stack_Size
+@@ -41,7 +41,7 @@
+ ;   <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
+ ; </h>
+ 
+-Heap_Size      EQU     0x200
++Heap_Size      EQU     0x40
+ 
+                 AREA    HEAP, NOINIT, READWRITE, ALIGN=3
+ __heap_base
+--- 8/tw66gw02/MDK-ARM/tw66gw02.sct
++++ 9/tw66gw02/MDK-ARM/tw66gw02.sct
+@@ -2,14 +2,14 @@
+ ; *** Scatter-Loading Description File generated by uVision ***
+ ; *************************************************************
+ 
+-LR_IROM1 0x08000000 0x0000F800  {    ; reserve final two 1KB pages for settings
+-  ER_IROM1 0x08000000 0x0000F800  {  ; load address = execution address
++LR_IROM1 0x08004000 0x00005E80  {    ; slot A application, leaving 384 bytes for RSA signature
++  ER_IROM1 0x08004000 0x00005E80  {  ; load address = execution address
+    *.o (RESET, +First)
+    *(InRoot$$Sections)
+    .ANY (+RO)
+    .ANY (+XO)
+   }
+-  RW_IRAM1 0x20000000 0x00002000  {  ; RW data
++  RW_IRAM1 0x200000C0 0x00001F40  {  ; first 192 bytes hold remapped vectors
+    .ANY (+RW +ZI)
+   }
+ }
+--- 8/tw66gw02/MDK-ARM/tw66gw02.uvprojx
++++ 9/tw66gw02/MDK-ARM/tw66gw02.uvprojx
+@@ -276,8 +276,8 @@
+               </OCR_RVCT3>
+               <OCR_RVCT4>
+                 <Type>1</Type>
+-                <StartAddress>0x8000000</StartAddress>
+-                <Size>0xf800</Size>
++                <StartAddress>0x8004000</StartAddress>
++                <Size>0x5e80</Size>
+               </OCR_RVCT4>
+               <OCR_RVCT5>
+                 <Type>1</Type>
+@@ -301,8 +301,8 @@
+               </OCR_RVCT8>
+               <OCR_RVCT9>
+                 <Type>0</Type>
+-                <StartAddress>0x20000000</StartAddress>
+-                <Size>0x2000</Size>
++                <StartAddress>0x200000c0</StartAddress>
++                <Size>0x1f40</Size>
+               </OCR_RVCT9>
+               <OCR_RVCT10>
+                 <Type>0</Type>
+@@ -340,7 +340,7 @@
+               <MiscControls></MiscControls>
+               <Define>USE_HAL_DRIVER,STM32F030x8</Define>
+               <Undefine></Undefine>
+-              <IncludePath>../Core/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F0xx/Include;../Drivers/CMSIS/Include;../MDK-ARM;../BSP;../COP;../OS</IncludePath>
++              <IncludePath>../Core/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F0xx/Include;../Drivers/CMSIS/Include;../MDK-ARM;../BSP;../COP;../OS;../Common</IncludePath>
+             </VariousControls>
+           </Cads>
+           <Aads>
+@@ -371,7 +371,7 @@
+             <TextAddressRange></TextAddressRange>
+             <DataAddressRange></DataAddressRange>
+             <pXoBase></pXoBase>
+-            <ScatterFile></ScatterFile>
++            <ScatterFile>tw66gw02.sct</ScatterFile>
+             <IncludeLibs></IncludeLibs>
+             <IncludeLibsPath></IncludeLibsPath>
+             <Misc></Misc>
+@@ -1129,6 +1129,31 @@
+               <FileType>1</FileType>
+               <FilePath>..\COP\warning.c</FilePath>
+             </File>
++            <File>
++              <FileName>ota.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\COP\ota.c</FilePath>
++            </File>
++          </Files>
++        </Group>
++        <Group>
++          <GroupName>OTA/Common</GroupName>
++          <Files>
++            <File>
++              <FileName>ota_crc.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\Common\ota_crc.c</FilePath>
++            </File>
++            <File>
++              <FileName>ota_metadata.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\Common\ota_metadata.c</FilePath>
++            </File>
++            <File>
++              <FileName>ota_image_header.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\Common\ota_image_header.c</FilePath>
++            </File>
+           </Files>
+         </Group>
+         <Group>
+--- 8/tw66gw02/Common/ota_crc.c
++++ 9/tw66gw02/Common/ota_crc.c
+@@ -0,0 +1,20 @@
++#include "ota_crc.h"
++
++uint32_t OtaCrc32Update(uint32_t crc, const uint8_t *data, uint32_t length)
++{
++    uint32_t i;
++    uint8_t bit;
++    crc = ~crc;
++    for (i = 0U; i < length; ++i) {
++        crc ^= data[i];
++        for (bit = 0U; bit < 8U; ++bit) {
++            crc = ((crc & 1U) != 0U) ? ((crc >> 1) ^ 0xEDB88320UL) : (crc >> 1);
++        }
++    }
++    return ~crc;
++}
++
++uint32_t OtaCrc32(const void *data, uint32_t length)
++{
++    return OtaCrc32Update(0U, (const uint8_t *)data, length);
++}
+--- 8/tw66gw02/Common/ota_crc.h
++++ 9/tw66gw02/Common/ota_crc.h
+@@ -0,0 +1,9 @@
++#ifndef MATHIS_OTA_CRC_H
++#define MATHIS_OTA_CRC_H
++
++#include <stdint.h>
++
++uint32_t OtaCrc32Update(uint32_t crc, const uint8_t *data, uint32_t length);
++uint32_t OtaCrc32(const void *data, uint32_t length);
++
++#endif
+--- 8/tw66gw02/Common/ota_image_header.c
++++ 9/tw66gw02/Common/ota_image_header.c
+@@ -0,0 +1,22 @@
++#include "ota_layout.h"
++#include "config.h"
++
++#ifndef MATHIS_SECURITY_VERSION
++#define MATHIS_SECURITY_VERSION 1UL
++#endif
++
++#if defined(__CC_ARM)
++__attribute__((at(OTA_IMAGE_HEADER_ADDR), used))
++#else
++__attribute__((section(".ota_image_header"), used))
++#endif
++const OtaImageHeader g_ota_image_header = {
++    OTA_IMAGE_MAGIC, OTA_IMAGE_FORMAT_VERSION, sizeof(OtaImageHeader),
++    OTA_MODEL_ID, (uint8_t)system_version, 0U, MATHIS_SECURITY_VERSION,
++    0xFFFFFFFFUL, OTA_VECTOR_WORDS, 0U, 0xFFFFFFFFUL,
++    { 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
++      0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU },
++    { 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
++      0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU },
++    0xFFFFFFFFUL
++};
+--- 8/tw66gw02/Common/ota_layout.h
++++ 9/tw66gw02/Common/ota_layout.h
+@@ -0,0 +1,80 @@
++#ifndef MATHIS_OTA_LAYOUT_H
++#define MATHIS_OTA_LAYOUT_H
++
++#include <stdint.h>
++
++#define OTA_FLASH_BASE             0x08000000UL
++#define OTA_FLASH_END              0x08010000UL
++#define OTA_FLASH_PAGE_SIZE        0x00000400UL
++
++#define OTA_BOOT_BASE              0x08000000UL
++#define OTA_BOOT_SIZE              0x00003400UL
++#define OTA_META_A_BASE            0x08003400UL
++#define OTA_META_B_BASE            0x08003800UL
++#define OTA_META_PAGE_SIZE         0x00000400UL
++#define OTA_SCRATCH_BASE           0x08003C00UL
++
++#define OTA_SLOT_A_BASE            0x08004000UL
++#define OTA_SLOT_B_BASE            0x0800A000UL
++#define OTA_SLOT_SIZE              0x00006000UL
++#define OTA_SLOT_PAGE_COUNT        24UL
++#define OTA_RSA_SIGNATURE_SIZE     384UL
++#define OTA_APP_IMAGE_MAX          (OTA_SLOT_SIZE - OTA_RSA_SIGNATURE_SIZE)
++#define OTA_APP_RELEASE_MAX        23168UL
++
++#define OTA_VECTOR_WORDS           48UL
++#define OTA_VECTOR_BYTES           (OTA_VECTOR_WORDS * 4UL)
++#define OTA_IMAGE_HEADER_OFFSET     0x000000C0UL
++#define OTA_IMAGE_HEADER_ADDR       (OTA_SLOT_A_BASE + OTA_IMAGE_HEADER_OFFSET)
++#define OTA_IMAGE_MAGIC             0x5348544DUL /* "MTHS" in little endian. */
++#define OTA_IMAGE_FORMAT_VERSION    1U
++#define OTA_MODEL_ID                0x04U
++
++#define OTA_BOOT_API_ADDR           0x08000200UL
++#define OTA_BOOT_API_MAGIC          0x49504142UL /* "BAPI" */
++#define OTA_BOOT_API_VERSION        1U
++
++#define OTA_DEV_PUBLIC_EXPONENT     65537UL
++
++typedef struct {
++    uint32_t magic;
++    uint16_t format_version;
++    uint16_t header_size;
++    uint8_t model_id;
++    uint8_t firmware_version;
++    uint16_t flags;
++    uint32_t security_version;
++    uint32_t image_size;
++    uint16_t vector_words;
++    uint16_t reserved0;
++    uint32_t build_epoch;
++    uint8_t build_id[16];
++    uint8_t reserved1[16];
++    uint32_t header_crc32;
++} OtaImageHeader;
++
++typedef enum {
++    OTA_VERIFY_OK = 0,
++    OTA_VERIFY_BAD_ARGUMENT = 1,
++    OTA_VERIFY_BAD_HEADER = 2,
++    OTA_VERIFY_BAD_CRC = 3,
++    OTA_VERIFY_BAD_SIGNATURE = 4,
++    OTA_VERIFY_ROLLBACK = 5
++} OtaVerifyResult;
++
++typedef OtaVerifyResult (*OtaBootVerifyFn)(uint32_t artifact_addr,
++                                           uint32_t artifact_size,
++                                           uint32_t expected_crc32,
++                                           uint32_t minimum_security_version,
++                                           OtaImageHeader *header_out);
++
++typedef struct {
++    uint32_t magic;
++    uint16_t abi_version;
++    uint16_t table_size;
++    OtaBootVerifyFn verify_artifact;
++} OtaBootApi;
++
++static const OtaBootApi *const OTA_BOOT_API = (const OtaBootApi *)OTA_BOOT_API_ADDR;
++
++#endif
+--- 8/tw66gw02/Common/ota_metadata.c
++++ 9/tw66gw02/Common/ota_metadata.c
+@@ -0,0 +1,178 @@
++#include "ota_metadata.h"
++#include "ota_crc.h"
++#include "stm32f0xx_hal.h"
++#include <stddef.h>
++#include <string.h>
++
++#define META_MAGIC       0x3141544DUL /* "MTA1" */
++#define META_SCHEMA      1U
++#define META_COMMIT      0xA55AU
++#define META_RECORD_SIZE 96U
++#define META_PER_PAGE    (OTA_META_PAGE_SIZE / META_RECORD_SIZE)
++
++typedef struct {
++    uint32_t magic;
++    uint16_t schema;
++    uint16_t type;
++    uint32_t sequence;
++    uint16_t payload_length;
++    uint16_t reserved;
++    uint8_t payload[OTA_METADATA_PAYLOAD_MAX];
++    uint32_t crc32;
++    uint16_t commit;
++    uint16_t padding;
++} MetaRecord;
++
++typedef char MetaRecordSizeCheck[(sizeof(MetaRecord) == META_RECORD_SIZE) ? 1 : -1];
++typedef char OtaStateSizeCheck[(sizeof(OtaPersistentState) <= OTA_METADATA_PAYLOAD_MAX) ? 1 : -1];
++typedef char OtaConfigSizeCheck[(sizeof(OtaPersistentConfig) <= OTA_METADATA_PAYLOAD_MAX) ? 1 : -1];
++
++static uint8_t record_valid(const MetaRecord *record)
++{
++    uint32_t crc;
++    if ((record->magic != META_MAGIC) || (record->schema != META_SCHEMA) ||
++        (record->commit != META_COMMIT) || (record->payload_length > OTA_METADATA_PAYLOAD_MAX) ||
++        ((record->type != OTA_RECORD_CONFIG) && (record->type != OTA_RECORD_STATE))) {
++        return 0U;
++    }
++    crc = OtaCrc32(record, (uint32_t)offsetof(MetaRecord, crc32));
++    return (crc == record->crc32) ? 1U : 0U;
++}
++
++static const MetaRecord *latest_record(OtaRecordType type)
++{
++    const uint32_t pages[2] = { OTA_META_A_BASE, OTA_META_B_BASE };
++    const MetaRecord *best = 0;
++    uint8_t page;
++    uint8_t slot;
++    for (page = 0U; page < 2U; ++page) {
++        for (slot = 0U; slot < META_PER_PAGE; ++slot) {
++            const MetaRecord *record = (const MetaRecord *)(pages[page] + ((uint32_t)slot * META_RECORD_SIZE));
++            if ((record_valid(record) != 0U) && (record->type == (uint16_t)type) &&
++                ((best == 0) || ((int32_t)(record->sequence - best->sequence) > 0))) {
++                best = record;
++            }
++        }
++    }
++    return best;
++}
++
++static uint8_t flash_erase_page(uint32_t address)
++{
++    FLASH_EraseInitTypeDef erase;
++    uint32_t page_error = 0U;
++    erase.TypeErase = FLASH_TYPEERASE_PAGES;
++    erase.PageAddress = address;
++    erase.NbPages = 1U;
++    return (HAL_FLASHEx_Erase(&erase, &page_error) == HAL_OK) ? 1U : 0U;
++}
++
++static uint8_t flash_write_record(uint32_t address, const MetaRecord *record)
++{
++    const uint16_t *source = (const uint16_t *)record;
++    uint16_t offset;
++    for (offset = 0U; offset < (uint16_t)offsetof(MetaRecord, commit); offset += 2U) {
++        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, address + offset, source[offset / 2U]) != HAL_OK) {
++            return 0U;
++        }
++    }
++    return (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,
++                              address + (uint32_t)offsetof(MetaRecord, commit), META_COMMIT) == HAL_OK) ? 1U : 0U;
++}
++
++static uint8_t find_free(uint32_t page_address, uint8_t *slot_out)
++{
++    uint8_t slot;
++    for (slot = 0U; slot < META_PER_PAGE; ++slot) {
++        const uint32_t *word = (const uint32_t *)(page_address + ((uint32_t)slot * META_RECORD_SIZE));
++        if (*word == 0xFFFFFFFFUL) { *slot_out = slot; return 1U; }
++    }
++    return 0U;
++}
++
++static void make_record(MetaRecord *record, OtaRecordType type, const void *payload,
++                        uint16_t payload_size, uint32_t sequence)
++{
++    memset(record, 0xFF, sizeof(*record));
++    record->magic = META_MAGIC;
++    record->schema = META_SCHEMA;
++    record->type = (uint16_t)type;
++    record->sequence = sequence;
++    record->payload_length = payload_size;
++    memcpy(record->payload, payload, payload_size);
++    record->crc32 = OtaCrc32(record, (uint32_t)offsetof(MetaRecord, crc32));
++    record->commit = META_COMMIT;
++}
++
++uint8_t OtaMetadataRead(OtaRecordType type, void *payload, uint16_t payload_size)
++{
++    const MetaRecord *record = latest_record(type);
++    if ((record == 0) || (payload == 0) || (record->payload_length != payload_size)) { return 0U; }
++    memcpy(payload, record->payload, payload_size);
++    return 1U;
++}
++
++uint8_t OtaMetadataWrite(OtaRecordType type, const void *payload, uint16_t payload_size)
++{
++    const MetaRecord *latest_config;
++    const MetaRecord *latest_state;
++    const MetaRecord *latest_any;
++    MetaRecord record;
++    MetaRecord keeper_copy[2];
++    uint8_t keeper_valid[2] = { 0U, 0U };
++    uint32_t active_page = OTA_META_A_BASE;
++    uint32_t other_page = OTA_META_B_BASE;
++    uint32_t sequence = 1U;
++    uint8_t slot;
++    uint8_t result = 0U;
++
++    if ((payload == 0) || (payload_size > OTA_METADATA_PAYLOAD_MAX)) { return 0U; }
++    latest_config = latest_record(OTA_RECORD_CONFIG);
++    latest_state = latest_record(OTA_RECORD_STATE);
++    latest_any = latest_config;
++    if ((latest_any == 0) || ((latest_state != 0) && ((int32_t)(latest_state->sequence - latest_any->sequence) > 0))) {
++        latest_any = latest_state;
++    }
++    if (latest_any != 0) {
++        uint32_t address = (uint32_t)latest_any;
++        sequence = latest_any->sequence + 1U;
++        active_page = (address < OTA_META_B_BASE) ? OTA_META_A_BASE : OTA_META_B_BASE;
++        other_page = (active_page == OTA_META_A_BASE) ? OTA_META_B_BASE : OTA_META_A_BASE;
++    }
++    make_record(&record, type, payload, payload_size, sequence);
++    if (latest_config != 0) { memcpy(&keeper_copy[0], latest_config, sizeof(MetaRecord)); keeper_valid[0] = 1U; }
++    if (latest_state != 0) { memcpy(&keeper_copy[1], latest_state, sizeof(MetaRecord)); keeper_valid[1] = 1U; }
++
++    if (HAL_FLASH_Unlock() != HAL_OK) { return 0U; }
++    if (find_free(active_page, &slot) != 0U) {
++        result = flash_write_record(active_page + ((uint32_t)slot * META_RECORD_SIZE), &record);
++    } else if (flash_erase_page(other_page) != 0U) {
++        uint8_t next_slot = 0U;
++        uint8_t i;
++        result = 1U;
++        for (i = 0U; i < 2U; ++i) {
++            if ((keeper_valid[i] != 0U) && (keeper_copy[i].type != (uint16_t)type)) {
++                if (flash_write_record(other_page + ((uint32_t)next_slot * META_RECORD_SIZE), &keeper_copy[i]) == 0U) {
++                    result = 0U; break;
++                }
++                ++next_slot;
++            }
++        }
++        if ((result != 0U) && (flash_write_record(other_page + ((uint32_t)next_slot * META_RECORD_SIZE), &record) == 0U)) {
++            result = 0U;
++        }
++        if (result != 0U) { (void)flash_erase_page(active_page); }
++    }
++    HAL_FLASH_Lock();
++    return result;
++}
++
++uint8_t OtaMetadataEraseAll(void)
++{
++    uint8_t ok;
++    if (HAL_FLASH_Unlock() != HAL_OK) { return 0U; }
++    ok = flash_erase_page(OTA_META_A_BASE);
++    if (flash_erase_page(OTA_META_B_BASE) == 0U) { ok = 0U; }
++    HAL_FLASH_Lock();
++    return ok;
++}
+--- 8/tw66gw02/Common/ota_metadata.h
++++ 9/tw66gw02/Common/ota_metadata.h
+@@ -0,0 +1,69 @@
++#ifndef MATHIS_OTA_METADATA_H
++#define MATHIS_OTA_METADATA_H
++
++#include <stdint.h>
++#include "ota_layout.h"
++
++#define OTA_METADATA_PAYLOAD_MAX 72U
++
++typedef enum {
++    OTA_RECORD_CONFIG = 1,
++    OTA_RECORD_STATE = 2
++} OtaRecordType;
++
++typedef enum {
++    OTA_PERSIST_IDLE = 0,
++    OTA_PERSIST_DOWNLOADING = 1,
++    OTA_PERSIST_VERIFIED_PENDING_SWAP = 2,
++    OTA_PERSIST_SWAPPING = 3,
++    OTA_PERSIST_INSTALLED_PENDING_CONFIRM = 4,
++    OTA_PERSIST_CONFIRMED = 5,
++    OTA_PERSIST_ROLLBACK_PENDING = 6,
++    OTA_PERSIST_FAILED = 7
++} OtaPersistState;
++
++typedef enum {
++    OTA_SWAP_NONE = 0,
++    OTA_SWAP_SCRATCH_VALID = 1,
++    OTA_SWAP_A_NEW_VALID = 2,
++    OTA_SWAP_PAGE_SWAPPED = 3
++} OtaSwapPhase;
++
++typedef struct {
++    uint32_t artifact_size;
++    uint32_t artifact_crc32;
++    uint32_t security_version;
++    uint8_t firmware_version;
++    uint8_t valid;
++    uint16_t reserved;
++} OtaSlotDescriptor;
++
++typedef struct {
++    uint8_t state;
++    uint8_t swap_phase;
++    uint8_t swap_page;
++    uint8_t boot_attempts;
++    uint32_t expected_artifact_size;
++    uint32_t expected_crc32;
++    uint32_t highest_security_version;
++    uint8_t target_firmware_version;
++    uint8_t reserved0[3];
++    OtaSlotDescriptor slot_a;
++    OtaSlotDescriptor slot_b;
++    uint32_t next_offset;
++    uint32_t generation;
++    uint8_t reserved1[12];
++} OtaPersistentState;
++
++typedef struct {
++    uint8_t units;
++    uint8_t reserved[3];
++    float coeff[3][5];
++    uint8_t padding[8];
++} OtaPersistentConfig;
++
++uint8_t OtaMetadataRead(OtaRecordType type, void *payload, uint16_t payload_size);
++uint8_t OtaMetadataWrite(OtaRecordType type, const void *payload, uint16_t payload_size);
++uint8_t OtaMetadataEraseAll(void);
++
++#endif
+--- 8/tw66gw02/COP/gagent_md5.c
++++ 9/tw66gw02/COP/gagent_md5.c
+@@ -1,217 +0,0 @@
+-/**
+-  ******************************************************************************
+-  * @file    gagent_md5.c
+-  * @author 
+-  * @version V1.0
+-  * @date
+-  * @brief   GAgent MD5 algorithm implementation.
+-  ******************************************************************************
+-  */
+-#include "config.h"
+-unsigned char PADDING[] = { 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+-/**
+-  * @function GAgent_MD5Init()
+-  * ----------------
+-  * @brief    Initialize an MD5 context.
+-  * @param    context - input parameter
+-  * @note     None
+-  */
+-void GAgent_MD5Init(MD5_CTX *context)
+-{
+-	context->count[0] = 0;
+-	context->count[1] = 0;
+-	context->state[0] = 0x67452301;
+-	context->state[1] = 0xEFCDAB89;
+-	context->state[2] = 0x98BADCFE;
+-	context->state[3] = 0x10325476;
+-}
+-/**
+-  * @function GAgent_MD5Update()
+-  * ------------------
+-  * @brief    Update the MD5 context with input data.
+-  * @param    context - input parameter
+-  * @param    input - input parameter
+-  * @param    inputlen - input parameter
+-  * @note     None
+-  */
+-void GAgent_MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen)
+-{
+-	unsigned int i = 0, index = 0, partlen = 0;
+-	index = (context->count[0] >> 3) & 0x3F;
+-	partlen = 64 - index;
+-	context->count[0] += inputlen << 3;
+-	if (context->count[0] < (inputlen << 3))
+-		context->count[1]++;
+-	context->count[1] += inputlen >> 29;
+-
+-	if (inputlen >= partlen)
+-	{
+-		memcpy(&context->buffer[index], input, partlen);
+-		GAgent_MD5Transform(context->state, context->buffer);
+-		for (i = partlen; i + 64 <= inputlen; i += 64)
+-			GAgent_MD5Transform(context->state, &input[i]);
+-		index = 0;
+-	}
+-	else
+-	{
+-		i = 0;
+-	}
+-	memcpy(&context->buffer[index], &input[i], inputlen - i);
+-}
+-/**
+-  * @function GAgent_MD5Final()
+-  * -----------------
+-  * @brief    Finalize MD5 calculation and output digest.
+-  * @param    context - input parameter
+-  * @param    digest - input parameter
+-  * @note     None
+-  */
+-void GAgent_MD5Final(MD5_CTX *context, unsigned char digest[16])
+-{
+-	unsigned int index = 0, padlen = 0;
+-	unsigned char bits[8];
+-	index = (context->count[0] >> 3) & 0x3F;
+-	padlen = (index < 56) ? (56 - index) : (120 - index);
+-	GAgent_MD5Encode(bits, context->count, 8);
+-	GAgent_MD5Update(context, PADDING, padlen);
+-	GAgent_MD5Update(context, bits, 8);
+-	GAgent_MD5Encode(digest, context->state, 16);
+-}
+-/**
+-  * @function GAgent_MD5Encode()
+-  * ------------------
+-  * @brief    Encode 32-bit words into little-endian bytes.
+-  * @param    output - input parameter
+-  * @param    input - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-void GAgent_MD5Encode(unsigned char *output, unsigned int *input, unsigned int len)
+-{
+-	unsigned int i = 0, j = 0;
+-	while (j < len)
+-	{
+-		output[j] = input[i] & 0xFF;
+-		output[j + 1] = (input[i] >> 8) & 0xFF;
+-		output[j + 2] = (input[i] >> 16) & 0xFF;
+-		output[j + 3] = (input[i] >> 24) & 0xFF;
+-		i++;
+-		j += 4;
+-	}
+-}
+-/**
+-  * @function GAgent_MD5Decode()
+-  * ------------------
+-  * @brief    Decode little-endian bytes into 32-bit words.
+-  * @param    output - input parameter
+-  * @param    input - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-void GAgent_MD5Decode(unsigned int *output, unsigned char *input, unsigned int len)
+-{
+-	unsigned int i = 0, j = 0;
+-	while (j < len)
+-	{
+-		output[i] = (input[j]) |
+-				(input[j + 1] << 8) |
+-				(input[j + 2] << 16) |
+-				(input[j + 3] << 24);
+-		i++;
+-		j += 4;
+-	}
+-}
+-/**
+-  * @function GAgent_MD5Transform()
+-  * ---------------------
+-  * @brief    Transform one 64-byte MD5 block.
+-  * @param    state - input parameter
+-  * @param    block - input parameter
+-  * @note     None
+-  */
+-void GAgent_MD5Transform(unsigned int state[4], unsigned char block[64])
+-{
+-	unsigned int a = state[0];
+-	unsigned int b = state[1];
+-	unsigned int c = state[2];
+-	unsigned int d = state[3];
+-	unsigned int x[64];
+-	GAgent_MD5Decode(x, block, 64);
+-	FF(a, b, c, d, x[0], 7, 0xd76aa478); /* 1 */
+-	FF(d, a, b, c, x[1], 12, 0xe8c7b756); /* 2 */
+-	FF(c, d, a, b, x[2], 17, 0x242070db); /* 3 */
+-	FF(b, c, d, a, x[3], 22, 0xc1bdceee); /* 4 */
+-	FF(a, b, c, d, x[4], 7, 0xf57c0faf); /* 5 */
+-	FF(d, a, b, c, x[5], 12, 0x4787c62a); /* 6 */
+-	FF(c, d, a, b, x[6], 17, 0xa8304613); /* 7 */
+-	FF(b, c, d, a, x[7], 22, 0xfd469501); /* 8 */
+-	FF(a, b, c, d, x[8], 7, 0x698098d8); /* 9 */
+-	FF(d, a, b, c, x[9], 12, 0x8b44f7af); /* 10 */
+-	FF(c, d, a, b, x[10], 17, 0xffff5bb1); /* 11 */
+-	FF(b, c, d, a, x[11], 22, 0x895cd7be); /* 12 */
+-	FF(a, b, c, d, x[12], 7, 0x6b901122); /* 13 */
+-	FF(d, a, b, c, x[13], 12, 0xfd987193); /* 14 */
+-	FF(c, d, a, b, x[14], 17, 0xa679438e); /* 15 */
+-	FF(b, c, d, a, x[15], 22, 0x49b40821); /* 16 */
+-
+-	/* Round 2 */
+-	GG(a, b, c, d, x[1], 5, 0xf61e2562); /* 17 */
+-	GG(d, a, b, c, x[6], 9, 0xc040b340); /* 18 */
+-	GG(c, d, a, b, x[11], 14, 0x265e5a51); /* 19 */
+-	GG(b, c, d, a, x[0], 20, 0xe9b6c7aa); /* 20 */
+-	GG(a, b, c, d, x[5], 5, 0xd62f105d); /* 21 */
+-	GG(d, a, b, c, x[10], 9, 0x2441453); /* 22 */
+-	GG(c, d, a, b, x[15], 14, 0xd8a1e681); /* 23 */
+-	GG(b, c, d, a, x[4], 20, 0xe7d3fbc8); /* 24 */
+-	GG(a, b, c, d, x[9], 5, 0x21e1cde6); /* 25 */
+-	GG(d, a, b, c, x[14], 9, 0xc33707d6); /* 26 */
+-	GG(c, d, a, b, x[3], 14, 0xf4d50d87); /* 27 */
+-	GG(b, c, d, a, x[8], 20, 0x455a14ed); /* 28 */
+-	GG(a, b, c, d, x[13], 5, 0xa9e3e905); /* 29 */
+-	GG(d, a, b, c, x[2], 9, 0xfcefa3f8); /* 30 */
+-	GG(c, d, a, b, x[7], 14, 0x676f02d9); /* 31 */
+-	GG(b, c, d, a, x[12], 20, 0x8d2a4c8a); /* 32 */
+-
+-	/* Round 3 */
+-	HH(a, b, c, d, x[5], 4, 0xfffa3942); /* 33 */
+-	HH(d, a, b, c, x[8], 11, 0x8771f681); /* 34 */
+-	HH(c, d, a, b, x[11], 16, 0x6d9d6122); /* 35 */
+-	HH(b, c, d, a, x[14], 23, 0xfde5380c); /* 36 */
+-	HH(a, b, c, d, x[1], 4, 0xa4beea44); /* 37 */
+-	HH(d, a, b, c, x[4], 11, 0x4bdecfa9); /* 38 */
+-	HH(c, d, a, b, x[7], 16, 0xf6bb4b60); /* 39 */
+-	HH(b, c, d, a, x[10], 23, 0xbebfbc70); /* 40 */
+-	HH(a, b, c, d, x[13], 4, 0x289b7ec6); /* 41 */
+-	HH(d, a, b, c, x[0], 11, 0xeaa127fa); /* 42 */
+-	HH(c, d, a, b, x[3], 16, 0xd4ef3085); /* 43 */
+-	HH(b, c, d, a, x[6], 23, 0x4881d05); /* 44 */
+-	HH(a, b, c, d, x[9], 4, 0xd9d4d039); /* 45 */
+-	HH(d, a, b, c, x[12], 11, 0xe6db99e5); /* 46 */
+-	HH(c, d, a, b, x[15], 16, 0x1fa27cf8); /* 47 */
+-	HH(b, c, d, a, x[2], 23, 0xc4ac5665); /* 48 */
+-
+-	/* Round 4 */
+-	II(a, b, c, d, x[0], 6, 0xf4292244); /* 49 */
+-	II(d, a, b, c, x[7], 10, 0x432aff97); /* 50 */
+-	II(c, d, a, b, x[14], 15, 0xab9423a7); /* 51 */
+-	II(b, c, d, a, x[5], 21, 0xfc93a039); /* 52 */
+-	II(a, b, c, d, x[12], 6, 0x655b59c3); /* 53 */
+-	II(d, a, b, c, x[3], 10, 0x8f0ccc92); /* 54 */
+-	II(c, d, a, b, x[10], 15, 0xffeff47d); /* 55 */
+-	II(b, c, d, a, x[1], 21, 0x85845dd1); /* 56 */
+-	II(a, b, c, d, x[8], 6, 0x6fa87e4f); /* 57 */
+-	II(d, a, b, c, x[15], 10, 0xfe2ce6e0); /* 58 */
+-	II(c, d, a, b, x[6], 15, 0xa3014314); /* 59 */
+-	II(b, c, d, a, x[13], 21, 0x4e0811a1); /* 60 */
+-	II(a, b, c, d, x[4], 6, 0xf7537e82); /* 61 */
+-	II(d, a, b, c, x[11], 10, 0xbd3af235); /* 62 */
+-	II(c, d, a, b, x[2], 15, 0x2ad7d2bb); /* 63 */
+-	II(b, c, d, a, x[9], 21, 0xeb86d391); /* 64 */
+-	state[0] += a;
+-	state[1] += b;
+-	state[2] += c;
+-	state[3] += d;
+-}
+--- 8/tw66gw02/COP/gagent_md5.h
++++ 9/tw66gw02/COP/gagent_md5.h
+@@ -1,58 +0,0 @@
+-/**
+-  ******************************************************************************
+-  * @file    gagent_md5.h
+-  * @author 
+-  * @version V1.0
+-  * @date
+-  * @brief   GAgent MD5 context, macro and function declarations.
+-  ******************************************************************************
+-  */
+-#ifndef _GAGENT_MD5_H
+-#define _GAGENT_MD5_H
+-#include "config.h"
+-
+-typedef struct
+-{
+-	unsigned int count[2];
+-	unsigned int state[4];
+-	unsigned char buffer[64];
+-} MD5_CTX;
+-
+-#define F(x,y,z) ((x & y) | (~x & z))
+-#define G(x,y,z) ((x & z) | (y & ~z))
+-#define H(x,y,z) (x^y^z)
+-#define I(x,y,z) (y ^ (x | ~z))
+-#define ROTATE_LEFT(x,n) ((x << n) | (x >> (32-n)))
+-#define FF(a,b,c,d,x,s,ac) \
+-{ \
+-	a += F(b,c,d) + x + ac; \
+-	a = ROTATE_LEFT(a,s); \
+-	a += b; \
+-}
+-#define GG(a,b,c,d,x,s,ac) \
+-{ \
+-	a += G(b,c,d) + x + ac; \
+-	a = ROTATE_LEFT(a,s); \
+-	a += b; \
+-}
+-#define HH(a,b,c,d,x,s,ac) \
+-{ \
+-	a += H(b,c,d) + x + ac; \
+-	a = ROTATE_LEFT(a,s); \
+-	a += b; \
+-}
+-#define II(a,b,c,d,x,s,ac) \
+-{ \
+-	a += I(b,c,d) + x + ac; \
+-	a = ROTATE_LEFT(a,s); \
+-	a += b; \
+-}
+-
+-void GAgent_MD5Init(MD5_CTX *context);
+-void GAgent_MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen);
+-void GAgent_MD5Final(MD5_CTX *context, unsigned char digest[16]);
+-void GAgent_MD5Transform(unsigned int state[4], unsigned char block[64]);
+-void GAgent_MD5Encode(unsigned char *output, unsigned int *input, unsigned int len);
+-void GAgent_MD5Decode(unsigned int *output, unsigned char *input, unsigned int len);
+-
+-#endif

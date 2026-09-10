@@ -1,0 +1,212 @@
+[
+  {
+    "source": "Bootloader",
+    "target": "01_固件工程/main/Bootloader",
+    "group": "main"
+  },
+  {
+    "source": "BSP",
+    "target": "01_固件工程/main/BSP",
+    "group": "main"
+  },
+  {
+    "source": "COP",
+    "target": "01_固件工程/main/COP",
+    "group": "main"
+  },
+  {
+    "source": "Core",
+    "target": "01_固件工程/main/Core",
+    "group": "main"
+  },
+  {
+    "source": "Diagnostics",
+    "target": "01_固件工程/main/Diagnostics",
+    "group": "main"
+  },
+  {
+    "source": "Drivers",
+    "target": "01_固件工程/main/Drivers",
+    "group": "main"
+  },
+  {
+    "source": "MDK-ARM",
+    "target": "01_固件工程/main/MDK-ARM",
+    "group": "main"
+  },
+  {
+    "source": "OS",
+    "target": "01_固件工程/main/OS",
+    "group": "main"
+  },
+  {
+    "source": "tests",
+    "target": "01_固件工程/main/tests",
+    "group": "main"
+  },
+  {
+    "source": "tools",
+    "target": "01_固件工程/main/tools",
+    "group": "main"
+  },
+  {
+    "source": ".mxproject",
+    "target": "01_固件工程/main/.mxproject",
+    "group": "main"
+  },
+  {
+    "source": "tw66gw02.ioc",
+    "target": "01_固件工程/main/tw66gw02.ioc",
+    "group": "main"
+  },
+  {
+    "source": "CHANGELOG.md",
+    "target": "01_固件工程/main/CHANGELOG.md",
+    "group": "main"
+  },
+  {
+    "source": "EMB1082_蓝牙接口说明.md",
+    "target": "01_固件工程/main/EMB1082_蓝牙接口说明.md",
+    "group": "main"
+  },
+  {
+    "source": "OTA_DEVELOPMENT_README.md",
+    "target": "01_固件工程/main/OTA_DEVELOPMENT_README.md",
+    "group": "main"
+  },
+  {
+    "source": "OTA_烧录与APP联调说明.md",
+    "target": "01_固件工程/main/OTA_烧录与APP联调说明.md",
+    "group": "main"
+  },
+  {
+    "source": "BuildKeilFactoryTarget.ps1",
+    "target": "01_固件工程/main/BuildKeilFactoryTarget.ps1",
+    "group": "main"
+  },
+  {
+    "source": "BuildOtaArtifacts.ps1",
+    "target": "01_固件工程/main/BuildOtaArtifacts.ps1",
+    "group": "main"
+  },
+  {
+    "source": "BuildStartupDiagnostic.ps1",
+    "target": "01_固件工程/main/BuildStartupDiagnostic.ps1",
+    "group": "main"
+  },
+  {
+    "source": "PrepareFactoryBootImage.ps1",
+    "target": "01_固件工程/main/PrepareFactoryBootImage.ps1",
+    "group": "main"
+  },
+  {
+    "source": "ProgramBootloaderOnlyWithJLink.ps1",
+    "target": "01_固件工程/main/ProgramBootloaderOnlyWithJLink.ps1",
+    "group": "main"
+  },
+  {
+    "source": "ProgramFactoryWithJLink.ps1",
+    "target": "01_固件工程/main/ProgramFactoryWithJLink.ps1",
+    "group": "main"
+  },
+  {
+    "source": "ReadStartupStateWithJLink.ps1",
+    "target": "01_固件工程/main/ReadStartupStateWithJLink.ps1",
+    "group": "main"
+  },
+  {
+    "source": "1",
+    "target": "01_固件工程/history/snapshot-01_early-baseline",
+    "group": "history"
+  },
+  {
+    "source": "2",
+    "target": "01_固件工程/history/snapshot-02_incomplete",
+    "group": "history"
+  },
+  {
+    "source": "3",
+    "target": "01_固件工程/history/snapshot-03_temperature-errors",
+    "group": "history"
+  },
+  {
+    "source": "4",
+    "target": "01_固件工程/history/snapshot-04_calibration",
+    "group": "history"
+  },
+  {
+    "source": "5",
+    "target": "01_固件工程/history/snapshot-05_units-display",
+    "group": "history"
+  },
+  {
+    "source": "6",
+    "target": "01_固件工程/history/snapshot-06_early-ota",
+    "group": "history"
+  },
+  {
+    "source": "7",
+    "target": "01_固件工程/history/snapshot-07_direct-boot",
+    "group": "history"
+  },
+  {
+    "source": "8",
+    "target": "01_固件工程/history/snapshot-08_mathis-ble",
+    "group": "history"
+  },
+  {
+    "source": "9",
+    "target": "01_固件工程/history/snapshot-09_secure-ota-experiment",
+    "group": "history"
+  },
+  {
+    "source": "10",
+    "target": "01_固件工程/history/snapshot-10_development-ota",
+    "group": "history"
+  },
+  {
+    "source": "11",
+    "target": "01_固件工程/history/snapshot-11_powerhold-incomplete",
+    "group": "history"
+  },
+  {
+    "source": "12",
+    "target": "01_固件工程/development/snapshot-12_secure-ota",
+    "group": "development"
+  },
+  {
+    "source": "13",
+    "target": "01_固件工程/development/snapshot-13_poweroff-v104",
+    "group": "development"
+  },
+  {
+    "source": "14",
+    "target": "01_固件工程/development/snapshot-14_refactor-from-10",
+    "group": "development"
+  },
+  {
+    "source": "TEST",
+    "target": "04_测试与联调/实验工程/TEST",
+    "group": "experiments"
+  },
+  {
+    "source": "ostest",
+    "target": "04_测试与联调/实验工程/ostest",
+    "group": "experiments"
+  },
+  {
+    "source": "eide",
+    "target": "04_测试与联调/实验工程/eide",
+    "group": "experiments"
+  },
+  {
+    "source": "JLink",
+    "target": "06_工具与参考/JLink",
+    "group": "tools"
+  },
+  {
+    "source": "tw66gw02.jflash",
+    "target": "06_工具与参考/JFlash配置/tw66gw02_snapshot10.jflash",
+    "group": "tools"
+  }
+]

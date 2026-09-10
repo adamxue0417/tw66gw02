@@ -1,0 +1,6 @@
+{
+  "group": "tools",
+  "checked": 369,
+  "mismatches": [],
+  "phase": "After directory moves, before intentional link/config edits and builds"
+}

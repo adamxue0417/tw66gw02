@@ -1,0 +1,787 @@
+--- 4/tw66gw02/BSP/key.c
++++ 5/tw66gw02/BSP/key.c
+@@ -10,48 +10,6 @@
+ #include "config.h"
+ 
+ _KeyState KeyState[KeyNumber];
+-/**
+-  * @function ConvertTempToUnit()
+-  * -------------------
+-  * @brief    Convert a temperature value between Celsius and Fahrenheit units.
+-  * @param    value - input parameter
+-  * @param    toUnit - input parameter
+-  * @note     None
+-  */
+-static int16_t ConvertTempToUnit(int16_t value, uint8_t toUnit)
+-{
+-    int32_t t = (int32_t)value;
+-
+-    if ((value == HaveTempErr) || (value == TempDisconnected) || (value == TempHigh) || (value == TempLow)) {
+-        return value;
+-    }
+-
+-    if (toUnit == unitF) {
+-        t = (t * 9) / 5 + 32;
+-    } else {
+-        t = (t - 32) * 5 / 9;
+-    }
+-
+-    if (t > 999) { t = 999; }
+-    if (t < -200) { t = -200; }
+-    return (int16_t)t;
+-}
+-/**
+-  * @function SyncTempsAfterUnitSwitch()
+-  * --------------------------
+-  * @brief    Synchronize cached temperatures after a unit switch.
+-  * @param    toUnit - input parameter
+-  * @note     None
+-  */
+-static void SyncTempsAfterUnitSwitch(uint8_t toUnit)
+-{
+-    uint8_t i;
+-
+-    for (i = 0u; i < 9u; i++)
+-    {
+-        system_data.pt1000_temp[i] = ConvertTempToUnit(system_data.pt1000_temp[i], toUnit);
+-    }
+-}
+ /**
+   * @function IsDisplayDashOnlyAlarm()
+   * ------------------------
+@@ -204,7 +162,7 @@
+             break;
+ 
+         default:
+-            if (IsDisplayDashOnlyAlarm() == 0u) {
++            if ((IsDisplayDashOnlyAlarm() == 0u) || (UI_IsProbeConnected() != 0u)) {
+                 UI_CycleDisplayMode();
+             }
+             UI_NotifyLocalInteraction();
+@@ -234,10 +192,8 @@
+             }
+             if (system_data.units == unitC) {
+                 system_data.units = unitF;
+-                SyncTempsAfterUnitSwitch(unitF);
+             } else {
+                 system_data.units = unitC;
+-                SyncTempsAfterUnitSwitch(unitC);
+             }
+             UI_NotifyLocalInteraction();
+             break;
+--- 4/tw66gw02/BSP/screen_c8721.c
++++ 5/tw66gw02/BSP/screen_c8721.c
+@@ -48,13 +48,30 @@
+ 
+ static const uint16_t s_probeGaugeThreshC[GAUGE_SEG_COUNT] =
+ {
+-    10u, 20u, 30u, 40u, 50u, 60u, 70u, 80u, 90u
++    30u, 70u, 110u, 150u, 190u, 230u, 270u, 310u, 350u
+ };
+ 
+ static const uint16_t s_probeGaugeThreshF[GAUGE_SEG_COUNT] =
+ {
+-    50u, 68u, 86u, 104u, 122u, 140u, 158u, 176u, 194u
++    86u, 158u, 230u, 302u, 374u, 446u, 518u, 590u, 662u
+ };
++
++static void SetGaugeSegment(uint8_t leftIndex, uint8_t value)
++{
++    switch (leftIndex)
++    {
++        case 0u: Screen_Data.DisplayMap.TempA = value; break;
++        case 1u: Screen_Data.DisplayMap.TempB = value; break;
++        case 2u: Screen_Data.DisplayMap.TempC = value; break;
++        case 3u: Screen_Data.DisplayMap.TempD = value; break;
++        case 4u: Screen_Data.DisplayMap.TempE = value; break;
++        case 5u: Screen_Data.DisplayMap.TempF = value; break;
++        case 6u: Screen_Data.DisplayMap.TempG = value; break;
++        case 7u: Screen_Data.DisplayMap.TempH = value; break;
++        case 8u: Screen_Data.DisplayMap.TempI = value; break;
++        default: break;
++    }
++}
+ /**
+   * @function SCL_Write()
+   * ------------
+@@ -249,6 +266,9 @@
+             Screen_Data.DisplayMap.CavityIcon1 = 1u;                        /* [13] */
+             Screen_Data.DisplayMap.CavityIcon2 = (uint8_t)GAUGE_SEG_ON;
+             Screen_Data.DisplayMap.CavityIcon3 = (uint8_t)GAUGE_SEG_ON;
++      
++//				    Screen_Data.DisplayMap.CavityIcon2 = 1u;
++//            Screen_Data.DisplayMap.CavityIcon3 = 1u;
+             break;
+ 
+         default:
+@@ -288,16 +308,10 @@
+         }
+     }
+ 
+-    /* Write each 2-bit gauge segment field */
+-    Screen_Data.DisplayMap.TempA = (segOn >= 1u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempB = (segOn >= 2u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempC = (segOn >= 3u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempD = (segOn >= 4u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempE = (segOn >= 5u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempF = (segOn >= 6u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempG = (segOn >= 7u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempH = (segOn >= 8u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempI = (segOn >= 9u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
++    for(i = 0u; i < GAUGE_SEG_COUNT; i++)
++    {
++        SetGaugeSegment(i, (segOn > i) ? GAUGE_SEG_ON : GAUGE_SEG_OFF);
++    }
+ }
+ 
+ /**
+@@ -309,15 +323,12 @@
+   */
+ static void ClearGauge(void)
+ {
+-    Screen_Data.DisplayMap.TempA = GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempB = GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempC = GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempD = GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempE = GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempF = GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempG = GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempH = GAUGE_SEG_OFF;
+-    Screen_Data.DisplayMap.TempI = GAUGE_SEG_OFF;
++    uint8_t i;
++
++    for(i = 0u; i < GAUGE_SEG_COUNT; i++)
++    {
++        SetGaugeSegment(i, GAUGE_SEG_OFF);
++    }
+ }
+ 
+ 
+@@ -383,11 +394,12 @@
+     {
+         displaystep = 0u;
+     }
+-}
+-
+-
+-
+-
+-
+-
+-
++
++}
++
++
++
++
++
++
++
+--- 4/tw66gw02/BSP/temp.c
++++ 5/tw66gw02/BSP/temp.c
+@@ -378,8 +378,8 @@
+     if (raw == TempDisconnected) {
+         return TempDisconnected;
+     }
+-    if (raw >= PROBE_TEMP_C_HIGH_LIMIT) { return TempHigh; }
+-    if (raw <= PROBE_TEMP_C_LOW_LIMIT) { return TempLow; }
++    if (raw > PROBE_TEMP_C_HIGH_LIMIT) { return TempHigh; }
++    if (raw < PROBE_TEMP_C_LOW_LIMIT) { return TempLow; }
+ 
+     return (int16_t)raw;
+ }
+@@ -608,19 +608,9 @@
+                 continue;
+             }
+ 
+-            if (system_data.units == unitC)
+-            {
+-                if (t < PROBE_TEMP_C_LOW_LIMIT) { t = PROBE_TEMP_C_LOW_LIMIT; }
+-                if (t > PROBE_TEMP_C_HIGH_LIMIT) { t = PROBE_TEMP_C_HIGH_LIMIT; }
+-                system_data.pt1000_temp[i] = (int16_t)t;
+-            }
+-            else
+-            {
+-                t = (t * 9) / 5 + 32;
+-                if (t < -4) { t = -4; }
+-                if (t > 932) { t = 932; }
+-                system_data.pt1000_temp[i] = (int16_t)t;
+-            }
++            if (t < PROBE_TEMP_C_LOW_LIMIT) { t = PROBE_TEMP_C_LOW_LIMIT; }
++            if (t > PROBE_TEMP_C_HIGH_LIMIT) { t = PROBE_TEMP_C_HIGH_LIMIT; }
++            system_data.pt1000_temp[i] = (int16_t)t;
+         }
+     }
+ 
+@@ -718,11 +708,7 @@
+             s_probe_lo_latched = 0u;
+             s_probe_lo_pending_cnt = 0u;
+             s_probe_lo_release_cnt = 0u;
+-            if (system_data.units == unitC) {
+-                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+-            } else {
+-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
+-            }
++            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+             return;
+         }
+     }
+@@ -745,11 +731,7 @@
+             s_probe_hi_pending_cnt = 0u;
+             s_probe_hi_release_cnt = 0u;
+             s_probe_lo_release_cnt = 0u;
+-            if (system_data.units == unitC) {
+-                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+-            } else {
+-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
+-            }
++            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+         }
+         return;
+     }
+@@ -767,11 +749,7 @@
+             g_probe_over_hi = 1u;
+             g_probe_over_lo = 0u;
+             s_probe_hi_release_cnt = 0u;
+-            if (system_data.units == unitC) {
+-                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+-            } else {
+-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
+-            }
++            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+             return;
+         }
+         if (s_probe_hi_release_cnt < 255u) { s_probe_hi_release_cnt++; }
+@@ -779,11 +757,7 @@
+         {
+             g_probe_over_hi = 1u;
+             g_probe_over_lo = 0u;
+-            if (system_data.units == unitC) {
+-                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+-            } else {
+-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
+-            }
++            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+             return;
+         }
+         s_probe_hi_latched = 0u;
+@@ -799,11 +773,7 @@
+             g_probe_over_hi = 0u;
+             g_probe_over_lo = 1u;
+             s_probe_lo_release_cnt = 0u;
+-            if (system_data.units == unitC) {
+-                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+-            } else {
+-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
+-            }
++            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+             return;
+         }
+         if (s_probe_lo_release_cnt < 255u) { s_probe_lo_release_cnt++; }
+@@ -811,11 +781,7 @@
+         {
+             g_probe_over_hi = 0u;
+             g_probe_over_lo = 1u;
+-            if (system_data.units == unitC) {
+-                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+-            } else {
+-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
+-            }
++            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+             return;
+         }
+         s_probe_lo_latched = 0u;
+@@ -879,11 +845,7 @@
+             s_probe_lo_latched = 0u;
+             s_probe_lo_pending_cnt = 0u;
+             s_probe_lo_release_cnt = 0u;
+-            if (system_data.units == unitC) {
+-                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+-            } else {
+-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
+-            }
++            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
+             return;
+         }
+     }
+@@ -900,11 +862,7 @@
+             s_probe_lo_release_cnt = 0u;
+             g_probe_over_hi = 0u;
+             g_probe_over_lo = 1u;
+-            if (system_data.units == unitC) {
+-                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+-            } else {
+-                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
+-            }
++            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
+             return;
+         }
+     } else {
+@@ -912,14 +870,7 @@
+         g_probe_over_lo = 0u;
+     }
+ 
+-    if (system_data.units == unitC)
+-    {
+-        system_data.pt1000_temp[3] = probe_c;
+-    }
+-    else
+-    {
+-        system_data.pt1000_temp[3] = (int16_t)(((int32_t)probe_c * 9) / 5 + 32);
+-    }
++    system_data.pt1000_temp[3] = probe_c;
+ }
+ 
+ /**
+--- 4/tw66gw02/BSP/wireless.c
++++ 5/tw66gw02/BSP/wireless.c
+@@ -26,15 +26,26 @@
+   * @param    None
+   * @note     None
+   */
+-static uint16_t wl_get_probe_temp(void)
++static int16_t wl_temp_from_c(int16_t t)
++{
++    if ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) {
++        return t;
++    }
++    if (system_data.units == unitF) {
++        return (int16_t)(((int32_t)t * 9) / 5 + 32);
++    }
++    return t;
++}
++
++static int16_t wl_get_probe_temp(void)
+ {
+     if (g_probe_connected == 0u) {
+         return HaveTempErr;
+     }
+-    return system_data.pt1000_temp[3];
+-}
+-
+-static uint8_t wl_is_special_temp(uint16_t t)
++    return wl_temp_from_c(system_data.pt1000_temp[3]);
++}
++
++static uint8_t wl_is_special_temp(int16_t t)
+ {
+     return ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) ? 1u : 0u;
+ }
+@@ -45,7 +56,7 @@
+   * @param    ch - input parameter
+   * @note     None
+   */
+-static uint16_t wl_get_temp_by_channel(uint8_t ch)
++static int16_t wl_get_temp_by_channel(uint8_t ch)
+ {
+     if (ch == 0x01u) { return wl_get_probe_temp(); }        /* probe1 in legacy protocol */
+     if (ch == 0x02u) { return HaveTempErr; }                /* probe2 unsupported */
+@@ -58,13 +69,13 @@
+   * @param    None
+   * @note     None
+   */
+-static uint16_t wl_get_display_main_temp(void)
+-{
+-    if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return (uint16_t)UI_GetAdjustedMainTemp(1u); }
+-    if (DisplayMode == DISPLAY_MODE_D_SURFACE) { return (uint16_t)UI_GetAdjustedMainTemp(0u); }
+-    if (DisplayMode == DISPLAY_MODE_CAVITY)    { return (uint16_t)UI_GetAdjustedMainTemp(2u); }
++static int16_t wl_get_display_main_temp(void)
++{
++    if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return UI_GetAdjustedMainTemp(1u); }
++    if (DisplayMode == DISPLAY_MODE_D_SURFACE) { return UI_GetAdjustedMainTemp(0u); }
++    if (DisplayMode == DISPLAY_MODE_CAVITY)    { return UI_GetAdjustedMainTemp(2u); }
+     if (DisplayMode == DISPLAY_MODE_PROBE)     { return wl_get_probe_temp(); }
+-    return (uint16_t)UI_GetAdjustedMainTemp(0u);
++    return UI_GetAdjustedMainTemp(0u);
+ }
+ /**
+   * @function wl_split3()
+@@ -84,6 +95,58 @@
+     *l = (uint8_t)(v % 10u);
+ }
+ 
++static void wl_put_temp3(uint8_t offset, int16_t temp)
++{
++    uint8_t h, t, l;
++
++    if (wl_is_special_temp(temp) != 0u) {
++        s_tx[offset] = 0x09u;
++        s_tx[offset + 1u] = 0x06u;
++        s_tx[offset + 2u] = 0x00u;
++    } else {
++        wl_split3((uint16_t)temp, &h, &t, &l);
++        s_tx[offset] = h;
++        s_tx[offset + 1u] = t;
++        s_tx[offset + 2u] = l;
++    }
++}
++
++static uint8_t wl_get_temp_level(int16_t temp)
++{
++    int16_t temp_f;
++
++    if (wl_is_special_temp(temp) != 0u) {
++        return 0x01u;
++    }
++
++    temp_f = temp;
++    if (system_data.units == unitC) {
++        temp_f = (int16_t)(((int32_t)temp * 9) / 5 + 32);
++    }
++
++    if (temp_f <= 100) { return 0x01u; }
++    if (temp_f <= 167) { return 0x02u; }
++    if (temp_f <= 234) { return 0x03u; }
++    if (temp_f <= 300) { return 0x04u; }
++    if (temp_f <= 367) { return 0x05u; }
++    if (temp_f <= 434) { return 0x06u; }
++    return 0x07u;
++}
++
++static uint8_t wl_get_temp_status(int16_t main_temp, int16_t probe1_temp)
++{
++    uint8_t status = 0u;
++
++    if (wl_is_special_temp(main_temp) != 0u) {
++        status |= 0x01u;
++    }
++    if (wl_is_special_temp(probe1_temp) != 0u) {
++        status |= 0x02u;
++    }
++    status |= 0x04u; /* Probe2 is reserved/unsupported in this product. */
++    return status;
++}
++
+ static int32_t wl_parse_s32_be(const uint8_t *p)
+ {
+     uint32_t u;
+@@ -177,7 +240,7 @@
+     uint16_t step;
+     uint8_t h, t, l;
+ 
+-    if ((len < 7u) || (rx[2] != 0x01u)) {
++    if ((len < 5u) || (rx[2] != 0x01u)) {
+         return;
+     }
+ 
+@@ -204,7 +267,7 @@
+     uint16_t step;
+     uint8_t h, t, l;
+ 
+-    if ((len < 7u) || (rx[2] != 0x01u)) {
++    if ((len < 5u) || (rx[2] != 0x01u)) {
+         return;
+     }
+ 
+@@ -274,13 +337,13 @@
+   */
+ static void wl_handle_query_probe(const uint8_t *rx, uint16_t len)
+ {
+-    uint16_t p;
++    int16_t p;
+     uint8_t h, t, l;
+     (void)len;
+ 
+     p = wl_get_temp_by_channel(rx[2]);
+     if (wl_is_special_temp(p) != 0u) { h = 0x09u; t = 0x06u; l = 0x00u; }
+-    else { wl_split3(p, &h, &t, &l); }
++    else { wl_split3((uint16_t)p, &h, &t, &l); }
+ 
+     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_PROBE; s_tx[2] = rx[2];
+     s_tx[3] = 0x00u; s_tx[4] = 0x00u; s_tx[5] = 0x00u;
+@@ -313,8 +376,8 @@
+   */
+ static void wl_handle_query_status(const uint8_t *rx, uint16_t len)
+ {
+-    uint16_t in_t;
+-    uint16_t p1;
++    int16_t in_t;
++    int16_t p1;
+     uint8_t h, t, l;
+     (void)len;
+ 
+@@ -322,7 +385,7 @@
+         return;
+     }
+ 
+-    s_tx[0] = WL_HEAD; s_tx[1] = 0x1Bu;
++    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_STATUS_WORK;
+     s_tx[2] = (work_process == set) ? 0x01u : 0x02u;
+     s_tx[3] = ((work_process == idle) || (work_process == shutdown)) ? 0x02u : 0x01u;
+     s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u;
+@@ -333,24 +396,70 @@
+ 
+     in_t = wl_get_display_main_temp();
+     p1 = wl_get_probe_temp();
+-    s_tx[0] = WL_HEAD; s_tx[1] = 0x2Bu;
+-    s_tx[2] = 0x01u;
++    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_STATUS_TEMP;
++    s_tx[2] = wl_get_temp_level(in_t);
+     s_tx[3] = (system_data.units == unitF) ? 0x01u : 0x02u;
+     s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u;
+-    if (wl_is_special_temp(in_t) != 0u) { s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u; }
+-    else { wl_split3(in_t, &h, &t, &l); s_tx[8] = h; s_tx[9] = t; s_tx[10] = l; }
+-    if (wl_is_special_temp(p1) != 0u) { s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u; s_tx[14] = 0x02u; }
+-    else { wl_split3(p1, &h, &t, &l); s_tx[11] = h; s_tx[12] = t; s_tx[13] = l; s_tx[14] = 0x00u; }
++    wl_put_temp3(8u, in_t);
++    wl_put_temp3(11u, p1);
++    s_tx[14] = wl_get_temp_status(in_t, p1);
+     s_tx[15] = WL_TAIL;
+     wl_send(s_tx, 16u);
+ 
+-    s_tx[0] = WL_HEAD; s_tx[1] = 0x3Bu;
++    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_STATUS_OUTPUT;
+     s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; /* probe2 unsupported */
+-    s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u; s_tx[8] = 0x00u;
++    s_tx[5] = 0x00u; /* Prime reserved */
++    s_tx[6] = 0x00u; s_tx[7] = 0x00u; s_tx[8] = 0x00u; /* Fan/Mot/Hot reserved */
+     s_tx[9] = 0x00u; s_tx[10] = 0x00u; s_tx[11] = 0x00u;
+     s_tx[12] = 0x00u; s_tx[13] = 0x00u; s_tx[14] = 0x00u;
+     s_tx[15] = WL_TAIL;
+     wl_send(s_tx, 16u);
++}
++
++static void wl_handle_query_runtime(const uint8_t *rx, uint16_t len)
++{
++    (void)len;
++    if (rx[2] != 0x01u) { return; }
++
++    s_tx[0] = WL_HEAD;
++    s_tx[1] = WL_CMD_QUERY_RUNTIME;
++    s_tx[2] = 0x00u;
++    s_tx[3] = 0x00u;
++    s_tx[4] = 0x00u;
++    s_tx[5] = WL_TAIL;
++    wl_send(s_tx, 6u);
++}
++
++static void wl_handle_pid_pwm(const uint8_t *rx, uint16_t len)
++{
++    (void)rx;
++    (void)len;
++
++    memset(s_tx, 0, 15u);
++    s_tx[0] = WL_HEAD;
++    s_tx[1] = WL_CMD_PID_PWM;
++    s_tx[14] = WL_TAIL;
++    wl_send(s_tx, 15u);
++}
++
++static void wl_handle_shutdown_time(const uint8_t *rx, uint16_t len)
++{
++    if (rx[2] == 0x01u) {
++        memset(s_tx, 0, 10u);
++        s_tx[0] = WL_HEAD;
++        s_tx[1] = WL_CMD_SHUTDOWN_TIME;
++        s_tx[2] = 0x01u;
++        s_tx[9] = WL_TAIL;
++        wl_send(s_tx, 10u);
++    } else if (rx[2] == 0x02u) {
++        wl_send(rx, len);
++    }
++}
++
++static void wl_handle_prime(const uint8_t *rx, uint16_t len)
++{
++    (void)len;
++    wl_ack_cmd2(WL_CMD_PRIME, rx[2]);
+ }
+ /**
+   * @function wl_handle_query_set_all()
+@@ -382,7 +491,7 @@
+   */
+ static void wl_handle_query_act_all(const uint8_t *rx, uint16_t len)
+ {
+-    uint16_t in_t, p1;
++    int16_t in_t, p1;
+     uint8_t h, t, l;
+     (void)len;
+     if (rx[2] != 0x01u) { return; }
+@@ -392,14 +501,14 @@
+ 
+     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_ACT_ALL;
+     if (wl_is_special_temp(p1) != 0u) { s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; }
+-    else { wl_split3(p1, &h, &t, &l); s_tx[2] = h; s_tx[3] = t; s_tx[4] = l; }
++    else { wl_split3((uint16_t)p1, &h, &t, &l); s_tx[2] = h; s_tx[3] = t; s_tx[4] = l; }
+     s_tx[5] = 0x09u; s_tx[6] = 0x06u; s_tx[7] = 0x00u;
+     s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u;
+     s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u;
+     s_tx[14] = 0x09u; s_tx[15] = 0x06u; s_tx[16] = 0x00u;
+     s_tx[17] = 0x09u; s_tx[18] = 0x06u; s_tx[19] = 0x00u;
+     if (wl_is_special_temp(in_t) != 0u) { s_tx[20] = 0x09u; s_tx[21] = 0x06u; s_tx[22] = 0x00u; }
+-    else { wl_split3(in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; }
++    else { wl_split3((uint16_t)in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; }
+     s_tx[23] = WL_TAIL;
+     wl_send(s_tx, 24u);
+ }
+@@ -468,9 +577,10 @@
+ 
+     memset(s_tx, 0, 21u);
+     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_FW_INFO; s_tx[2] = 0x01u;
+-    s_tx[5] = 0x01u;  /* volume */
+-    s_tx[6] = 0x01u;  /* type */
+-    s_tx[7] = 0x01u;  /* probe count */
++    s_tx[5] = 0x01u;  /* firmware version 1 */
++    s_tx[6] = 0x01u;  /* oven volume */
++    s_tx[7] = 0x01u;  /* type */
++    s_tx[8] = 0x01u;  /* supported probe count */
+     s_tx[10] = 0x01u; s_tx[11] = 0x07u; s_tx[12] = 0x05u; /* grill min 175 */
+     s_tx[13] = 0x04u; s_tx[14] = 0x05u; s_tx[15] = 0x05u; /* grill max 455 */
+     s_tx[20] = WL_TAIL;
+@@ -498,6 +608,9 @@
+         case WL_CMD_QUERY_STATUS:  wl_handle_query_status(rx, len); break;
+         case WL_CMD_QUERY_SET_ALL: wl_handle_query_set_all(rx, len); break;
+         case WL_CMD_QUERY_ACT_ALL: wl_handle_query_act_all(rx, len); break;
++        case WL_CMD_QUERY_RUNTIME: wl_handle_query_runtime(rx, len); break;
++        case WL_CMD_PID_PWM:       wl_handle_pid_pwm(rx, len); break;
++        case WL_CMD_WIFI_SYMBOL:   break;
+         case WL_CMD_BT_STATUS:
+             s_bt_status = rx[2];
+             if (rx[2] == 0x01u) {
+@@ -506,6 +619,9 @@
+                 UI_SetBluetoothConnectionState(0u);
+             }
+             break;
++        case WL_CMD_SHUTDOWN_TIME: wl_handle_shutdown_time(rx, len); break;
++        case WL_CMD_PRIME:         wl_handle_prime(rx, len); break;
++        case WL_CMD_START_RECIPE:  break;
+         case WL_CMD_COEFF_SET:    wl_handle_coeff_set(rx, len); break;
+         case WL_CMD_COEFF_QUERY:  wl_handle_coeff_query(rx, len); break;
+         case WL_CMD_FW_INFO:       wl_handle_fw_info(rx, len); break;
+--- 4/tw66gw02/BSP/wireless.h
++++ 5/tw66gw02/BSP/wireless.h
+@@ -26,7 +26,16 @@
+ #define WL_CMD_QUERY_STATUS         0x0Bu
+ #define WL_CMD_QUERY_SET_ALL        0x0Du
+ #define WL_CMD_QUERY_ACT_ALL        0x0Eu
++#define WL_CMD_QUERY_RUNTIME        0x0Fu
++#define WL_CMD_STATUS_WORK          0x1Bu
++#define WL_CMD_PID_PWM              0x1Fu
++#define WL_CMD_STATUS_TEMP          0x2Bu
++#define WL_CMD_WIFI_SYMBOL          0x23u
+ #define WL_CMD_BT_STATUS            0x24u
++#define WL_CMD_SHUTDOWN_TIME        0x27u
++#define WL_CMD_PRIME                0x28u
++#define WL_CMD_STATUS_OUTPUT        0x3Bu
++#define WL_CMD_START_RECIPE         0x31u
+ #define WL_CMD_FW_INFO              0x5Fu
+ #define WL_CMD_COEFF_SET            0x60u
+ #define WL_CMD_COEFF_QUERY          0x61u
+--- 4/tw66gw02/COP/main_control.c
++++ 5/tw66gw02/COP/main_control.c
+@@ -33,7 +33,6 @@
+ /* 0:none, 1:-HI, 2:-LO, 3:--- */
+ static uint8_t s_display_special = 3u;
+ 
+-static uint16_t s_idle_ticks_100ms = 0u;
+ static _work_process s_last_work_process = idle;
+ static uint8_t s_probe_connected_last = 0u;
+ static uint8_t s_probe_absent_ticks_100ms = 0u;
+@@ -100,16 +99,13 @@
+ /**
+   * @function TempToC()
+   * ------------
+-  * @brief    Convert temperature from current UI unit to Celsius.
++  * @brief    Return the cached Celsius temperature.
+   * @param    t - input parameter
+   * @note     None
+   */
+ static int16_t TempToC(int16_t t)
+ {
+-    if (system_data.units == unitC) {
+-        return t;
+-    }
+-    return (int16_t)((((int32_t)t - 32) * 5) / 9);
++    return t;
+ }
+ 
+ /**
+@@ -474,7 +470,6 @@
+   */
+ void UI_NotifyLocalInteraction(void)
+ {
+-    s_idle_ticks_100ms = 0u;
+ }
+ 
+ /**
+@@ -668,7 +663,8 @@
+ {
+     if (s_bt_hw_on == 0u) {
+         BT_On;
+-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
++ //       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
++        delay_ms(200);
+         BT_Reset;
+         s_bt_hw_on = 1u;
+     }
+@@ -684,8 +680,8 @@
+ static void BluetoothHwPowerOff(void)
+ {
+     if (s_bt_hw_on != 0u) {
++//        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+         BT_Off;
+-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+         s_bt_hw_on = 0u;
+     }
+ }
+@@ -752,6 +748,7 @@
+             s_bt_state = BT_OFF;
+             s_bt_icon_on = 0u;
+             s_bt_connected_input = 0u;
++            BluetoothHwPowerOff();
+         }
+     }
+ }
+@@ -826,13 +823,13 @@
+                 s_display_temp = 0;
+             } else {
+                 ch_temp = (int16_t)system_data.pt1000_temp[3];
+-                s_display_temp = ch_temp;
++                s_display_temp = TempFromC(ch_temp);
+ 							 
+             }
+             break;
+ 
+         default:
+-            s_display_temp = (int16_t)system_data.pt1000_temp[0];
++            s_display_temp = TempFromC((int16_t)system_data.pt1000_temp[0]);
+             break;
+     }
+ }
+@@ -888,7 +885,6 @@
+             } else {
+                 DisplayMode = DISPLAY_MODE_D_SURFACE;
+             }
+-            s_idle_ticks_100ms = 0u;
+         }
+ 
+     if (work_process == shutdown) {
+@@ -903,17 +899,6 @@
+     BluetoothTask_100ms();
+     UpdateDisplayCache();
+ 
+-    if ((work_process != idle) && (work_process != shutdown)) {
+-        if (s_bt_state != BT_CONNECTED) {
+-            s_idle_ticks_100ms++;
+-            if (s_idle_ticks_100ms >= IDLE_AUTO_SHUTDOWN_TICKS_100MS) {
+-                work_process = shutdown;
+-            }
+-        }
+-    } else {
+-        s_idle_ticks_100ms = 0u;
+-    }
+-		
+         /* Two-step power-off:
+          * 1) enter shutdown immediately (screen off),
+          * 2) wait KEY0 release, then cut PB3 power latch. */
+--- 4/tw66gw02/COP/main_control.h
++++ 5/tw66gw02/COP/main_control.h
+@@ -11,7 +11,6 @@
+ #define		__MAIN_CONTROL_H__
+ #include "config.h"
+ 
+-#define IDLE_AUTO_SHUTDOWN_TICKS_100MS  (3000u)
+ #define FIT_TEMP_C_THRESHOLD             (50)
+ #define FIT_OUTLIER_DIFF_C               (4)
+ #define FIT_MAIN_OUTLIER_DIFF_C          (4)

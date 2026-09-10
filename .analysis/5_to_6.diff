@@ -1,0 +1,2116 @@
+--- 5/tw66gw02/BSP/config.h
++++ 6/tw66gw02/BSP/config.h
+@@ -37,7 +37,7 @@
+ //#include "set.h"
+ #include "shutdown.h"
+ #include "warning.h"
+-//#include "ota.h"
++#include "ota.h"
+ //#include "pid.h"
+ //#include "gagent_md5.h"
+ //OS
+--- 5/tw66gw02/BSP/key.c
++++ 6/tw66gw02/BSP/key.c
+@@ -10,6 +10,48 @@
+ #include "config.h"
+ 
+ _KeyState KeyState[KeyNumber];
++/**
++  * @function ConvertTempToUnit()
++  * -------------------
++  * @brief    Convert a temperature value between Celsius and Fahrenheit units.
++  * @param    value - input parameter
++  * @param    toUnit - input parameter
++  * @note     None
++  */
++static int16_t ConvertTempToUnit(int16_t value, uint8_t toUnit)
++{
++    int32_t t = (int32_t)value;
++
++    if ((value == HaveTempErr) || (value == TempDisconnected) || (value == TempHigh) || (value == TempLow)) {
++        return value;
++    }
++
++    if (toUnit == unitF) {
++        t = (t * 9) / 5 + 32;
++    } else {
++        t = (t - 32) * 5 / 9;
++    }
++
++    if (t > 999) { t = 999; }
++    if (t < -200) { t = -200; }
++    return (int16_t)t;
++}
++/**
++  * @function SyncTempsAfterUnitSwitch()
++  * --------------------------
++  * @brief    Synchronize cached temperatures after a unit switch.
++  * @param    toUnit - input parameter
++  * @note     None
++  */
++static void SyncTempsAfterUnitSwitch(uint8_t toUnit)
++{
++    uint8_t i;
++
++    for (i = 0u; i < 9u; i++)
++    {
++        system_data.pt1000_temp[i] = ConvertTempToUnit(system_data.pt1000_temp[i], toUnit);
++    }
++}
+ /**
+   * @function IsDisplayDashOnlyAlarm()
+   * ------------------------
+@@ -162,7 +204,7 @@
+             break;
+ 
+         default:
+-            if ((IsDisplayDashOnlyAlarm() == 0u) || (UI_IsProbeConnected() != 0u)) {
++            if (IsDisplayDashOnlyAlarm() == 0u) {
+                 UI_CycleDisplayMode();
+             }
+             UI_NotifyLocalInteraction();
+@@ -192,8 +234,10 @@
+             }
+             if (system_data.units == unitC) {
+                 system_data.units = unitF;
++                SyncTempsAfterUnitSwitch(unitF);
+             } else {
+                 system_data.units = unitC;
++                SyncTempsAfterUnitSwitch(unitC);
+             }
+             UI_NotifyLocalInteraction();
+             break;
+--- 5/tw66gw02/BSP/screen_c8721.c
++++ 6/tw66gw02/BSP/screen_c8721.c
+@@ -48,30 +48,13 @@
+ 
+ static const uint16_t s_probeGaugeThreshC[GAUGE_SEG_COUNT] =
+ {
+-    30u, 70u, 110u, 150u, 190u, 230u, 270u, 310u, 350u
++    10u, 20u, 30u, 40u, 50u, 60u, 70u, 80u, 90u
+ };
+ 
+ static const uint16_t s_probeGaugeThreshF[GAUGE_SEG_COUNT] =
+ {
+-    86u, 158u, 230u, 302u, 374u, 446u, 518u, 590u, 662u
+-};
+-
+-static void SetGaugeSegment(uint8_t leftIndex, uint8_t value)
+-{
+-    switch (leftIndex)
+-    {
+-        case 0u: Screen_Data.DisplayMap.TempA = value; break;
+-        case 1u: Screen_Data.DisplayMap.TempB = value; break;
+-        case 2u: Screen_Data.DisplayMap.TempC = value; break;
+-        case 3u: Screen_Data.DisplayMap.TempD = value; break;
+-        case 4u: Screen_Data.DisplayMap.TempE = value; break;
+-        case 5u: Screen_Data.DisplayMap.TempF = value; break;
+-        case 6u: Screen_Data.DisplayMap.TempG = value; break;
+-        case 7u: Screen_Data.DisplayMap.TempH = value; break;
+-        case 8u: Screen_Data.DisplayMap.TempI = value; break;
+-        default: break;
+-    }
+-}
++    50u, 68u, 86u, 104u, 122u, 140u, 158u, 176u, 194u
++};
+ /**
+   * @function SCL_Write()
+   * ------------
+@@ -266,9 +249,6 @@
+             Screen_Data.DisplayMap.CavityIcon1 = 1u;                        /* [13] */
+             Screen_Data.DisplayMap.CavityIcon2 = (uint8_t)GAUGE_SEG_ON;
+             Screen_Data.DisplayMap.CavityIcon3 = (uint8_t)GAUGE_SEG_ON;
+-      
+-//				    Screen_Data.DisplayMap.CavityIcon2 = 1u;
+-//            Screen_Data.DisplayMap.CavityIcon3 = 1u;
+             break;
+ 
+         default:
+@@ -308,10 +288,16 @@
+         }
+     }
+ 
+-    for(i = 0u; i < GAUGE_SEG_COUNT; i++)
+-    {
+-        SetGaugeSegment(i, (segOn > i) ? GAUGE_SEG_ON : GAUGE_SEG_OFF);
+-    }
++    /* Write each 2-bit gauge segment field */
++    Screen_Data.DisplayMap.TempA = (segOn >= 1u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempB = (segOn >= 2u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempC = (segOn >= 3u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempD = (segOn >= 4u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempE = (segOn >= 5u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempF = (segOn >= 6u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempG = (segOn >= 7u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempH = (segOn >= 8u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempI = (segOn >= 9u) ? GAUGE_SEG_ON : GAUGE_SEG_OFF;
+ }
+ 
+ /**
+@@ -323,12 +309,15 @@
+   */
+ static void ClearGauge(void)
+ {
+-    uint8_t i;
+-
+-    for(i = 0u; i < GAUGE_SEG_COUNT; i++)
+-    {
+-        SetGaugeSegment(i, GAUGE_SEG_OFF);
+-    }
++    Screen_Data.DisplayMap.TempA = GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempB = GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempC = GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempD = GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempE = GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempF = GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempG = GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempH = GAUGE_SEG_OFF;
++    Screen_Data.DisplayMap.TempI = GAUGE_SEG_OFF;
+ }
+ 
+ 
+@@ -394,12 +383,11 @@
+     {
+         displaystep = 0u;
+     }
+-
+-}
+-
+-
+-
+-
+-
+-
+-
++}
++
++
++
++
++
++
++
+--- 5/tw66gw02/BSP/temp.c
++++ 6/tw66gw02/BSP/temp.c
+@@ -378,8 +378,8 @@
+     if (raw == TempDisconnected) {
+         return TempDisconnected;
+     }
+-    if (raw > PROBE_TEMP_C_HIGH_LIMIT) { return TempHigh; }
+-    if (raw < PROBE_TEMP_C_LOW_LIMIT) { return TempLow; }
++    if (raw >= PROBE_TEMP_C_HIGH_LIMIT) { return TempHigh; }
++    if (raw <= PROBE_TEMP_C_LOW_LIMIT) { return TempLow; }
+ 
+     return (int16_t)raw;
+ }
+@@ -608,9 +608,19 @@
+                 continue;
+             }
+ 
+-            if (t < PROBE_TEMP_C_LOW_LIMIT) { t = PROBE_TEMP_C_LOW_LIMIT; }
+-            if (t > PROBE_TEMP_C_HIGH_LIMIT) { t = PROBE_TEMP_C_HIGH_LIMIT; }
+-            system_data.pt1000_temp[i] = (int16_t)t;
++            if (system_data.units == unitC)
++            {
++                if (t < PROBE_TEMP_C_LOW_LIMIT) { t = PROBE_TEMP_C_LOW_LIMIT; }
++                if (t > PROBE_TEMP_C_HIGH_LIMIT) { t = PROBE_TEMP_C_HIGH_LIMIT; }
++                system_data.pt1000_temp[i] = (int16_t)t;
++            }
++            else
++            {
++                t = (t * 9) / 5 + 32;
++                if (t < -4) { t = -4; }
++                if (t > 932) { t = 932; }
++                system_data.pt1000_temp[i] = (int16_t)t;
++            }
+         }
+     }
+ 
+@@ -708,7 +718,11 @@
+             s_probe_lo_latched = 0u;
+             s_probe_lo_pending_cnt = 0u;
+             s_probe_lo_release_cnt = 0u;
+-            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
++            }
+             return;
+         }
+     }
+@@ -731,7 +745,11 @@
+             s_probe_hi_pending_cnt = 0u;
+             s_probe_hi_release_cnt = 0u;
+             s_probe_lo_release_cnt = 0u;
+-            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
++            }
+         }
+         return;
+     }
+@@ -749,7 +767,11 @@
+             g_probe_over_hi = 1u;
+             g_probe_over_lo = 0u;
+             s_probe_hi_release_cnt = 0u;
+-            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
++            }
+             return;
+         }
+         if (s_probe_hi_release_cnt < 255u) { s_probe_hi_release_cnt++; }
+@@ -757,7 +779,11 @@
+         {
+             g_probe_over_hi = 1u;
+             g_probe_over_lo = 0u;
+-            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
++            }
+             return;
+         }
+         s_probe_hi_latched = 0u;
+@@ -773,7 +799,11 @@
+             g_probe_over_hi = 0u;
+             g_probe_over_lo = 1u;
+             s_probe_lo_release_cnt = 0u;
+-            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
++            }
+             return;
+         }
+         if (s_probe_lo_release_cnt < 255u) { s_probe_lo_release_cnt++; }
+@@ -781,7 +811,11 @@
+         {
+             g_probe_over_hi = 0u;
+             g_probe_over_lo = 1u;
+-            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
++            }
+             return;
+         }
+         s_probe_lo_latched = 0u;
+@@ -845,7 +879,11 @@
+             s_probe_lo_latched = 0u;
+             s_probe_lo_pending_cnt = 0u;
+             s_probe_lo_release_cnt = 0u;
+-            system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_HIGH_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_HIGH_LIMIT * 9) / 5 + 32);
++            }
+             return;
+         }
+     }
+@@ -862,7 +900,11 @@
+             s_probe_lo_release_cnt = 0u;
+             g_probe_over_hi = 0u;
+             g_probe_over_lo = 1u;
+-            system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            if (system_data.units == unitC) {
++                system_data.pt1000_temp[3] = PROBE_TEMP_C_LOW_LIMIT;
++            } else {
++                system_data.pt1000_temp[3] = (int16_t)(((int32_t)PROBE_TEMP_C_LOW_LIMIT * 9) / 5 + 32);
++            }
+             return;
+         }
+     } else {
+@@ -870,7 +912,14 @@
+         g_probe_over_lo = 0u;
+     }
+ 
+-    system_data.pt1000_temp[3] = probe_c;
++    if (system_data.units == unitC)
++    {
++        system_data.pt1000_temp[3] = probe_c;
++    }
++    else
++    {
++        system_data.pt1000_temp[3] = (int16_t)(((int32_t)probe_c * 9) / 5 + 32);
++    }
+ }
+ 
+ /**
+--- 5/tw66gw02/BSP/wireless.c
++++ 6/tw66gw02/BSP/wireless.c
+@@ -19,6 +19,15 @@
+ 
+ static uint8_t s_tx[WL_TX_MAX];
+ static uint8_t s_bt_status = 0u;
++
++static void wl_send_at_cmd(const uint8_t *cmd, uint16_t len)
++{
++    if ((cmd == NULL) || (len == 0u)) {
++        return;
++    }
++    HAL_UART_Transmit(&huart1, (uint8_t *)cmd, len, 100u);
++    HAL_Delay(80u);
++}
+ /**
+   * @function wl_get_probe_temp()
+   * -------------------
+@@ -26,26 +35,15 @@
+   * @param    None
+   * @note     None
+   */
+-static int16_t wl_temp_from_c(int16_t t)
+-{
+-    if ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) {
+-        return t;
+-    }
+-    if (system_data.units == unitF) {
+-        return (int16_t)(((int32_t)t * 9) / 5 + 32);
+-    }
+-    return t;
+-}
+-
+-static int16_t wl_get_probe_temp(void)
++static uint16_t wl_get_probe_temp(void)
+ {
+     if (g_probe_connected == 0u) {
+         return HaveTempErr;
+     }
+-    return wl_temp_from_c(system_data.pt1000_temp[3]);
+-}
+-
+-static uint8_t wl_is_special_temp(int16_t t)
++    return system_data.pt1000_temp[3];
++}
++
++static uint8_t wl_is_special_temp(uint16_t t)
+ {
+     return ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) ? 1u : 0u;
+ }
+@@ -56,7 +54,7 @@
+   * @param    ch - input parameter
+   * @note     None
+   */
+-static int16_t wl_get_temp_by_channel(uint8_t ch)
++static uint16_t wl_get_temp_by_channel(uint8_t ch)
+ {
+     if (ch == 0x01u) { return wl_get_probe_temp(); }        /* probe1 in legacy protocol */
+     if (ch == 0x02u) { return HaveTempErr; }                /* probe2 unsupported */
+@@ -69,13 +67,13 @@
+   * @param    None
+   * @note     None
+   */
+-static int16_t wl_get_display_main_temp(void)
+-{
+-    if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return UI_GetAdjustedMainTemp(1u); }
+-    if (DisplayMode == DISPLAY_MODE_D_SURFACE) { return UI_GetAdjustedMainTemp(0u); }
+-    if (DisplayMode == DISPLAY_MODE_CAVITY)    { return UI_GetAdjustedMainTemp(2u); }
++static uint16_t wl_get_display_main_temp(void)
++{
++    if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return (uint16_t)UI_GetAdjustedMainTemp(1u); }
++    if (DisplayMode == DISPLAY_MODE_D_SURFACE) { return (uint16_t)UI_GetAdjustedMainTemp(0u); }
++    if (DisplayMode == DISPLAY_MODE_CAVITY)    { return (uint16_t)UI_GetAdjustedMainTemp(2u); }
+     if (DisplayMode == DISPLAY_MODE_PROBE)     { return wl_get_probe_temp(); }
+-    return UI_GetAdjustedMainTemp(0u);
++    return (uint16_t)UI_GetAdjustedMainTemp(0u);
+ }
+ /**
+   * @function wl_split3()
+@@ -95,58 +93,6 @@
+     *l = (uint8_t)(v % 10u);
+ }
+ 
+-static void wl_put_temp3(uint8_t offset, int16_t temp)
+-{
+-    uint8_t h, t, l;
+-
+-    if (wl_is_special_temp(temp) != 0u) {
+-        s_tx[offset] = 0x09u;
+-        s_tx[offset + 1u] = 0x06u;
+-        s_tx[offset + 2u] = 0x00u;
+-    } else {
+-        wl_split3((uint16_t)temp, &h, &t, &l);
+-        s_tx[offset] = h;
+-        s_tx[offset + 1u] = t;
+-        s_tx[offset + 2u] = l;
+-    }
+-}
+-
+-static uint8_t wl_get_temp_level(int16_t temp)
+-{
+-    int16_t temp_f;
+-
+-    if (wl_is_special_temp(temp) != 0u) {
+-        return 0x01u;
+-    }
+-
+-    temp_f = temp;
+-    if (system_data.units == unitC) {
+-        temp_f = (int16_t)(((int32_t)temp * 9) / 5 + 32);
+-    }
+-
+-    if (temp_f <= 100) { return 0x01u; }
+-    if (temp_f <= 167) { return 0x02u; }
+-    if (temp_f <= 234) { return 0x03u; }
+-    if (temp_f <= 300) { return 0x04u; }
+-    if (temp_f <= 367) { return 0x05u; }
+-    if (temp_f <= 434) { return 0x06u; }
+-    return 0x07u;
+-}
+-
+-static uint8_t wl_get_temp_status(int16_t main_temp, int16_t probe1_temp)
+-{
+-    uint8_t status = 0u;
+-
+-    if (wl_is_special_temp(main_temp) != 0u) {
+-        status |= 0x01u;
+-    }
+-    if (wl_is_special_temp(probe1_temp) != 0u) {
+-        status |= 0x02u;
+-    }
+-    status |= 0x04u; /* Probe2 is reserved/unsupported in this product. */
+-    return status;
+-}
+-
+ static int32_t wl_parse_s32_be(const uint8_t *p)
+ {
+     uint32_t u;
+@@ -240,7 +186,7 @@
+     uint16_t step;
+     uint8_t h, t, l;
+ 
+-    if ((len < 5u) || (rx[2] != 0x01u)) {
++    if ((len < 7u) || (rx[2] != 0x01u)) {
+         return;
+     }
+ 
+@@ -267,7 +213,7 @@
+     uint16_t step;
+     uint8_t h, t, l;
+ 
+-    if ((len < 5u) || (rx[2] != 0x01u)) {
++    if ((len < 7u) || (rx[2] != 0x01u)) {
+         return;
+     }
+ 
+@@ -337,13 +283,13 @@
+   */
+ static void wl_handle_query_probe(const uint8_t *rx, uint16_t len)
+ {
+-    int16_t p;
++    uint16_t p;
+     uint8_t h, t, l;
+     (void)len;
+ 
+     p = wl_get_temp_by_channel(rx[2]);
+     if (wl_is_special_temp(p) != 0u) { h = 0x09u; t = 0x06u; l = 0x00u; }
+-    else { wl_split3((uint16_t)p, &h, &t, &l); }
++    else { wl_split3(p, &h, &t, &l); }
+ 
+     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_PROBE; s_tx[2] = rx[2];
+     s_tx[3] = 0x00u; s_tx[4] = 0x00u; s_tx[5] = 0x00u;
+@@ -376,8 +322,8 @@
+   */
+ static void wl_handle_query_status(const uint8_t *rx, uint16_t len)
+ {
+-    int16_t in_t;
+-    int16_t p1;
++    uint16_t in_t;
++    uint16_t p1;
+     uint8_t h, t, l;
+     (void)len;
+ 
+@@ -385,7 +331,7 @@
+         return;
+     }
+ 
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_STATUS_WORK;
++    s_tx[0] = WL_HEAD; s_tx[1] = 0x1Bu;
+     s_tx[2] = (work_process == set) ? 0x01u : 0x02u;
+     s_tx[3] = ((work_process == idle) || (work_process == shutdown)) ? 0x02u : 0x01u;
+     s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u;
+@@ -396,70 +342,24 @@
+ 
+     in_t = wl_get_display_main_temp();
+     p1 = wl_get_probe_temp();
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_STATUS_TEMP;
+-    s_tx[2] = wl_get_temp_level(in_t);
++    s_tx[0] = WL_HEAD; s_tx[1] = 0x2Bu;
++    s_tx[2] = 0x01u;
+     s_tx[3] = (system_data.units == unitF) ? 0x01u : 0x02u;
+     s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u;
+-    wl_put_temp3(8u, in_t);
+-    wl_put_temp3(11u, p1);
+-    s_tx[14] = wl_get_temp_status(in_t, p1);
++    if (wl_is_special_temp(in_t) != 0u) { s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u; }
++    else { wl_split3(in_t, &h, &t, &l); s_tx[8] = h; s_tx[9] = t; s_tx[10] = l; }
++    if (wl_is_special_temp(p1) != 0u) { s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u; s_tx[14] = 0x02u; }
++    else { wl_split3(p1, &h, &t, &l); s_tx[11] = h; s_tx[12] = t; s_tx[13] = l; s_tx[14] = 0x00u; }
+     s_tx[15] = WL_TAIL;
+     wl_send(s_tx, 16u);
+ 
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_STATUS_OUTPUT;
++    s_tx[0] = WL_HEAD; s_tx[1] = 0x3Bu;
+     s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; /* probe2 unsupported */
+-    s_tx[5] = 0x00u; /* Prime reserved */
+-    s_tx[6] = 0x00u; s_tx[7] = 0x00u; s_tx[8] = 0x00u; /* Fan/Mot/Hot reserved */
++    s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u; s_tx[8] = 0x00u;
+     s_tx[9] = 0x00u; s_tx[10] = 0x00u; s_tx[11] = 0x00u;
+     s_tx[12] = 0x00u; s_tx[13] = 0x00u; s_tx[14] = 0x00u;
+     s_tx[15] = WL_TAIL;
+     wl_send(s_tx, 16u);
+-}
+-
+-static void wl_handle_query_runtime(const uint8_t *rx, uint16_t len)
+-{
+-    (void)len;
+-    if (rx[2] != 0x01u) { return; }
+-
+-    s_tx[0] = WL_HEAD;
+-    s_tx[1] = WL_CMD_QUERY_RUNTIME;
+-    s_tx[2] = 0x00u;
+-    s_tx[3] = 0x00u;
+-    s_tx[4] = 0x00u;
+-    s_tx[5] = WL_TAIL;
+-    wl_send(s_tx, 6u);
+-}
+-
+-static void wl_handle_pid_pwm(const uint8_t *rx, uint16_t len)
+-{
+-    (void)rx;
+-    (void)len;
+-
+-    memset(s_tx, 0, 15u);
+-    s_tx[0] = WL_HEAD;
+-    s_tx[1] = WL_CMD_PID_PWM;
+-    s_tx[14] = WL_TAIL;
+-    wl_send(s_tx, 15u);
+-}
+-
+-static void wl_handle_shutdown_time(const uint8_t *rx, uint16_t len)
+-{
+-    if (rx[2] == 0x01u) {
+-        memset(s_tx, 0, 10u);
+-        s_tx[0] = WL_HEAD;
+-        s_tx[1] = WL_CMD_SHUTDOWN_TIME;
+-        s_tx[2] = 0x01u;
+-        s_tx[9] = WL_TAIL;
+-        wl_send(s_tx, 10u);
+-    } else if (rx[2] == 0x02u) {
+-        wl_send(rx, len);
+-    }
+-}
+-
+-static void wl_handle_prime(const uint8_t *rx, uint16_t len)
+-{
+-    (void)len;
+-    wl_ack_cmd2(WL_CMD_PRIME, rx[2]);
+ }
+ /**
+   * @function wl_handle_query_set_all()
+@@ -491,7 +391,7 @@
+   */
+ static void wl_handle_query_act_all(const uint8_t *rx, uint16_t len)
+ {
+-    int16_t in_t, p1;
++    uint16_t in_t, p1;
+     uint8_t h, t, l;
+     (void)len;
+     if (rx[2] != 0x01u) { return; }
+@@ -501,14 +401,14 @@
+ 
+     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_ACT_ALL;
+     if (wl_is_special_temp(p1) != 0u) { s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; }
+-    else { wl_split3((uint16_t)p1, &h, &t, &l); s_tx[2] = h; s_tx[3] = t; s_tx[4] = l; }
++    else { wl_split3(p1, &h, &t, &l); s_tx[2] = h; s_tx[3] = t; s_tx[4] = l; }
+     s_tx[5] = 0x09u; s_tx[6] = 0x06u; s_tx[7] = 0x00u;
+     s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u;
+     s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u;
+     s_tx[14] = 0x09u; s_tx[15] = 0x06u; s_tx[16] = 0x00u;
+     s_tx[17] = 0x09u; s_tx[18] = 0x06u; s_tx[19] = 0x00u;
+     if (wl_is_special_temp(in_t) != 0u) { s_tx[20] = 0x09u; s_tx[21] = 0x06u; s_tx[22] = 0x00u; }
+-    else { wl_split3((uint16_t)in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; }
++    else { wl_split3(in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; }
+     s_tx[23] = WL_TAIL;
+     wl_send(s_tx, 24u);
+ }
+@@ -577,10 +477,9 @@
+ 
+     memset(s_tx, 0, 21u);
+     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_FW_INFO; s_tx[2] = 0x01u;
+-    s_tx[5] = 0x01u;  /* firmware version 1 */
+-    s_tx[6] = 0x01u;  /* oven volume */
+-    s_tx[7] = 0x01u;  /* type */
+-    s_tx[8] = 0x01u;  /* supported probe count */
++    s_tx[5] = 0x01u;  /* volume */
++    s_tx[6] = 0x01u;  /* type */
++    s_tx[7] = 0x01u;  /* probe count */
+     s_tx[10] = 0x01u; s_tx[11] = 0x07u; s_tx[12] = 0x05u; /* grill min 175 */
+     s_tx[13] = 0x04u; s_tx[14] = 0x05u; s_tx[15] = 0x05u; /* grill max 455 */
+     s_tx[20] = WL_TAIL;
+@@ -608,9 +507,6 @@
+         case WL_CMD_QUERY_STATUS:  wl_handle_query_status(rx, len); break;
+         case WL_CMD_QUERY_SET_ALL: wl_handle_query_set_all(rx, len); break;
+         case WL_CMD_QUERY_ACT_ALL: wl_handle_query_act_all(rx, len); break;
+-        case WL_CMD_QUERY_RUNTIME: wl_handle_query_runtime(rx, len); break;
+-        case WL_CMD_PID_PWM:       wl_handle_pid_pwm(rx, len); break;
+-        case WL_CMD_WIFI_SYMBOL:   break;
+         case WL_CMD_BT_STATUS:
+             s_bt_status = rx[2];
+             if (rx[2] == 0x01u) {
+@@ -619,9 +515,6 @@
+                 UI_SetBluetoothConnectionState(0u);
+             }
+             break;
+-        case WL_CMD_SHUTDOWN_TIME: wl_handle_shutdown_time(rx, len); break;
+-        case WL_CMD_PRIME:         wl_handle_prime(rx, len); break;
+-        case WL_CMD_START_RECIPE:  break;
+         case WL_CMD_COEFF_SET:    wl_handle_coeff_set(rx, len); break;
+         case WL_CMD_COEFF_QUERY:  wl_handle_coeff_query(rx, len); break;
+         case WL_CMD_FW_INFO:       wl_handle_fw_info(rx, len); break;
+@@ -640,6 +533,10 @@
+     COM1.rxFlag = 0u;
+     COM1.rxLen = 0u;
+     s_bt_status = 0u;
++    OTA_Init();
++    wl_send_at_cmd((const uint8_t *)"AT+SYSMSG=4\r\n", sizeof("AT+SYSMSG=4\r\n") - 1u);
++    wl_send_at_cmd((const uint8_t *)"AT+UARTPACK=2\r\n", sizeof("AT+UARTPACK=2\r\n") - 1u);
++    wl_send_at_cmd((const uint8_t *)"AT+CIPMODE=1\r\n", sizeof("AT+CIPMODE=1\r\n") - 1u);
+ 	
+ }
+ /**
+@@ -665,6 +562,11 @@
+     }
+ 
+     rx = COM1.rxBuf;
++    if (OTA_IsFrame(rx, len) != 0u) {
++        OTA_HandleFrame(rx, len);
++        return;
++    }
++
+     if ((rx[0] != WL_HEAD) || (rx[len - 1u] != WL_TAIL)) {
+         return;
+     }
+--- 5/tw66gw02/BSP/wireless.h
++++ 6/tw66gw02/BSP/wireless.h
+@@ -26,16 +26,7 @@
+ #define WL_CMD_QUERY_STATUS         0x0Bu
+ #define WL_CMD_QUERY_SET_ALL        0x0Du
+ #define WL_CMD_QUERY_ACT_ALL        0x0Eu
+-#define WL_CMD_QUERY_RUNTIME        0x0Fu
+-#define WL_CMD_STATUS_WORK          0x1Bu
+-#define WL_CMD_PID_PWM              0x1Fu
+-#define WL_CMD_STATUS_TEMP          0x2Bu
+-#define WL_CMD_WIFI_SYMBOL          0x23u
+ #define WL_CMD_BT_STATUS            0x24u
+-#define WL_CMD_SHUTDOWN_TIME        0x27u
+-#define WL_CMD_PRIME                0x28u
+-#define WL_CMD_STATUS_OUTPUT        0x3Bu
+-#define WL_CMD_START_RECIPE         0x31u
+ #define WL_CMD_FW_INFO              0x5Fu
+ #define WL_CMD_COEFF_SET            0x60u
+ #define WL_CMD_COEFF_QUERY          0x61u
+--- 5/tw66gw02/COP/main_control.c
++++ 6/tw66gw02/COP/main_control.c
+@@ -33,6 +33,7 @@
+ /* 0:none, 1:-HI, 2:-LO, 3:--- */
+ static uint8_t s_display_special = 3u;
+ 
++static uint16_t s_idle_ticks_100ms = 0u;
+ static _work_process s_last_work_process = idle;
+ static uint8_t s_probe_connected_last = 0u;
+ static uint8_t s_probe_absent_ticks_100ms = 0u;
+@@ -99,13 +100,16 @@
+ /**
+   * @function TempToC()
+   * ------------
+-  * @brief    Return the cached Celsius temperature.
++  * @brief    Convert temperature from current UI unit to Celsius.
+   * @param    t - input parameter
+   * @note     None
+   */
+ static int16_t TempToC(int16_t t)
+ {
+-    return t;
++    if (system_data.units == unitC) {
++        return t;
++    }
++    return (int16_t)((((int32_t)t - 32) * 5) / 9);
+ }
+ 
+ /**
+@@ -470,6 +474,7 @@
+   */
+ void UI_NotifyLocalInteraction(void)
+ {
++    s_idle_ticks_100ms = 0u;
+ }
+ 
+ /**
+@@ -663,8 +668,7 @@
+ {
+     if (s_bt_hw_on == 0u) {
+         BT_On;
+- //       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+-        delay_ms(200);
++        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+         BT_Reset;
+         s_bt_hw_on = 1u;
+     }
+@@ -680,8 +684,8 @@
+ static void BluetoothHwPowerOff(void)
+ {
+     if (s_bt_hw_on != 0u) {
+-//        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+         BT_Off;
++        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+         s_bt_hw_on = 0u;
+     }
+ }
+@@ -748,7 +752,6 @@
+             s_bt_state = BT_OFF;
+             s_bt_icon_on = 0u;
+             s_bt_connected_input = 0u;
+-            BluetoothHwPowerOff();
+         }
+     }
+ }
+@@ -823,13 +826,13 @@
+                 s_display_temp = 0;
+             } else {
+                 ch_temp = (int16_t)system_data.pt1000_temp[3];
+-                s_display_temp = TempFromC(ch_temp);
++                s_display_temp = ch_temp;
+ 							 
+             }
+             break;
+ 
+         default:
+-            s_display_temp = TempFromC((int16_t)system_data.pt1000_temp[0]);
++            s_display_temp = (int16_t)system_data.pt1000_temp[0];
+             break;
+     }
+ }
+@@ -885,6 +888,7 @@
+             } else {
+                 DisplayMode = DISPLAY_MODE_D_SURFACE;
+             }
++            s_idle_ticks_100ms = 0u;
+         }
+ 
+     if (work_process == shutdown) {
+@@ -899,6 +903,17 @@
+     BluetoothTask_100ms();
+     UpdateDisplayCache();
+ 
++    if ((work_process != idle) && (work_process != shutdown)) {
++        if (s_bt_state != BT_CONNECTED) {
++            s_idle_ticks_100ms++;
++            if (s_idle_ticks_100ms >= IDLE_AUTO_SHUTDOWN_TICKS_100MS) {
++                work_process = shutdown;
++            }
++        }
++    } else {
++        s_idle_ticks_100ms = 0u;
++    }
++		
+         /* Two-step power-off:
+          * 1) enter shutdown immediately (screen off),
+          * 2) wait KEY0 release, then cut PB3 power latch. */
+--- 5/tw66gw02/COP/main_control.h
++++ 6/tw66gw02/COP/main_control.h
+@@ -11,6 +11,7 @@
+ #define		__MAIN_CONTROL_H__
+ #include "config.h"
+ 
++#define IDLE_AUTO_SHUTDOWN_TICKS_100MS  (3000u)
+ #define FIT_TEMP_C_THRESHOLD             (50)
+ #define FIT_OUTLIER_DIFF_C               (4)
+ #define FIT_MAIN_OUTLIER_DIFF_C          (4)
+--- 5/tw66gw02/COP/ota.c
++++ 6/tw66gw02/COP/ota.c
+@@ -1,369 +1,458 @@
+ /**
+   ******************************************************************************
+   * @file    ota.c
+-  * @author 
+-  * @version V1.0
+-  * @date
+-  * @brief   OTA and IAP upgrade implementation.
++  * @brief   BLE transparent UART OTA receiver.
+   ******************************************************************************
+   */
+-//#include "config.h"
+-//_OTA_Date OTA_Date;
+-///**
+-// * @author  niu
+-// * @date    2026.02.26
+-// * @version 1.0
+-// * 
+-// */
+-///***************************************************************************************************************************************************************/ 
+-///**
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void FLASH_ErasePage(uint32_t addr)
+-//{
+-//    uint32_t PageError = 0;
+-//    
+-//    FLASH_EraseInitTypeDef  FlashEraseInit = 
+-//    {
+-//        .TypeErase = FLASH_TYPEERASE_PAGES,
+-//        .PageAddress = addr,
+-//        .NbPages = 1,
+-//    };
+-//    HAL_FLASHEx_Erase(&FlashEraseInit,&PageError);
+-//}
+-///**
+-// * @param   none      
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void recv_bin_success(void)
+-//{
+-//	uint8_t i;
+-//	uint16_t	flashBUF[2];
+-//	
+-//	flashBUF[0] = 0x1a1a;
+-//	flashBUF[1] = 0x2b2b;
+-//	HAL_FLASH_Unlock();
+-
+-//	}
+-//	HAL_FLASH_Lock();
+-//}
+-///**
+-// * @param   none      
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void download_success(void)
+-//{
+-//	recv_bin_success();
+-//}
+-///**
+-// * @param   none      
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void SoftReset(void)
+-//{  
+-//}
+-///**
+-// * @return  none
+-// * @note    none
+-// * 
+-// */
+-//void iap_write_appbin(uint32_t appxaddr,uint8_t *appbuf,uint32_t appsize)
+-//{
+-//	uint16_t t;
+-//	uint16_t i=0,j;
+-//  static uint16_t iapbuf[1024];
+-//  static uint32_t fwaddrShade=FLASH_BAK_ADDR;
+-//	for(t=0;t<appsize;t+=2)
+-//	{						    
+-//				iapbuf[i++]=((uint16_t)appbuf[1]<<8)+(uint16_t)appbuf[0];
+-//	}
+-//	{
+-//				HAL_FLASH_Unlock();
+-//		    if(((fwaddr-fwaddrShade)==2048)||(fwaddr==FLASH_BAK_ADDR))
+-//				{
+-//					  fwaddrShade=fwaddr;
+-//				    FLASH_ErasePage(fwaddr);
+-//				}
+-//				{
+-//				}
+-//				HAL_FLASH_Lock();
+-//	}
+-//}
+-///*****************************************************************************************/
+-///*****************************************************************************************/
+-//#define FILE_MD5_MAX_LEN  32
+-//#define SSL_MAX_LEN (FILE_MD5_MAX_LEN/2)
+-// uint8_t g_ota_sta=0;
+-// uint32_t g_ota_recv_sum=0;    
+-// uint16_t g_ota_pg_numid=0;
+-// uint16_t g_ota_pg_ok_cnt=0;
+-// uint16_t g_ota_pg_nums=0;
+-// uint32_t g_ota_bin_size=0;
+-// uint8_t  g_ota_mcu_end=0;
+-// uint32_t USART_RX_STA_BAK=0;
+-// uint8_t g_direct_iap=0;
+-// uint8_t g_ota_esp_start=0;
+-// uint16_t g_ota_esp_cnt=0;
+-// uint8_t md5_pass = 1;
+-// uint8_t  OtaUpDateFail=0;
+-// MD5_CTX g_ota_md5_ctx;
+-// MD5_CTX package_md5_ctx;
+-// uint8_t g_ota_bin_md5[SSL_MAX_LEN] = {0};
+-// uint8_t g_ota_package_md5[SSL_MAX_LEN] = {0};
+-// uint8_t bin_md5_calc[SSL_MAX_LEN];
+-// uint8_t package_md5_calc[SSL_MAX_LEN] = {0};
+-//// FE 40 04 + 1B-RESULT + 1B-PackageNum + FF
+-//// RESULT: 1-pass, 2-fail
+-//void UART1_ReportOtaPackageSta(uint8_t md5_res)
+-//{
+-//	uint8_t buf[8] = {0xFE, 0x40, 0x04, 0x01, 0x01, 0xFF};// Pass
+-
+-//	if (md5_res != 1) {
+-//		buf[3] = 2;// Fail
+-//	}
+-
+-//	buf[4] = g_ota_pg_numid;
+-
+-//	HAL_UART_Transmit_DMA(&huart3,buf,6);
+-
+-
+-//}
+-
+-//void UART1_ReportOtaBinSta(uint8_t md5_res)
+-//{
+-//	uint8_t buf[5] = {0xFE, 0x40, 0x05, 0x02, 0xFF};// Pass
+-
+-////	if (md5_res != 1) {
+-////		buf[3] = 2;// Fail
+-////	}
+-//  buf[3] = md5_res;
+-//	HAL_UART_Transmit_DMA(&huart3,buf,5);
+-//}
+-//void bin_update(void)
+-//{
+-//	  system_data.ota_prcent=g_ota_pg_numid*100/g_ota_pg_nums;
+-//		if((g_ota_mcu_end == 0) && (g_ota_sta == 3))
+-//		{
+-//					{
+-//						// MD5 for total bin
+-//						GAgent_MD5Init(&g_ota_md5_ctx);
+-//						memset(bin_md5_calc, 0, SSL_MAX_LEN);
+-//					}
+-//					{  // 0-IDEL, 1-pass, 2-fail, 3-in progress
+-//						//DisplayString("OTA STOP BY APP",0,0,0,0);
+-//						USART_RX_STA_BAK=0;
+-//						return;
+-//					}
+-//					{
+-//						//DisplayString("OTA TOTALSIZE OVERFLOW",0,0,0,0);
+-//						g_ota_sta = 2;                  //OTA FAIL
+-//						UART1_ReportOtaPackageSta(0);
+-//						USART_RX_STA_BAK=0;
+-//						return;
+-//					}
+-//					{
+-//						//DisplayString("OTA PGNUM OVERFLOW",0,0,0,0);
+-//						g_ota_sta = 2;                  //OTA FAIL
+-//						UART1_ReportOtaPackageSta(0);
+-//						USART_RX_STA_BAK=0;
+-//						return;
+-//					}
+-//					
+-//					GAgent_MD5Init(&package_md5_ctx);
+-//					GAgent_MD5Update(&package_md5_ctx, COM3.rxBuf, (USART_RX_STA_BAK&0xFFFF));
+-//					
+-//					{
+-//						USART_RX_STA_BAK=0;
+-//						md5_pass = 0;
+-//						g_ota_sta = 2;                  //OTA FAIL
+-//						UART1_ReportOtaPackageSta(0);
+-//						//DisplayString("OTA FAIL",0,0,0,0);
+-//					} 
+-//					{
+-//						md5_pass = 1;
+-//						g_ota_sta = 3;                  //OTA In process
+-//					}
+-//					{
+-//						 
+-//						iap_write_appbin(FLASH_BAK_ADDR+g_ota_recv_sum, COM3.rxBuf, (USART_RX_STA_BAK&0xFFFF));
+-//			 
+-//						g_ota_recv_sum += USART_RX_STA_BAK&0xFFFF;
+-//						UART1_ReportOtaPackageSta(1);
+-//					}
+-//					USART_RX_STA_BAK=0;
+-//		}			     
+-//		{
+-//				{
+-//							//DisplayString("OTA 1ERR",0,0,0,0);
+-//							g_ota_sta = 1;
+-//							UART1_ReportOtaBinSta(2);// Fail (fe 40 5 2 ff)
+-//				} 
+-//				else 
+-//				{
+-//							{
+-//										md5_pass = 0;
+-//										g_ota_sta = 1;
+-//										OtaUpDateFail=1;
+-//										UART1_ReportOtaBinSta(2);// Fail (fe 40 5 2 ff)
+-//										//DisplayString("OTA 2ERR",0,0,0,0);
+-//							} 
+-//							else
+-//							{
+-//										md5_pass = 1;
+-//										g_ota_esp_start=1;
+-//										g_ota_sta = 2;
+-//										UART1_ReportOtaBinSta(1);// Pass
+-//										//delay_ms(1000);
+-//										g_ota_mcu_end = 0;
+-//										download_success();// Mark Flag in Flash
+-//										SoftReset();
+-//							}
+-//				}
+-//	 }
+-//}
+-//void OTA_MCU_Task(uint8_t *data)
+-//{
+-//	uint8_t snd_len = 0;
+-//	uint32_t num=0;
+-//  uint8_t snd_buf[95];
+-//	if(work_process == idle){return;}
+-//	if (COM3.rxFlag ==0) {return;}
+-//	COM3.rxFlag=0;
+-//	num=COM3.rxLen;
+-//	snd_len = num;
+-//	USART_RX_STA_BAK=num;
+-//	if((data[0] == 0xfe)&&(data[1] == 0x40)&&(data[num-1]==0xFF)&&(num<=30)){
+-//				switch(data[2])
+-//				{
+-//					// FE 40 01 01 FF
+-//					case 0x01:
+-//						switch(data[3])
+-//						{
+-//							case 0x01:// OTA Start
+-
+-//								if (g_direct_iap >= 2) {
+-//									g_direct_iap = 3;
+-//								} else {
+-//									g_direct_iap = 1;
+-//								}
+-//								work_process=ota;system_data.ota_process=0;								
+-//								g_ota_sta = 3;
+-//								g_ota_mcu_end = 0;
+-//								g_ota_recv_sum = 0;
+-//								g_ota_pg_numid = 0;
+-//								g_ota_pg_nums = 0;
+-//								g_ota_bin_size = 0;
+-//								g_ota_pg_ok_cnt = 0;
+-//								memcpy(snd_buf, data, num);
+-//								break;
+-//							case 0x02://OTA End
+-//								g_ota_mcu_end = 1;
+-//								memcpy(snd_buf, data, num);
+-//								break;
+-//							default:
+-//								//g_ota_mcu_end = 0;	
+-//								snd_len = 0;
+-//							break;
+-//						}
+-//						break;
+-//					// FE 40 02 + 3B-Size + 1B-TotalPackagesNum + MD5 + FF
+-//					case 0x02:// Total Packages & MD5
+-//						g_ota_pg_nums = data[6];
+-//						g_ota_bin_size = (data[3]<<16) + (data[4]<<8) + data[5];
+-//						memcpy(g_ota_bin_md5, data+7, SSL_MAX_LEN);
+-//						memcpy(snd_buf, data, num);
+-//						break;
+-//					// After Recved 03 ACK, APP will send the package data
+-//					case 0x03:// Divided Package & MD5    FE 40 03 + 1B-PackageNum + MD5 + FF
+-//						g_ota_pg_numid = data[3];
+-////					if(g_ota_pg_numid==2)
+-////					OTA_Date.PackageDateReceiveFlash=0;	
+-//						memcpy(g_ota_package_md5, data+4, SSL_MAX_LEN);
+-//						g_ota_esp_cnt	= (uint16_t)data[20]; //UpdatePercent=(u16)data[20];
+-//						OTA_Date.PackageDateReceiveReady=1;
+-//						memcpy(snd_buf, data, num);
+-//						break;
+-//					
+-//					case 0x06:// Query OTA Sta   FE 40 06 01 FF
+-//						memcpy(snd_buf, data, num);
+-//						snd_buf[3] = g_ota_sta;// 0-idle, 1-pass, 2-fail, 3-in progress
+-//						break;
+-//					
+-//					case 0x07:// Force to Stop OTA   FE 40 07 01 FF
+-//						g_ota_sta = 2;
+-//						if (g_direct_iap >= 2) {
+-//							g_direct_iap = 4;
+-//						}
+-//						g_ota_recv_sum = 0;
+-//						g_ota_pg_numid = 0;
+-//						g_ota_pg_nums = 0;
+-//						g_ota_bin_size = 0;
+-//						g_ota_pg_ok_cnt = 0;
+-//						memcpy(snd_buf, data, num);
+-//						break;
+-//					default:
+-//						snd_len = 0;
+-//						break;
+-//				}
+-//																													
+-//		snd_len = 0;data[1] =0;data[num-1]=0;COM3.rxLen=0;
+-
+-//			OTA_Date.PackageDateReceiveReady=0;COM3.rxLen=0;
+-//			bin_update();
+-//		}
+-//	else if((work_process==ota)&&(system_data.ota_process==0)){COM3.rxLen=0;}
+-//}
+-
+-//void OTA_screen_Task(uint8_t *data)
+-//{
+-//		if(work_process== idle){return;}
+-//		if(COM3.rxFlag==0) {return;}
+-//		COM3.rxFlag=0;
+-//		{
+-//				work_process=ota;system_data.ota_process=1;
+-//			 
+-//				HAL_UART_Transmit(&huart3, data, COM3.rxLen, 1000);
+-//	 
+-//				data[1] = 0x00;COM3.rxLen=0;
+-//		}
+-//		{
+-//				 COM3.rxFlag=0;
+-//				if((COM3.rxBuf[0] == 0xfe)&&(COM3.rxBuf[1] == 0x50)&&(COM3.rxBuf[COM3.rxLen-1]==0xFF)&&(COM3.rxLen<=30))
+-//				{
+-//					   HAL_UART_Transmit_DMA(&huart3,COM3.rxBuf,COM3.rxLen);
+-//						 COM3.rxBuf[0]=0;
+-//						 COM3.rxLen=0;
+-//				}
+-//		}
+-//		//if((TouchScreenState==ota_mode)&&(SystemData.ota_process==1)){COM5.RX_Cnt=0;}
+-//}
+-//void OTA_ESP32(uint8_t *data)
+-//{
+-// if(COM3.rxFlag==0) {return;}
+-// COM3.rxFlag=0;
+-// COM3.rxLen=0;
+-// if(data[1]!=0x34) return;
+-// if(data[2]!=0XFF) {system_data.ota_prcent = data[2];}
+-//}
+-
+-
+-//void ota_control(void)
+-//{
+-//     OTA_MCU_Task(COM3.rxBuf);	   
+-//	   OTA_screen_Task(COM3.rxBuf);
+-//	   OTA_ESP32(COM3.rxBuf);	
+-//}
+-
+-
+-
+-
+-
+-
++#include "config.h"
++
++typedef struct {
++    OTA_State state;
++    uint32_t expected_size;
++    uint32_t expected_crc32;
++    uint32_t running_crc32;
++    uint32_t received_size;
++    uint32_t version;
++    uint16_t expected_seq;
++    uint8_t last_status;
++} OTA_Context;
++
++static OTA_Context s_ota;
++
++static uint16_t ota_read_be16(const uint8_t *p)
++{
++    return (uint16_t)(((uint16_t)p[0] << 8) | p[1]);
++}
++
++static uint32_t ota_read_be32(const uint8_t *p)
++{
++    return ((uint32_t)p[0] << 24) |
++           ((uint32_t)p[1] << 16) |
++           ((uint32_t)p[2] << 8)  |
++           ((uint32_t)p[3]);
++}
++
++static void ota_put_be16(uint8_t *p, uint16_t v)
++{
++    p[0] = (uint8_t)(v >> 8);
++    p[1] = (uint8_t)v;
++}
++
++static void ota_put_be32(uint8_t *p, uint32_t v)
++{
++    p[0] = (uint8_t)(v >> 24);
++    p[1] = (uint8_t)(v >> 16);
++    p[2] = (uint8_t)(v >> 8);
++    p[3] = (uint8_t)v;
++}
++
++static uint16_t ota_crc16_ccitt(const uint8_t *data, uint16_t len)
++{
++    uint16_t crc = 0xFFFFu;
++    uint16_t i;
++    uint8_t bit;
++
++    for (i = 0u; i < len; i++) {
++        crc ^= (uint16_t)data[i] << 8;
++        for (bit = 0u; bit < 8u; bit++) {
++            if ((crc & 0x8000u) != 0u) {
++                crc = (uint16_t)((crc << 1) ^ 0x1021u);
++            } else {
++                crc <<= 1;
++            }
++        }
++    }
++    return crc;
++}
++
++static uint32_t ota_crc32_update(uint32_t crc, const uint8_t *data, uint32_t len)
++{
++    uint32_t i;
++    uint8_t bit;
++
++    crc = ~crc;
++    for (i = 0u; i < len; i++) {
++        crc ^= data[i];
++        for (bit = 0u; bit < 8u; bit++) {
++            if ((crc & 1u) != 0u) {
++                crc = (crc >> 1) ^ 0xEDB88320UL;
++            } else {
++                crc >>= 1;
++            }
++        }
++    }
++    return ~crc;
++}
++
++static uint32_t ota_crc32(const uint8_t *data, uint32_t len)
++{
++    return ota_crc32_update(0u, data, len);
++}
++
++static uint8_t ota_is_flash_range(uint32_t addr, uint32_t size, uint32_t base, uint32_t limit_size)
++{
++    if (size == 0u) {
++        return 0u;
++    }
++    if (addr < base) {
++        return 0u;
++    }
++    if ((addr + size) < addr) {
++        return 0u;
++    }
++    if ((addr + size) > (base + limit_size)) {
++        return 0u;
++    }
++    return 1u;
++}
++
++static HAL_StatusTypeDef ota_flash_wait(void)
++{
++    while ((FLASH->SR & FLASH_SR_BSY) != 0u) {
++    }
++
++    if ((FLASH->SR & (FLASH_SR_PGERR | FLASH_SR_WRPERR)) != 0u) {
++        FLASH->SR = FLASH_SR_PGERR | FLASH_SR_WRPERR;
++        return HAL_ERROR;
++    }
++
++    if ((FLASH->SR & FLASH_SR_EOP) != 0u) {
++        FLASH->SR = FLASH_SR_EOP;
++    }
++    return HAL_OK;
++}
++
++static HAL_StatusTypeDef ota_flash_unlock(void)
++{
++    if ((FLASH->CR & FLASH_CR_LOCK) != 0u) {
++        FLASH->KEYR = FLASH_KEY1;
++        FLASH->KEYR = FLASH_KEY2;
++    }
++
++    if ((FLASH->CR & FLASH_CR_LOCK) != 0u) {
++        return HAL_ERROR;
++    }
++
++    FLASH->SR = FLASH_SR_EOP | FLASH_SR_PGERR | FLASH_SR_WRPERR;
++    return HAL_OK;
++}
++
++static void ota_flash_lock(void)
++{
++    FLASH->CR |= FLASH_CR_LOCK;
++}
++
++static HAL_StatusTypeDef ota_erase_pages(uint32_t addr, uint32_t size)
++{
++    uint32_t pages;
++    uint32_t page;
++    HAL_StatusTypeDef ret;
++
++    if ((addr % OTA_FLASH_PAGE_SIZE) != 0u) {
++        return HAL_ERROR;
++    }
++
++    pages = (size + OTA_FLASH_PAGE_SIZE - 1u) / OTA_FLASH_PAGE_SIZE;
++    for (page = 0u; page < pages; page++) {
++        ret = ota_flash_wait();
++        if (ret != HAL_OK) {
++            return ret;
++        }
++        FLASH->CR |= FLASH_CR_PER;
++        FLASH->AR = addr + (page * OTA_FLASH_PAGE_SIZE);
++        FLASH->CR |= FLASH_CR_STRT;
++        ret = ota_flash_wait();
++        FLASH->CR &= (uint32_t)~FLASH_CR_PER;
++        if (ret != HAL_OK) {
++            return ret;
++        }
++    }
++    return HAL_OK;
++}
++
++static HAL_StatusTypeDef ota_program_bytes(uint32_t addr, const uint8_t *data, uint32_t len)
++{
++    uint32_t i;
++    uint16_t halfword;
++    HAL_StatusTypeDef ret;
++
++    if ((addr & 1u) != 0u) {
++        return HAL_ERROR;
++    }
++
++    for (i = 0u; i < len; i += 2u) {
++        halfword = data[i];
++        if ((i + 1u) < len) {
++            halfword |= (uint16_t)data[i + 1u] << 8;
++        } else {
++            halfword |= 0xFF00u;
++        }
++
++        ret = ota_flash_wait();
++        if (ret != HAL_OK) {
++            return ret;
++        }
++        FLASH->CR |= FLASH_CR_PG;
++        *(__IO uint16_t *)(addr + i) = halfword;
++        ret = ota_flash_wait();
++        FLASH->CR &= (uint32_t)~FLASH_CR_PG;
++        if (ret != HAL_OK) {
++            return ret;
++        }
++    }
++    return HAL_OK;
++}
++
++static void ota_send_ack(uint8_t status)
++{
++    uint8_t tx[16];
++
++    s_ota.last_status = status;
++    tx[0] = WL_HEAD;
++    tx[1] = OTA_CMD_GROUP;
++    tx[2] = OTA_CMD_STATUS;
++    tx[3] = status;
++    ota_put_be16(&tx[4], s_ota.expected_seq);
++    ota_put_be32(&tx[6], s_ota.received_size);
++    tx[10] = (uint8_t)s_ota.state;
++    tx[11] = WL_TAIL;
++
++    HAL_UART_Transmit(&huart1, tx, 12u, 100u);
++}
++
++static HAL_StatusTypeDef ota_write_metadata(void)
++{
++    OTA_Metadata meta;
++    HAL_StatusTypeDef ret;
++
++    memset(&meta, 0xFF, sizeof(meta));
++    meta.magic = OTA_META_MAGIC;
++    meta.flags = OTA_META_FLAG_PENDING;
++    meta.image_addr = OTA_STAGING_BASE;
++    meta.image_size = s_ota.expected_size;
++    meta.image_crc32 = s_ota.expected_crc32;
++    meta.version = s_ota.version;
++    meta.reserved = 0u;
++    meta.metadata_crc32 = ota_crc32((const uint8_t *)&meta, sizeof(meta) - sizeof(meta.metadata_crc32));
++
++    ret = ota_flash_unlock();
++    if (ret == HAL_OK) {
++        ret = ota_erase_pages(OTA_METADATA_BASE, OTA_METADATA_SIZE);
++        if (ret == HAL_OK) {
++            ret = ota_program_bytes(OTA_METADATA_BASE, (const uint8_t *)&meta, sizeof(meta));
++        }
++    }
++    ota_flash_lock();
++
++    return ret;
++}
++
++static void ota_handle_start(const uint8_t *data, uint16_t len)
++{
++    HAL_StatusTypeDef ret;
++
++    /* FE 40 01 size[4] crc32[4] version[2] FF */
++    if (len != 14u) {
++        ota_send_ack(OTA_ACK_FORMAT_ERR);
++        return;
++    }
++
++    s_ota.expected_size = ota_read_be32(&data[3]);
++    s_ota.expected_crc32 = ota_read_be32(&data[7]);
++    s_ota.version = ota_read_be16(&data[11]);
++    s_ota.running_crc32 = 0u;
++    s_ota.received_size = 0u;
++    s_ota.expected_seq = 0u;
++
++    if ((s_ota.expected_size == 0u) || (s_ota.expected_size > OTA_STAGING_SIZE)) {
++        s_ota.state = OTA_STATE_FAILED;
++        ota_send_ack(OTA_ACK_SIZE_ERR);
++        return;
++    }
++
++    ret = ota_flash_unlock();
++    if (ret == HAL_OK) {
++        ret = ota_erase_pages(OTA_STAGING_BASE, OTA_STAGING_SIZE);
++        if (ret == HAL_OK) {
++            ret = ota_erase_pages(OTA_METADATA_BASE, OTA_METADATA_SIZE);
++        }
++    }
++    ota_flash_lock();
++
++    if (ret != HAL_OK) {
++        s_ota.state = OTA_STATE_FAILED;
++        ota_send_ack(OTA_ACK_FLASH_ERR);
++        return;
++    }
++
++    s_ota.state = OTA_STATE_RECEIVING;
++    ota_send_ack(OTA_ACK_OK);
++}
++
++static void ota_handle_data(const uint8_t *data, uint16_t len)
++{
++    uint16_t seq;
++    uint32_t offset;
++    uint16_t data_len;
++    uint16_t crc_rx;
++    uint16_t crc_calc;
++    HAL_StatusTypeDef ret;
++
++    if (s_ota.state != OTA_STATE_RECEIVING) {
++        ota_send_ack(OTA_ACK_STATE_ERR);
++        return;
++    }
++
++    if (len < 14u) {
++        ota_send_ack(OTA_ACK_FORMAT_ERR);
++        return;
++    }
++
++    seq = ota_read_be16(&data[3]);
++    offset = ota_read_be32(&data[5]);
++    data_len = ota_read_be16(&data[9]);
++
++    if (len != (uint16_t)(14u + data_len)) {
++        ota_send_ack(OTA_ACK_FORMAT_ERR);
++        return;
++    }
++
++    if ((seq != s_ota.expected_seq) || (offset != s_ota.received_size)) {
++        ota_send_ack(OTA_ACK_SEQ_ERR);
++        return;
++    }
++
++    if ((offset + data_len) > s_ota.expected_size) {
++        s_ota.state = OTA_STATE_FAILED;
++        ota_send_ack(OTA_ACK_SIZE_ERR);
++        return;
++    }
++
++    crc_rx = ota_read_be16(&data[11u + data_len]);
++    crc_calc = ota_crc16_ccitt(&data[3], (uint16_t)(8u + data_len));
++    if (crc_rx != crc_calc) {
++        ota_send_ack(OTA_ACK_CRC_ERR);
++        return;
++    }
++
++    ret = ota_flash_unlock();
++    if (ret == HAL_OK) {
++        ret = ota_program_bytes(OTA_STAGING_BASE + offset, &data[11], data_len);
++    }
++    ota_flash_lock();
++
++    if (ret != HAL_OK) {
++        s_ota.state = OTA_STATE_FAILED;
++        ota_send_ack(OTA_ACK_FLASH_ERR);
++        return;
++    }
++
++    s_ota.running_crc32 = ota_crc32_update(s_ota.running_crc32, &data[11], data_len);
++    s_ota.received_size += data_len;
++    s_ota.expected_seq++;
++    ota_send_ack(OTA_ACK_OK);
++}
++
++static void ota_handle_finish(const uint8_t *data, uint16_t len)
++{
++    uint32_t crc;
++
++    /* FE 40 03 crc32[4] FF */
++    if (len != 8u) {
++        ota_send_ack(OTA_ACK_FORMAT_ERR);
++        return;
++    }
++
++    if (s_ota.state != OTA_STATE_RECEIVING) {
++        ota_send_ack(OTA_ACK_STATE_ERR);
++        return;
++    }
++
++    crc = ota_read_be32(&data[3]);
++    if ((s_ota.received_size != s_ota.expected_size) ||
++        (crc != s_ota.expected_crc32) ||
++        (s_ota.running_crc32 != s_ota.expected_crc32)) {
++        s_ota.state = OTA_STATE_FAILED;
++        ota_send_ack(OTA_ACK_CRC_ERR);
++        return;
++    }
++
++    if (ota_write_metadata() != HAL_OK) {
++        s_ota.state = OTA_STATE_FAILED;
++        ota_send_ack(OTA_ACK_FLASH_ERR);
++        return;
++    }
++
++    s_ota.state = OTA_STATE_READY;
++    ota_send_ack(OTA_ACK_OK);
++    HAL_Delay(100u);
++    NVIC_SystemReset();
++}
++
++static void ota_handle_abort(void)
++{
++    s_ota.state = OTA_STATE_IDLE;
++    s_ota.expected_size = 0u;
++    s_ota.expected_crc32 = 0u;
++    s_ota.running_crc32 = 0u;
++    s_ota.received_size = 0u;
++    s_ota.expected_seq = 0u;
++    ota_send_ack(OTA_ACK_OK);
++}
++
++void OTA_Init(void)
++{
++    memset(&s_ota, 0, sizeof(s_ota));
++    s_ota.state = OTA_STATE_IDLE;
++}
++
++uint8_t OTA_IsFrame(const uint8_t *data, uint16_t len)
++{
++    if ((data == NULL) || (len < 4u)) {
++        return 0u;
++    }
++    if ((data[0] == WL_HEAD) && (data[1] == OTA_CMD_GROUP) && (data[len - 1u] == WL_TAIL)) {
++        return 1u;
++    }
++    return 0u;
++}
++
++void OTA_HandleFrame(const uint8_t *data, uint16_t len)
++{
++    if (OTA_IsFrame(data, len) == 0u) {
++        return;
++    }
++
++    if (ota_is_flash_range(OTA_STAGING_BASE, OTA_STAGING_SIZE, OTA_FLASH_BASE, OTA_FLASH_SIZE) == 0u) {
++        s_ota.state = OTA_STATE_FAILED;
++        ota_send_ack(OTA_ACK_FLASH_ERR);
++        return;
++    }
++
++    switch (data[2])
++    {
++        case OTA_CMD_START:
++            ota_handle_start(data, len);
++            break;
++        case OTA_CMD_DATA:
++            ota_handle_data(data, len);
++            break;
++        case OTA_CMD_FINISH:
++            ota_handle_finish(data, len);
++            break;
++        case OTA_CMD_STATUS:
++            ota_send_ack(s_ota.last_status);
++            break;
++        case OTA_CMD_ABORT:
++            ota_handle_abort();
++            break;
++        default:
++            ota_send_ack(OTA_ACK_FORMAT_ERR);
++            break;
++    }
++}
++
++OTA_State OTA_GetState(void)
++{
++    return s_ota.state;
++}
+--- 5/tw66gw02/COP/ota.h
++++ 6/tw66gw02/COP/ota.h
+@@ -1,51 +1,78 @@
+ /**
+   ******************************************************************************
+   * @file    ota.h
+-  * @author 
+-  * @version V1.0
+-  * @date
+-  * @brief   OTA and IAP upgrade interface definitions.
++  * @brief   BLE transparent UART OTA protocol and flash partition definitions.
+   ******************************************************************************
+   */
+ #ifndef __OTA_H__
+ #define __OTA_H__
++
+ #include "config.h"
+-#define UPGRADEaddr1      0x08005000		// offset:20KB
+-#define FLASH_BAK_ADDR		0x08024800
+-typedef struct 
+-{
+-  uint8_t McuVersionSucess;
+-	uint8_t WifiYmodeSucess;
+-//	u32 g_ota_recv_sum;
+-  uint16_t g_ota_pg_numid; 
+-	uint8_t g_ota_pg_nums;
+-	uint8_t  McuRestart;
+-	uint8_t  YModemFlag;
+-	uint32_t FileZise;    
+-	uint32_t PackageSize;
+-	uint8_t PackageDateReceiveFlash;
+-	uint8_t PackageDateReceiveReady;
+-	uint8_t PackagALLReceiveFlash;
+-	uint8_t SucessFlag;
+-	uint8_t iapMode;
+-	uint16_t crcSum;
+-	uint8_t OTAStartFlag;	
+-}_OTA_Date;
+-extern _OTA_Date OTA_Date;
+-void FLASH_ErasePage(uint32_t addr);
+-void SoftReset(void);
+-void download_success(void);
+-void iap_write_appbin(uint32_t appxaddr,uint8_t *appbuf,uint32_t appsize);
+-void iap_write_data_to_TouchScreen(uint16_t screenaddr, uint8_t *appbuf, uint8_t appsize);
+-void iap_write_32_data_to_TouchScreen(uint16_t fwid);
+-void iap_wirte_data_from_TouchScreen(uint16_t fwid);
+-void check_data_from_TouchScreen(void);
+-void ota_read_OK_from_TouchScreen(uint8_t* w_32_status);
+-void re_TouchScreen(void);
+-void stop_DGUS(void);
+-void update_date_to_TouchScreen(uint8_t updata_mode,uint8_t* snd_buf);
+-void ota_control(void);
++
++/*
++ * STM32F030C8 64 KB flash partition:
++ * 0x08000000 - 0x08000FFF  Bootloader, factory programmed and protected
++ * 0x08001000 - 0x080083FF  Active application, 29 KB
++ * 0x08008400 - 0x0800F7FF  OTA staging image, 29 KB
++ * 0x0800F800 - 0x0800FBFF  OTA metadata, 1 KB
++ * 0x0800FC00 - 0x0800FFFF  Reserved, 1 KB
++ *
++ * The application is linked at OTA_APP_BASE. The bootloader must validate
++ * OTA_METADATA_BASE and copy OTA_STAGING_BASE to OTA_APP_BASE on reset.
++ */
++#define OTA_FLASH_BASE             0x08000000UL
++#define OTA_FLASH_SIZE             0x00010000UL
++#define OTA_FLASH_PAGE_SIZE        0x00000400UL
++
++#define OTA_BOOT_BASE              0x08000000UL
++#define OTA_BOOT_SIZE              0x00001000UL
++#define OTA_APP_BASE               0x08001000UL
++#define OTA_APP_SIZE               0x00007400UL
++#define OTA_STAGING_BASE           0x08008400UL
++#define OTA_STAGING_SIZE           0x00007400UL
++#define OTA_METADATA_BASE          0x0800F800UL
++#define OTA_METADATA_SIZE          0x00000400UL
++
++#define OTA_CMD_GROUP              0x40u
++#define OTA_CMD_START              0x01u
++#define OTA_CMD_DATA               0x02u
++#define OTA_CMD_FINISH             0x03u
++#define OTA_CMD_STATUS             0x04u
++#define OTA_CMD_ABORT              0x05u
++
++#define OTA_ACK_OK                 0x00u
++#define OTA_ACK_BUSY               0x01u
++#define OTA_ACK_FORMAT_ERR         0x02u
++#define OTA_ACK_SIZE_ERR           0x03u
++#define OTA_ACK_SEQ_ERR            0x04u
++#define OTA_ACK_FLASH_ERR          0x05u
++#define OTA_ACK_CRC_ERR            0x06u
++#define OTA_ACK_STATE_ERR          0x07u
++
++#define OTA_META_MAGIC             0x544F5441UL  /* "TOTA" */
++#define OTA_META_FLAG_PENDING      0x00000001UL
++
++typedef enum {
++    OTA_STATE_IDLE = 0,
++    OTA_STATE_RECEIVING,
++    OTA_STATE_READY,
++    OTA_STATE_FAILED
++} OTA_State;
++
++typedef struct {
++    uint32_t magic;
++    uint32_t flags;
++    uint32_t image_addr;
++    uint32_t image_size;
++    uint32_t image_crc32;
++    uint32_t version;
++    uint32_t reserved;
++    uint32_t metadata_crc32;
++} OTA_Metadata;
++
++void OTA_Init(void);
++uint8_t OTA_IsFrame(const uint8_t *data, uint16_t len);
++void OTA_HandleFrame(const uint8_t *data, uint16_t len);
++OTA_State OTA_GetState(void);
++
+ #endif
+-
+-
+-
+--- 5/tw66gw02/Core/Src/main.c
++++ 6/tw66gw02/Core/Src/main.c
+@@ -107,7 +107,7 @@
+  SCH_Add_Task(DisplayTask, 0 , 10); 
+  SCH_Add_Task(TempGetTask, 0 , 500);
+  SCH_Add_Task(MainControl, 0 , 100);
+-// SCH_Add_Task(WirelessTask, 0, 20);
++ SCH_Add_Task(WirelessTask, 0, 20);
+  
+   /* USER CODE END 2 */
+ 
+--- 5/tw66gw02/Core/Src/system_stm32f0xx.c
++++ 6/tw66gw02/Core/Src/system_stm32f0xx.c
+@@ -74,6 +74,9 @@
+ #define HSI48_VALUE    ((uint32_t)48000000) /*!< Default value of the HSI48 Internal oscillator in Hz.
+                                                  This value can be provided and adapted by the user application. */
+ #endif /* HSI48_VALUE */
++
++#define APPLICATION_ADDRESS      0x08001000UL
++#define VECTOR_TABLE_WORDS       48UL
+ /**
+   * @}
+   */
+@@ -125,6 +128,19 @@
+   */
+ void SystemInit(void)
+ {
++  uint32_t i;
++  uint32_t *src = (uint32_t *)APPLICATION_ADDRESS;
++  uint32_t *dst = (uint32_t *)0x20000000UL;
++
++  for (i = 0; i < VECTOR_TABLE_WORDS; i++)
++  {
++    dst[i] = src[i];
++  }
++
++  RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
++  SYSCFG->CFGR1 &= (uint32_t)~SYSCFG_CFGR1_MEM_MODE;
++  SYSCFG->CFGR1 |= SYSCFG_CFGR1_MEM_MODE;
++
+   /* NOTE :SystemInit(): This function is called at startup just after reset and 
+                          before branch to main program. This call is made inside
+                          the "startup_stm32f0xx.s" file.
+@@ -246,4 +262,3 @@
+ /**
+   * @}
+   */
+-
+--- 5/tw66gw02/MDK-ARM/tw66gw02.sct
++++ 6/tw66gw02/MDK-ARM/tw66gw02.sct
+@@ -2,14 +2,14 @@
+ ; *** Scatter-Loading Description File generated by uVision ***
+ ; *************************************************************
+ 
+-LR_IROM1 0x08000000 0x00010000  {    ; load region size_region
+-  ER_IROM1 0x08000000 0x00010000  {  ; load address = execution address
++LR_IROM1 0x08001000 0x00007400  {    ; application region after 4 KB bootloader
++  ER_IROM1 0x08001000 0x00007400  {  ; load address = execution address
+    *.o (RESET, +First)
+    *(InRoot$$Sections)
+    .ANY (+RO)
+    .ANY (+XO)
+   }
+-  RW_IRAM1 0x20000000 0x00002000  {  ; RW data
++  RW_IRAM1 0x200000C0 0x00001F40  {  ; first 0xC0 bytes reserved for vector remap
+    .ANY (+RW +ZI)
+   }
+ }
+--- 5/tw66gw02/MDK-ARM/tw66gw02.uvprojx
++++ 6/tw66gw02/MDK-ARM/tw66gw02.uvprojx
+@@ -18,7 +18,7 @@
+           <Vendor>STMicroelectronics</Vendor>
+           <PackID>Keil.STM32F0xx_DFP.3.1.1</PackID>
+           <PackURL>https://www.keil.com/pack/</PackURL>
+-          <Cpu>IRAM(0x20000000-0x20001FFF) IROM(0x8000000-0x800FFFF) CLOCK(8000000) CPUTYPE("Cortex-M0") TZ</Cpu>
++          <Cpu>IRAM(0x200000C0-0x20001FFF) IROM(0x8001000-0x80083FF) CLOCK(8000000) CPUTYPE("Cortex-M0") TZ</Cpu>
+           <FlashUtilSpec></FlashUtilSpec>
+           <StartupFile></StartupFile>
+           <FlashDriverDll></FlashDriverDll>
+@@ -246,13 +246,13 @@
+               </Ocm6>
+               <IRAM>
+                 <Type>0</Type>
+-                <StartAddress>0x20000000</StartAddress>
+-                <Size>0x2000</Size>
++                <StartAddress>0x200000C0</StartAddress>
++                <Size>0x1F40</Size>
+               </IRAM>
+               <IROM>
+                 <Type>1</Type>
+-                <StartAddress>0x8000000</StartAddress>
+-                <Size>0x10000</Size>
++                <StartAddress>0x8001000</StartAddress>
++                <Size>0x7400</Size>
+               </IROM>
+               <XRAM>
+                 <Type>0</Type>
+@@ -276,8 +276,8 @@
+               </OCR_RVCT3>
+               <OCR_RVCT4>
+                 <Type>1</Type>
+-                <StartAddress>0x8000000</StartAddress>
+-                <Size>0x10000</Size>
++                <StartAddress>0x8001000</StartAddress>
++                <Size>0x7400</Size>
+               </OCR_RVCT4>
+               <OCR_RVCT5>
+                 <Type>1</Type>
+@@ -301,8 +301,8 @@
+               </OCR_RVCT8>
+               <OCR_RVCT9>
+                 <Type>0</Type>
+-                <StartAddress>0x20000000</StartAddress>
+-                <Size>0x2000</Size>
++                <StartAddress>0x200000C0</StartAddress>
++                <Size>0x1F40</Size>
+               </OCR_RVCT9>
+               <OCR_RVCT10>
+                 <Type>0</Type>
+@@ -1129,6 +1129,11 @@
+               <FileType>1</FileType>
+               <FilePath>..\COP\warning.c</FilePath>
+             </File>
++            <File>
++              <FileName>ota.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\COP\ota.c</FilePath>
++            </File>
+           </Files>
+         </Group>
+         <Group>
+@@ -1161,3 +1166,4 @@
+   </LayerInfo>
+ 
+ </Project>
++
+--- 5/tw66gw02/Bootloader/bootloader.c
++++ 6/tw66gw02/Bootloader/bootloader.c
+@@ -0,0 +1,177 @@
++/*
++ * Minimal OTA bootloader reference for STM32F030C8Tx.
++ * Build this as a separate factory-programmed image at 0x08000000.
++ */
++#include "stm32f0xx_hal.h"
++#include <stdint.h>
++#include <string.h>
++
++#define BL_FLASH_PAGE_SIZE        0x00000400UL
++#define BL_APP_BASE               0x08001000UL
++#define BL_APP_SIZE               0x00007400UL
++#define BL_STAGING_BASE           0x08008400UL
++#define BL_STAGING_SIZE           0x00007400UL
++#define BL_METADATA_BASE          0x0800F800UL
++#define BL_METADATA_SIZE          0x00000400UL
++#define BL_META_MAGIC             0x544F5441UL
++#define BL_META_FLAG_PENDING      0x00000001UL
++#define BL_VECTOR_WORDS           48UL
++
++typedef struct {
++    uint32_t magic;
++    uint32_t flags;
++    uint32_t image_addr;
++    uint32_t image_size;
++    uint32_t image_crc32;
++    uint32_t version;
++    uint32_t reserved;
++    uint32_t metadata_crc32;
++} BL_Metadata;
++
++typedef void (*pFunction)(void);
++
++static uint32_t bl_crc32_update(uint32_t crc, const uint8_t *data, uint32_t len)
++{
++    uint32_t i;
++    uint8_t bit;
++
++    crc = ~crc;
++    for (i = 0; i < len; i++) {
++        crc ^= data[i];
++        for (bit = 0; bit < 8; bit++) {
++            crc = ((crc & 1U) != 0U) ? ((crc >> 1) ^ 0xEDB88320UL) : (crc >> 1);
++        }
++    }
++    return ~crc;
++}
++
++static uint32_t bl_crc32_flash(uint32_t addr, uint32_t len)
++{
++    return bl_crc32_update(0U, (const uint8_t *)addr, len);
++}
++
++static HAL_StatusTypeDef bl_erase_pages(uint32_t addr, uint32_t size)
++{
++    FLASH_EraseInitTypeDef erase;
++    uint32_t page_error = 0U;
++
++    erase.TypeErase = FLASH_TYPEERASE_PAGES;
++    erase.PageAddress = addr;
++    erase.NbPages = (size + BL_FLASH_PAGE_SIZE - 1U) / BL_FLASH_PAGE_SIZE;
++    return HAL_FLASHEx_Erase(&erase, &page_error);
++}
++
++static HAL_StatusTypeDef bl_program_bytes(uint32_t addr, const uint8_t *data, uint32_t len)
++{
++    uint32_t i;
++    uint16_t halfword;
++    HAL_StatusTypeDef ret;
++
++    for (i = 0; i < len; i += 2U) {
++        halfword = data[i];
++        halfword |= ((i + 1U) < len) ? ((uint16_t)data[i + 1U] << 8) : 0xFF00U;
++        ret = HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, addr + i, halfword);
++        if (ret != HAL_OK) {
++            return ret;
++        }
++    }
++    return HAL_OK;
++}
++
++static uint8_t bl_metadata_valid(const BL_Metadata *meta)
++{
++    uint32_t crc;
++
++    if (meta->magic != BL_META_MAGIC) {
++        return 0U;
++    }
++    if ((meta->flags & BL_META_FLAG_PENDING) == 0U) {
++        return 0U;
++    }
++    if ((meta->image_addr != BL_STAGING_BASE) || (meta->image_size == 0U) || (meta->image_size > BL_APP_SIZE)) {
++        return 0U;
++    }
++    crc = bl_crc32_update(0U, (const uint8_t *)meta, sizeof(BL_Metadata) - sizeof(meta->metadata_crc32));
++    return (crc == meta->metadata_crc32) ? 1U : 0U;
++}
++
++static void bl_clear_metadata(void)
++{
++    HAL_FLASH_Unlock();
++    (void)bl_erase_pages(BL_METADATA_BASE, BL_METADATA_SIZE);
++    HAL_FLASH_Lock();
++}
++
++static void bl_install_if_pending(void)
++{
++    const BL_Metadata *meta = (const BL_Metadata *)BL_METADATA_BASE;
++    HAL_StatusTypeDef ret;
++
++    if (bl_metadata_valid(meta) == 0U) {
++        return;
++    }
++    if (bl_crc32_flash(BL_STAGING_BASE, meta->image_size) != meta->image_crc32) {
++        bl_clear_metadata();
++        return;
++    }
++
++    HAL_FLASH_Unlock();
++    ret = bl_erase_pages(BL_APP_BASE, BL_APP_SIZE);
++    if (ret == HAL_OK) {
++        ret = bl_program_bytes(BL_APP_BASE, (const uint8_t *)BL_STAGING_BASE, meta->image_size);
++    }
++    HAL_FLASH_Lock();
++
++    if ((ret == HAL_OK) && (bl_crc32_flash(BL_APP_BASE, meta->image_size) == meta->image_crc32)) {
++        bl_clear_metadata();
++    }
++}
++
++static uint8_t bl_app_valid(void)
++{
++    uint32_t sp = *(uint32_t *)BL_APP_BASE;
++    uint32_t reset = *(uint32_t *)(BL_APP_BASE + 4U);
++
++    if ((sp < 0x20000000UL) || (sp > 0x20002000UL)) {
++        return 0U;
++    }
++    if ((reset < BL_APP_BASE) || (reset >= (BL_APP_BASE + BL_APP_SIZE))) {
++        return 0U;
++    }
++    return 1U;
++}
++
++static void bl_jump_to_app(void)
++{
++    uint32_t i;
++    uint32_t *src = (uint32_t *)BL_APP_BASE;
++    uint32_t *dst = (uint32_t *)0x20000000UL;
++    pFunction app_reset;
++
++    for (i = 0; i < BL_VECTOR_WORDS; i++) {
++        dst[i] = src[i];
++    }
++
++    __disable_irq();
++    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
++    SYSCFG->CFGR1 &= (uint32_t)~SYSCFG_CFGR1_MEM_MODE;
++    SYSCFG->CFGR1 |= SYSCFG_CFGR1_MEM_MODE;
++
++    __set_MSP(*(uint32_t *)BL_APP_BASE);
++    app_reset = (pFunction)*(uint32_t *)(BL_APP_BASE + 4U);
++    __enable_irq();
++    app_reset();
++}
++
++int main(void)
++{
++    HAL_Init();
++    bl_install_if_pending();
++
++    if (bl_app_valid() != 0U) {
++        bl_jump_to_app();
++    }
++
++    while (1) {
++    }
++}
+--- 5/tw66gw02/Bootloader/bootloader.sct
++++ 6/tw66gw02/Bootloader/bootloader.sct
+@@ -0,0 +1,11 @@
++LR_IROM1 0x08000000 0x00001000  {
++  ER_IROM1 0x08000000 0x00001000  {
++   *.o (RESET, +First)
++   *(InRoot$$Sections)
++   .ANY (+RO)
++   .ANY (+XO)
++  }
++  RW_IRAM1 0x200000C0 0x00001F40  {
++   .ANY (+RW +ZI)
++  }
++}

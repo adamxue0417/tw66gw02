@@ -1,0 +1,2074 @@
+--- 7/tw66gw02/BSP/C8721.c
++++ 8/tw66gw02/BSP/C8721.c
+@@ -37,7 +37,7 @@
+ 	 uint16_t i=0;
+ 		for(i=0;i<50;i++)
+ 		{
+-				__NOP;
++				__NOP();
+ 	  }
+ }
+ /**
+@@ -347,14 +347,12 @@
+ 
+ void  CF_DisplaySegment(uint8_t step)
+ {
+-	   uint8_t i,dataLength;
++	   uint8_t i;
+ 	   static uint8 checksum=0;
+ 	switch(step)
+ 	{
+ 		case 0:
+ 	
+-    dataLength = CF_SEG_NUM * (tCmdConfig.emComScan + 1);
+-
+     CF_SendCommandPackage(CmdCommand);
+     CF_SendSetPackage();
+     CF_SendCommandPackage(CmdData);
+--- 7/tw66gw02/BSP/config.h
++++ 8/tw66gw02/BSP/config.h
+@@ -19,7 +19,6 @@
+ #include "gpio.h"
+ #include "adc.h"
+ #include "dma.h"
+-#include "tim.h"
+ #include "usart.h"
+ //BSP
+ #include "buzz.h"
+@@ -133,6 +132,7 @@
+ extern volatile uint8_t g_probe_over_hi;
+ extern volatile uint8_t g_probe_over_lo;
+ extern volatile uint8_t g_battery_low;
++extern volatile uint16_t g_battery_mv;
+ typedef struct {
+     uint8_t RtdErr;
+     uint8_t HighTempErr;
+--- 7/tw66gw02/BSP/key.c
++++ 8/tw66gw02/BSP/key.c
+@@ -40,6 +40,7 @@
+     static uint16_t time_count[KeyNumber];
+     static uint8_t quick_sent_on_down[KeyNumber];
+     static uint8_t key0_shutdown_sent = 0u;
++    static uint8_t key0_press_started_idle = 0u;
+     uint8_t key_now[KeyNumber];
+ 
+     key_now[0] = key0;
+@@ -50,6 +51,9 @@
+         if (key_now[i] == 0)
+         {
+             time_count[i]++;
++            if ((i == 0u) && (time_count[i] == 1u)) {
++                key0_press_started_idle = (work_process == idle) ? 1u : 0u;
++            }
+             /* Power-on requirement: in idle state, KEY0 triggers on press (no release needed). */
+             if ((i == 0u) &&
+                 (work_process == idle) &&
+@@ -60,19 +64,21 @@
+                 quick_sent_on_down[i] = 1u;
+             }
+             if (time_count[i] == 100u) {
+-                KeyState[i] = LongPress;
+-                if ((i == 0u) && (key0_shutdown_sent == 0u))
++                if (!((i == 0u) && (key0_press_started_idle != 0u))) {
++                    KeyState[i] = LongPress;
++                }
++                if ((i == 0u) && (key0_shutdown_sent == 0u) && (key0_press_started_idle == 0u))
+                 {
+                     /* Force shutdown immediately at >=1s while still pressed. */
+                     work_process = shutdown;
+                     UI_NotifyLocalInteraction();
+                     key0_shutdown_sent = 1u;
+                 }
+-            } else if (time_count[i] == 300u) {
++            } else if ((time_count[i] == 1000u) && (i == 1u)) {
+                 KeyState[i] = VeryLongPress;
+             }
+-            if (time_count[i] > 300u) {
+-                time_count[i] = 300u;
++            if (time_count[i] > 1000u) {
++                time_count[i] = 1000u;
+             }
+         }
+         else
+@@ -84,6 +90,7 @@
+             quick_sent_on_down[i] = 0u;
+             if (i == 0u) {
+                 key0_shutdown_sent = 0u;
++                key0_press_started_idle = 0u;
+             }
+         }
+     }
+@@ -190,11 +197,7 @@
+                 UI_NotifyLocalInteraction();
+                 break;
+             }
+-            if (system_data.units == unitC) {
+-                system_data.units = unitF;
+-            } else {
+-                system_data.units = unitC;
+-            }
++            (void)UI_SetUnits((system_data.units == unitC) ? unitF : unitC, 1u);
+             UI_NotifyLocalInteraction();
+             break;
+     }
+@@ -254,5 +257,9 @@
+   */
+ void Key1_very_long_press(void)
+ {
+-    /* Bluetooth is handled uniformly at the 1s long-press threshold. */
+-}
++    if ((work_process != idle) && (work_process != shutdown) &&
++        (UI_GetBluetoothState() == BT_CONNECTED)) {
++        UI_RequestBluetoothPowerOff();
++        UI_NotifyLocalInteraction();
++    }
++}
+--- 7/tw66gw02/BSP/screen_c8721.c
++++ 8/tw66gw02/BSP/screen_c8721.c
+@@ -48,12 +48,12 @@
+ 
+ static const uint16_t s_probeGaugeThreshC[GAUGE_SEG_COUNT] =
+ {
+-    30u, 70u, 110u, 150u, 190u, 230u, 270u, 310u, 350u
++    10u, 20u, 30u, 40u, 50u, 60u, 70u, 80u, 90u
+ };
+ 
+ static const uint16_t s_probeGaugeThreshF[GAUGE_SEG_COUNT] =
+ {
+-    86u, 158u, 230u, 302u, 374u, 446u, 518u, 590u, 662u
++    50u, 68u, 86u, 104u, 122u, 140u, 158u, 176u, 194u
+ };
+ 
+ static void SetGaugeSegment(uint8_t leftIndex, uint8_t value)
+@@ -244,9 +244,13 @@
+   * @param    None
+   * @note     None
+   */
+-static void ApplySourceIcon(void)
++static void ApplySourceIcon(uint8_t special)
+ {
+     ClearTempSourceIcons();
++
++    if (special == 3u) {
++        return;
++    }
+ 
+     switch(DisplayMode)
+     {
+@@ -266,9 +270,6 @@
+             Screen_Data.DisplayMap.CavityIcon1 = 1u;                        /* [13] */
+             Screen_Data.DisplayMap.CavityIcon2 = (uint8_t)GAUGE_SEG_ON;
+             Screen_Data.DisplayMap.CavityIcon3 = (uint8_t)GAUGE_SEG_ON;
+-      
+-//				    Screen_Data.DisplayMap.CavityIcon2 = 1u;
+-//            Screen_Data.DisplayMap.CavityIcon3 = 1u;
+             break;
+ 
+         default:
+@@ -353,7 +354,7 @@
+     {
+         CF_DisplayClearBuf();
+ 
+-        if (work_process != shutdown)
++        if ((work_process != shutdown) && (work_process != idle))
+         {
+             displayTemp = UI_GetDisplayTemp();
+             special = UI_GetDisplaySpecial();
+@@ -373,7 +374,7 @@
+             }
+ 
+             ApplyUnitIcons();
+-            ApplySourceIcon();
++            ApplySourceIcon(special);
+             if (UI_GetBluetoothIconState() != 0u) {
+                 Screen_Data.DisplayMap.BlutoothIcon = 1u;
+             } else {
+--- 7/tw66gw02/BSP/temp.c
++++ 8/tw66gw02/BSP/temp.c
+@@ -15,6 +15,7 @@
+ ErrMessage SystemErrMessage;
+ volatile uint8_t ADC_Start_DMA_OVER = 0u;
+ volatile uint8_t g_battery_low = 0u;
++volatile uint16_t g_battery_mv = 0u;
+ 
+ static int16_t s_comm_temp_c[3] = {0, 0, 0};
+ static uint8_t s_comm_temp_valid = 0u;
+@@ -52,6 +53,13 @@
+ #define BATTERY_LOW_MV_THRESHOLD   (1100u)
+ #define BATTERY_RECOVER_MV_THRESHOLD (1200u)
+ #define BATTERY_DEBOUNCE_COUNT     (20u)
++/* TempGetTask runs every 500 ms: 120 samples form a 60-second window. */
++#define BATTERY_ADC_AVERAGE_SAMPLES (120u)
++
++static uint16_t s_battery_adc_history[BATTERY_ADC_AVERAGE_SAMPLES] = {0u};
++static uint32_t s_battery_adc_sum = 0u;
++static uint16_t s_battery_adc_index = 0u;
++static uint16_t s_battery_adc_count = 0u;
+ 
+ /* PT1000 lookup table: -25C..500C, step 5C, value scaled by 10 (10000 = 1000.0 ohm) */
+ static const uint16_t RTD_TAB_PT1000[] =
+@@ -303,14 +311,37 @@
+ /**
+   * @function Battery_Get_mV()
+   * ----------------
+-  * @brief    Convert ADC reading to battery voltage in millivolts.
++  * @brief    Average battery ADC over one minute, then convert it to millivolts.
+   * @param    channel - input parameter
+   * @note     None
+   */
+ static uint16_t Battery_Get_mV(uint8_t channel)
+ {
+-    uint32_t vol = (uint32_t)ch_env[channel].vol;
+-    return (uint16_t)((vol * 3300u) / 4095u);
++    uint16_t adc = ch_env[channel].vol;
++    uint16_t average_adc;
++
++    if (s_battery_adc_count < BATTERY_ADC_AVERAGE_SAMPLES)
++    {
++        s_battery_adc_count++;
++    }
++    else
++    {
++        s_battery_adc_sum -= s_battery_adc_history[s_battery_adc_index];
++    }
++
++    s_battery_adc_history[s_battery_adc_index] = adc;
++    s_battery_adc_sum += adc;
++    s_battery_adc_index++;
++    if (s_battery_adc_index >= BATTERY_ADC_AVERAGE_SAMPLES)
++    {
++        s_battery_adc_index = 0u;
++    }
++
++    /* Round to the nearest ADC count. During startup, average all samples
++       collected so far instead of delaying battery display for 60 seconds. */
++    average_adc = (uint16_t)((s_battery_adc_sum + (s_battery_adc_count / 2u)) /
++                             s_battery_adc_count);
++    return (uint16_t)(((uint32_t)average_adc * 3300u) / 4095u);
+ }
+ 
+ /**
+@@ -325,8 +356,10 @@
+     static uint8_t low_cnt = 0u;
+     static uint8_t high_cnt = 0u;
+ 
+-    /* Requirement: low battery when voltage is continuously below ~1.1V */
+-    if (batt_mV <= BATTERY_LOW_MV_THRESHOLD)
++    g_battery_mv = batt_mV;
++
++    /* Requirement: low battery only when voltage is below 1.1 V. */
++    if (batt_mV < BATTERY_LOW_MV_THRESHOLD)
+     {
+         if (low_cnt < BATTERY_DEBOUNCE_COUNT) { low_cnt++; }
+         high_cnt = 0u;
+@@ -530,6 +563,8 @@
+   */
+ static void update_three_temps_from_uart2(void)
+ {
++    uint8_t rx[32];
++    uint16_t rx_len;
+     uint8_t tx_req[8] = {0xAA, 0x55, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
+     int32_t raw0;
+     int32_t raw1;
+@@ -540,18 +575,14 @@
+ 
+     uart_dma_poll_check(&huart2, &hdma_usart2_rx, &COM2);
+ 
+-    if (COM2.rxFlag == 0u) {
++    rx_len = COM_TakeRx(&COM2, rx, sizeof(rx));
++    if (rx_len < 15u) {
+         return;
+     }
+ 
+-    COM2.rxFlag = 0u;
+-    if (COM2.rxLen < 15u) {
+-        return;
+-    }
+-
+-    raw0 = parse_be32_raw_c(&COM2.rxBuf[3]);
+-    raw1 = parse_be32_raw_c(&COM2.rxBuf[7]);
+-    raw2 = parse_be32_raw_c(&COM2.rxBuf[11]);
++    raw0 = parse_be32_raw_c(&rx[3]);
++    raw1 = parse_be32_raw_c(&rx[7]);
++    raw2 = parse_be32_raw_c(&rx[11]);
+ 
+     if ((raw0 == 0) && (raw1 == 0) && (raw2 == 0)) {
+         s_comm_temp_c[0] = TempDisconnected;
+--- 7/tw66gw02/BSP/wireless.c
++++ 8/tw66gw02/BSP/wireless.c
+@@ -1,568 +1,346 @@
+-/**
+-  ******************************************************************************
+-  * @file    wireless.c
+-  * @author 
+-  * @version V1.0
+-  * @date
+-  * @brief   Wireless protocol receive, parse, dispatch and reply module.
+-  ******************************************************************************
+-  */
++/** Mathis BLE framed protocol. OTA types are intentionally unsupported. */
+ #include "config.h"
+ 
+-/*
+- * Wireless protocol compatible with TW15A01 AppTask style.
+- * Transport: USART1 + COM1 DMA RX
+- * Frame: [0]=0xFE, [1]=CMD, [...payload...], [last]=0xFF
+- */
+-
+-
+-
+-static uint8_t s_tx[WL_TX_MAX];
+-static uint8_t s_bt_status = 0u;
+-/**
+-  * @function wl_get_probe_temp()
+-  * -------------------
+-  * @brief    Get the current probe temperature for wireless reporting.
+-  * @param    None
+-  * @note     None
+-  */
+-static int16_t wl_temp_from_c(int16_t t)
+-{
+-    if ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) {
+-        return t;
+-    }
+-    if (system_data.units == unitF) {
+-        return (int16_t)(((int32_t)t * 9) / 5 + 32);
+-    }
+-    return t;
+-}
+-
+-static int16_t wl_get_probe_temp(void)
+-{
+-    if (g_probe_connected == 0u) {
+-        return HaveTempErr;
+-    }
+-    return wl_temp_from_c(system_data.pt1000_temp[3]);
+-}
+-
+-static uint8_t wl_is_special_temp(int16_t t)
+-{
+-    return ((t == HaveTempErr) || (t == TempDisconnected) || (t == TempHigh) || (t == TempLow)) ? 1u : 0u;
+-}
+-/**
+-  * @function wl_get_temp_by_channel()
+-  * ------------------------
+-  * @brief    Get a temperature value by wireless protocol channel.
+-  * @param    ch - input parameter
+-  * @note     None
+-  */
+-static int16_t wl_get_temp_by_channel(uint8_t ch)
+-{
+-    if (ch == 0x01u) { return wl_get_probe_temp(); }        /* probe1 in legacy protocol */
+-    if (ch == 0x02u) { return HaveTempErr; }                /* probe2 unsupported */
+-    return HaveTempErr;
+-}
+-/**
+-  * @function wl_get_display_main_temp()
+-  * --------------------------
+-  * @brief    Get the main display temperature for wireless reporting.
+-  * @param    None
+-  * @note     None
+-  */
+-static int16_t wl_get_display_main_temp(void)
+-{
+-    if (DisplayMode == DISPLAY_MODE_O_SURFACE) { return UI_GetAdjustedMainTemp(1u); }
+-    if (DisplayMode == DISPLAY_MODE_D_SURFACE) { return UI_GetAdjustedMainTemp(0u); }
+-    if (DisplayMode == DISPLAY_MODE_CAVITY)    { return UI_GetAdjustedMainTemp(2u); }
+-    if (DisplayMode == DISPLAY_MODE_PROBE)     { return wl_get_probe_temp(); }
+-    return UI_GetAdjustedMainTemp(0u);
+-}
+-/**
+-  * @function wl_split3()
+-  * ------------
+-  * @brief    Split a temperature value into three display digits.
+-  * @param    v - input parameter
+-  * @param    h - input parameter
+-  * @param    t - input parameter
+-  * @param    l - input parameter
+-  * @note     None
+-  */
+-static void wl_split3(uint16_t v, uint8_t *h, uint8_t *t, uint8_t *l)
+-{
+-    if (v > 999u) { v = 999u; }
+-    *h = (uint8_t)(v / 100u);
+-    *t = (uint8_t)((v / 10u) % 10u);
+-    *l = (uint8_t)(v % 10u);
+-}
+-
+-static int32_t wl_parse_s32_be(const uint8_t *p)
+-{
+-    uint32_t u;
+-
+-    u = ((uint32_t)p[0] << 24) |
+-        ((uint32_t)p[1] << 16) |
+-        ((uint32_t)p[2] << 8)  |
+-        ((uint32_t)p[3]);
+-    return (int32_t)u;
+-}
+-
+-static void wl_put_s32_be(uint8_t *p, int32_t v)
+-{
+-    uint32_t u = (uint32_t)v;
+-
+-    p[0] = (uint8_t)(u >> 24);
+-    p[1] = (uint8_t)(u >> 16);
+-    p[2] = (uint8_t)(u >> 8);
+-    p[3] = (uint8_t)u;
+-}
+-
+-static int32_t wl_coeff_to_q1000000(float v)
+-{
+-    float scaled = v * 1000000.0f;
+-
+-    if (scaled > 2147483647.0f) { return 2147483647; }
+-    if (scaled < -2147483648.0f) { return (int32_t)0x80000000u; }
+-    if (scaled >= 0.0f) { return (int32_t)(scaled + 0.5f); }
+-    return (int32_t)(scaled - 0.5f);
+-}
+-/**
+-  * @function wl_send()
+-  * ------------
+-  * @brief    Send one wireless protocol frame.
+-  * @param    buf - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_send(const uint8_t *buf, uint16_t len)
+-{
+-    if ((buf == NULL) || (len == 0u)) {
++#define TX_QUEUE_DEPTH              (4u)
++#define TELEMETRY_PERIOD_TICKS_20MS (50u)
++#define COEFF_TIMEOUT_TICKS_20MS    (3000u)
++#define FW_RELEASE_NUMBER           ((uint8_t)system_version)
++
++typedef struct {
++    uint8_t data[20];
++    uint8_t length;
++} TxEntry;
++
++typedef struct {
++    float coeff[TEMP_COEFF_TERM_COUNT];
++    uint8_t parts;
++    uint16_t age;
++} CoeffPending;
++
++static uint8_t s_rx_frame[MATHIS_MAX_FRAME];
++static uint8_t s_uart_chunk[COM_RXSIZE];
++static uint16_t s_rx_count;
++static uint16_t s_rx_expected;
++static uint8_t s_connected;
++static uint8_t s_tx_sequence;
++static uint8_t s_telemetry_ticks;
++static TxEntry s_tx_queue[TX_QUEUE_DEPTH];
++static uint8_t s_tx_head;
++static uint8_t s_tx_tail;
++static uint8_t s_tx_count;
++static CoeffPending s_pending[TEMP_COEFF_CHANNEL_COUNT];
++MathisBleDebug g_mathis_ble_debug;
++
++static void SetConnection(uint8_t connected);
++
++uint16_t Mathis_Crc16(const uint8_t *data, uint16_t length)
++{
++    uint16_t crc = 0xFFFFu;
++    uint16_t i;
++    uint8_t bit;
++    for (i = 0u; i < length; i++) {
++        crc ^= (uint16_t)data[i] << 8;
++        for (bit = 0u; bit < 8u; bit++) {
++            crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u) : (uint16_t)(crc << 1);
++        }
++    }
++    return crc;
++}
++
++static uint8_t Float32Valid(const uint8_t *bytes)
++{
++    uint32_t raw;
++    memcpy(&raw, bytes, sizeof(raw));
++    return ((raw & 0x7F800000u) == 0x7F800000u) ? 0u : 1u;
++}
++
++static float ReadFloatLe(const uint8_t *bytes)
++{
++    float value;
++    memcpy(&value, bytes, sizeof(value));
++    return value;
++}
++
++static void ClearPending(void)
++{
++    memset(s_pending, 0, sizeof(s_pending));
++}
++
++static uint8_t ProtocolToInternalChannel(uint8_t channel)
++{
++    static const uint8_t map[3] = {2u, 1u, 0u};
++    return (channel < 3u) ? map[channel] : 0xFFu;
++}
++
++static uint8_t HandleCoefficientPart(uint8_t subcmd, const uint8_t *payload, uint16_t length)
++{
++    uint8_t protocol_channel;
++    uint8_t internal_channel;
++    CoeffPending *pending;
++    if (((subcmd == MATHIS_CMD_COEFF_E) && (length != 7u)) ||
++        ((subcmd != MATHIS_CMD_COEFF_E) && (length != 11u))) { return 0u; }
++    if (payload[1] != MATHIS_MODEL_ID) { return 0u; }
++    protocol_channel = payload[2];
++    internal_channel = ProtocolToInternalChannel(protocol_channel);
++    if (internal_channel == 0xFFu) { return 0u; }
++    if ((Float32Valid(&payload[3]) == 0u) ||
++        ((subcmd != MATHIS_CMD_COEFF_E) && (Float32Valid(&payload[7]) == 0u))) { return 0u; }
++    pending = &s_pending[internal_channel];
++    pending->age = 0u;
++    if (subcmd == MATHIS_CMD_COEFF_AB) {
++        pending->coeff[0] = ReadFloatLe(&payload[3]); pending->coeff[1] = ReadFloatLe(&payload[7]); pending->parts |= 0x01u;
++    } else if (subcmd == MATHIS_CMD_COEFF_CD) {
++        pending->coeff[2] = ReadFloatLe(&payload[3]); pending->coeff[3] = ReadFloatLe(&payload[7]); pending->parts |= 0x02u;
++    } else {
++        pending->coeff[4] = ReadFloatLe(&payload[3]); pending->parts |= 0x04u;
++    }
++    if (pending->parts == 0x07u) {
++        (void)UI_SetTempCoeff(internal_channel, pending->coeff);
++        memset(pending, 0, sizeof(*pending));
++    }
++    return 1u;
++}
++
++static void HandleCommand(const uint8_t *payload, uint16_t length)
++{
++    uint8_t command;
++    if (length == 0u) { return; }
++    command = payload[0];
++    g_mathis_ble_debug.cmd_frames++;
++    g_mathis_ble_debug.last_command = command;
++    switch (command) {
++        case MATHIS_CMD_SET_UNITS:
++            if ((length == 2u) && ((payload[1] == unitC) || (payload[1] == unitF))) {
++                (void)UI_SetUnits(payload[1], 1u); UI_NotifyLocalInteraction();
++            }
++            break;
++        case MATHIS_CMD_POWER_OFF:
++            if (length == 1u) { UI_NotifyLocalInteraction(); work_process = shutdown; }
++            break;
++        case MATHIS_CMD_FACTORY_RESET:
++            if (length == 1u) {
++                UI_FactoryReset(); ClearPending(); SetConnection(0u); UI_RequestBluetoothPowerOff();
++            }
++            break;
++        case MATHIS_CMD_COEFF_AB:
++        case MATHIS_CMD_COEFF_CD:
++        case MATHIS_CMD_COEFF_E:
++            if (HandleCoefficientPart(command, payload, length) != 0u) { UI_NotifyLocalInteraction(); }
++            break;
++        case MATHIS_CMD_TELEMETRY_CTRL:
++            if ((length == 2u) && (payload[1] == MATHIS_TELEMETRY_START)) {
++                g_mathis_ble_debug.start_frames++;
++                SetConnection(1u);
++            } else if ((length == 2u) && (payload[1] == MATHIS_TELEMETRY_STOP)) {
++                g_mathis_ble_debug.stop_frames++;
++                SetConnection(0u);
++            }
++            break;
++        default:
++            break;
++    }
++}
++
++static uint8_t HandleFrame(const uint8_t *frame, uint16_t length)
++{
++    uint16_t payload_length = (uint16_t)frame[4] | ((uint16_t)frame[5] << 8);
++    uint16_t received_crc = (uint16_t)frame[6u + payload_length] | ((uint16_t)frame[7u + payload_length] << 8);
++    uint16_t calculated_crc;
++    g_mathis_ble_debug.last_type = frame[2];
++    g_mathis_ble_debug.last_sequence = frame[3];
++    g_mathis_ble_debug.last_payload_length = payload_length;
++    if (length != (uint16_t)(payload_length + 8u)) {
++        g_mathis_ble_debug.length_errors++;
++        return 0u;
++    }
++    calculated_crc = Mathis_Crc16(&frame[2], (uint16_t)(4u + payload_length));
++    if (received_crc != calculated_crc) {
++        g_mathis_ble_debug.crc_errors++;
++        return 0u;
++    }
++    g_mathis_ble_debug.frames_ok++;
++    if (frame[2] == MATHIS_TYPE_CMD) { HandleCommand(&frame[6], payload_length); }
++    /* 0x10..0x13 OTA and all unknown types are deliberately ignored. */
++    return 1u;
++}
++
++static void ResyncBufferedFrame(void)
++{
++    uint16_t offset;
++    for (offset = 1u; (uint16_t)(offset + 1u) < s_rx_count; offset++) {
++        if ((s_rx_frame[offset] == MATHIS_START_BYTE) && (s_rx_frame[offset + 1u] == MATHIS_START_BYTE)) {
++            s_rx_count = (uint16_t)(s_rx_count - offset);
++            memmove(s_rx_frame, &s_rx_frame[offset], s_rx_count);
++            s_rx_expected = 0u;
++            if (s_rx_count >= 6u) {
++                uint16_t payload_length = (uint16_t)s_rx_frame[4] | ((uint16_t)s_rx_frame[5] << 8);
++                if (payload_length <= MATHIS_MAX_PAYLOAD) { s_rx_expected = (uint16_t)(payload_length + 8u); }
++                else { s_rx_count = 0u; }
++            }
++            if ((s_rx_expected != 0u) && (s_rx_count == s_rx_expected) &&
++                (HandleFrame(s_rx_frame, s_rx_count) != 0u)) {
++                s_rx_count = 0u; s_rx_expected = 0u;
++            }
++            return;
++        }
++    }
++    s_rx_count = 0u; s_rx_expected = 0u;
++}
++
++static void FeedProtocolByte(uint8_t byte)
++{
++    if (s_rx_count == 0u) {
++        if (byte == MATHIS_START_BYTE) { s_rx_frame[s_rx_count++] = byte; }
+         return;
+     }
+-    USART1_SendData((uint8_t *)buf, len);
+-}
+-/**
+-  * @function wl_ack_cmd2()
+-  * -------------
+-  * @brief    Reply to a two-byte wireless command acknowledgement.
+-  * @param    cmd - input parameter
+-  * @param    p2 - input parameter
+-  * @note     None
+-  */
+-static void wl_ack_cmd2(uint8_t cmd, uint8_t p2)
+-{
+-    s_tx[0] = WL_HEAD;
+-    s_tx[1] = cmd;
+-    s_tx[2] = p2;
+-    s_tx[3] = WL_TAIL;
+-    wl_send(s_tx, 4u);
+-}
+-/**
+-  * @function wl_handle_power()
+-  * -----------------
+-  * @brief    Handle wireless power command.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_power(const uint8_t *rx, uint16_t len)
+-{
+-    (void)len;
+-    if (rx[2] == 0x01u) {
+-        if (work_process == idle) { work_process = start_up; }
+-    } else if (rx[2] == 0x02u) {
+-        if (work_process != idle) { work_process = shutdown; }
+-    }
+-    UI_NotifyLocalInteraction();
+-    wl_ack_cmd2(WL_CMD_POWER, rx[2]);
+-}
+-/**
+-  * @function wl_handle_temp_up()
+-  * -------------------
+-  * @brief    Handle wireless temperature increment command.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_temp_up(const uint8_t *rx, uint16_t len)
+-{
+-    uint16_t step;
+-    uint8_t h, t, l;
+-
+-    if ((len < 7u) || (rx[2] != 0x01u)) {
++    if (s_rx_count == 1u) {
++        if (byte == MATHIS_START_BYTE) { s_rx_frame[s_rx_count++] = byte; }
++        else { s_rx_count = 0u; }
+         return;
+     }
+-
+-    step = rx[3];
+-    system_data.InTempSet = (uint16_t)(system_data.InTempSet + step);
+-    if (system_data.InTempSet > WL_TEMP_MAX) { system_data.InTempSet = WL_TEMP_MAX; }
+-    if (system_data.InTempSet < WL_TEMP_MIN) { system_data.InTempSet = WL_TEMP_MIN; }
+-
+-    wl_split3(system_data.InTempSet, &h, &t, &l);
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_TEMP_UP; s_tx[2] = 0x01u;
+-    s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
+-    wl_send(s_tx, 7u);
+-}
+-/**
+-  * @function wl_handle_temp_down()
+-  * ---------------------
+-  * @brief    Handle wireless temperature decrement command.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_temp_down(const uint8_t *rx, uint16_t len)
+-{
+-    uint16_t step;
+-    uint8_t h, t, l;
+-
+-    if ((len < 7u) || (rx[2] != 0x01u)) {
+-        return;
+-    }
+-
+-    step = rx[3];
+-    if (system_data.InTempSet > step) { system_data.InTempSet = (uint16_t)(system_data.InTempSet - step); }
+-    else { system_data.InTempSet = WL_TEMP_MIN; }
+-    if (system_data.InTempSet > WL_TEMP_MAX) { system_data.InTempSet = WL_TEMP_MAX; }
+-    if (system_data.InTempSet < WL_TEMP_MIN) { system_data.InTempSet = WL_TEMP_MIN; }
+-
+-    wl_split3(system_data.InTempSet, &h, &t, &l);
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_TEMP_DOWN; s_tx[2] = 0x01u;
+-    s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
+-    wl_send(s_tx, 7u);
+-}
+-/**
+-  * @function wl_handle_set_temp()
+-  * --------------------
+-  * @brief    Handle wireless set-temperature command.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_set_temp(const uint8_t *rx, uint16_t len)
+-{
+-    uint16_t v;
+-
+-    if (len < 7u) {
+-        return;
+-    }
+-
+-    if (rx[2] == 0x01u) {
+-        v = (uint16_t)(rx[3] * 100u + rx[4] * 10u + rx[5]);
+-        if (v > WL_TEMP_MAX) { v = WL_TEMP_MAX; }
+-        if (v < WL_TEMP_MIN) { v = WL_TEMP_MIN; }
+-        system_data.InTempSet = v;
+-    }
+-
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_SET_TEMP;
+-    s_tx[2] = rx[2]; s_tx[3] = rx[3]; s_tx[4] = rx[4]; s_tx[5] = rx[5]; s_tx[6] = WL_TAIL;
+-    wl_send(s_tx, 7u);
+-}
+-/**
+-  * @function wl_handle_jump_set()
+-  * --------------------
+-  * @brief    Handle wireless jump-to-set command.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_jump_set(const uint8_t *rx, uint16_t len)
+-{
+-    uint8_t h, t, l;
+-    (void)len;
+-
+-    wl_split3(system_data.InTempSet, &h, &t, &l);
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_JUMP_SET; s_tx[2] = rx[2];
+-    s_tx[3] = h; s_tx[4] = t; s_tx[5] = l; s_tx[6] = WL_TAIL;
+-    wl_send(s_tx, 7u);
+-}
+-/**
+-  * @function wl_handle_query_probe()
+-  * -----------------------
+-  * @brief    Handle wireless probe temperature query.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_query_probe(const uint8_t *rx, uint16_t len)
+-{
+-    int16_t p;
+-    uint8_t h, t, l;
+-    (void)len;
+-
+-    p = wl_get_temp_by_channel(rx[2]);
+-    if (wl_is_special_temp(p) != 0u) { h = 0x09u; t = 0x06u; l = 0x00u; }
+-    else { wl_split3((uint16_t)p, &h, &t, &l); }
+-
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_PROBE; s_tx[2] = rx[2];
+-    s_tx[3] = 0x00u; s_tx[4] = 0x00u; s_tx[5] = 0x00u;
+-    s_tx[6] = h; s_tx[7] = t; s_tx[8] = l; s_tx[9] = WL_TAIL;
+-    wl_send(s_tx, 10u);
+-}
+-/**
+-  * @function wl_handle_unit()
+-  * ----------------
+-  * @brief    Handle wireless unit switch command.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_unit(const uint8_t *rx, uint16_t len)
+-{
+-    (void)len;
+-    if (rx[2] == 0x01u) { system_data.units = unitF; }
+-    else if (rx[2] == 0x02u) { system_data.units = unitC; }
+-    UI_NotifyLocalInteraction();
+-    wl_ack_cmd2(WL_CMD_UNIT, rx[2]);
+-}
+-/**
+-  * @function wl_handle_query_status()
+-  * ------------------------
+-  * @brief    Handle wireless status query command.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_query_status(const uint8_t *rx, uint16_t len)
+-{
+-    int16_t in_t;
+-    int16_t p1;
+-    uint8_t h, t, l;
+-    (void)len;
+-
+-    if (rx[2] != 0x01u) {
+-        return;
+-    }
+-
+-    s_tx[0] = WL_HEAD; s_tx[1] = 0x1Bu;
+-    s_tx[2] = (work_process == set) ? 0x01u : 0x02u;
+-    s_tx[3] = ((work_process == idle) || (work_process == shutdown)) ? 0x02u : 0x01u;
+-    s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u;
+-    s_tx[7] = 0x00u; s_tx[8] = 0x00u; s_tx[9] = 0x00u; s_tx[10] = 0x00u; s_tx[11] = 0x00u;
+-    wl_split3(system_data.InTempSet, &h, &t, &l);
+-    s_tx[12] = h; s_tx[13] = t; s_tx[14] = l; s_tx[15] = WL_TAIL;
+-    wl_send(s_tx, 16u);
+-
+-    in_t = wl_get_display_main_temp();
+-    p1 = wl_get_probe_temp();
+-    s_tx[0] = WL_HEAD; s_tx[1] = 0x2Bu;
+-    s_tx[2] = 0x01u;
+-    s_tx[3] = (system_data.units == unitF) ? 0x01u : 0x02u;
+-    s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u;
+-    if (wl_is_special_temp(in_t) != 0u) { s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u; }
+-    else { wl_split3((uint16_t)in_t, &h, &t, &l); s_tx[8] = h; s_tx[9] = t; s_tx[10] = l; }
+-    if (wl_is_special_temp(p1) != 0u) { s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u; s_tx[14] = 0x02u; }
+-    else { wl_split3((uint16_t)p1, &h, &t, &l); s_tx[11] = h; s_tx[12] = t; s_tx[13] = l; s_tx[14] = 0x00u; }
+-    s_tx[15] = WL_TAIL;
+-    wl_send(s_tx, 16u);
+-
+-    s_tx[0] = WL_HEAD; s_tx[1] = 0x3Bu;
+-    s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; /* probe2 unsupported */
+-    s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u; s_tx[8] = 0x00u;
+-    s_tx[9] = 0x00u; s_tx[10] = 0x00u; s_tx[11] = 0x00u;
+-    s_tx[12] = 0x00u; s_tx[13] = 0x00u; s_tx[14] = 0x00u;
+-    s_tx[15] = WL_TAIL;
+-    wl_send(s_tx, 16u);
+-}
+-/**
+-  * @function wl_handle_query_set_all()
+-  * -------------------------
+-  * @brief    Handle wireless query of all set temperatures.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_query_set_all(const uint8_t *rx, uint16_t len)
+-{
+-    uint8_t h, t, l;
+-    (void)len;
+-    if (rx[2] != 0x01u) { return; }
+-
+-    wl_split3(system_data.InTempSet, &h, &t, &l);
+-    memset(s_tx, 0, 24u);
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_SET_ALL;
+-    s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; s_tx[23] = WL_TAIL;
+-    wl_send(s_tx, 24u);
+-}
+-/**
+-  * @function wl_handle_query_act_all()
+-  * -------------------------
+-  * @brief    Handle wireless query of all actual temperatures.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_query_act_all(const uint8_t *rx, uint16_t len)
+-{
+-    int16_t in_t, p1;
+-    uint8_t h, t, l;
+-    (void)len;
+-    if (rx[2] != 0x01u) { return; }
+-
+-    in_t = wl_get_display_main_temp();
+-    p1 = wl_get_probe_temp();
+-
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_QUERY_ACT_ALL;
+-    if (wl_is_special_temp(p1) != 0u) { s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; }
+-    else { wl_split3((uint16_t)p1, &h, &t, &l); s_tx[2] = h; s_tx[3] = t; s_tx[4] = l; }
+-    s_tx[5] = 0x09u; s_tx[6] = 0x06u; s_tx[7] = 0x00u;
+-    s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u;
+-    s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u;
+-    s_tx[14] = 0x09u; s_tx[15] = 0x06u; s_tx[16] = 0x00u;
+-    s_tx[17] = 0x09u; s_tx[18] = 0x06u; s_tx[19] = 0x00u;
+-    if (wl_is_special_temp(in_t) != 0u) { s_tx[20] = 0x09u; s_tx[21] = 0x06u; s_tx[22] = 0x00u; }
+-    else { wl_split3((uint16_t)in_t, &h, &t, &l); s_tx[20] = h; s_tx[21] = t; s_tx[22] = l; }
+-    s_tx[23] = WL_TAIL;
+-    wl_send(s_tx, 24u);
+-}
+-
+-static void wl_handle_coeff_set(const uint8_t *rx, uint16_t len)
+-{
+-    float coeff[TEMP_COEFF_TERM_COUNT];
+-    uint8_t i;
+-    uint8_t ok;
+-
+-    if (len < 24u) {
+-        return;
+-    }
+-
+-    for (i = 0u; i < TEMP_COEFF_TERM_COUNT; i++) {
+-        coeff[i] = (float)wl_parse_s32_be(&rx[3u + (uint16_t)i * 4u]) / 1000000.0f;
+-    }
+-
+-    ok = UI_SetTempCoeff(rx[2], coeff);
+-    s_tx[0] = WL_HEAD;
+-    s_tx[1] = WL_CMD_COEFF_SET;
+-    s_tx[2] = rx[2];
+-    s_tx[3] = ok;
+-    s_tx[4] = WL_TAIL;
+-    wl_send(s_tx, 5u);
+-}
+-
+-static void wl_handle_coeff_query(const uint8_t *rx, uint16_t len)
+-{
+-    float coeff[TEMP_COEFF_TERM_COUNT];
+-    uint8_t i;
+-
+-    (void)len;
+-
+-    memset(s_tx, 0, 24u);
+-    s_tx[0] = WL_HEAD;
+-    s_tx[1] = WL_CMD_COEFF_QUERY;
+-    s_tx[2] = rx[2];
+-
+-    if (UI_GetTempCoeff(rx[2], coeff) == 0u) {
+-        s_tx[3] = 0u;
+-        s_tx[4] = WL_TAIL;
+-        wl_send(s_tx, 5u);
+-        return;
+-    }
+-
+-    s_tx[3] = 1u;
+-    for (i = 0u; i < TEMP_COEFF_TERM_COUNT; i++) {
+-        wl_put_s32_be(&s_tx[4u + (uint16_t)i * 4u], wl_coeff_to_q1000000(coeff[i]));
+-    }
+-    s_tx[24] = WL_TAIL;
+-    wl_send(s_tx, 25u);
+-}
+-/**
+-  * @function wl_handle_fw_info()
+-  * -------------------
+-  * @brief    Handle wireless firmware information query.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_handle_fw_info(const uint8_t *rx, uint16_t len)
+-{
+-    (void)len;
+-    if (rx[2] != 0x01u) { return; }
+-
+-    memset(s_tx, 0, 21u);
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_FW_INFO; s_tx[2] = 0x01u;
+-    s_tx[5] = 0x01u;  /* volume */
+-    s_tx[6] = 0x01u;  /* type */
+-    s_tx[7] = 0x01u;  /* probe count */
+-    s_tx[10] = 0x01u; s_tx[11] = 0x07u; s_tx[12] = 0x05u; /* grill min 175 */
+-    s_tx[13] = 0x04u; s_tx[14] = 0x05u; s_tx[15] = 0x05u; /* grill max 455 */
+-    s_tx[20] = WL_TAIL;
+-    wl_send(s_tx, 21u);
+-}
+-/**
+-  * @function wl_dispatch()
+-  * -------------
+-  * @brief    Dispatch a received wireless command frame.
+-  * @param    rx - input parameter
+-  * @param    len - input parameter
+-  * @note     None
+-  */
+-static void wl_dispatch(const uint8_t *rx, uint16_t len)
+-{
+-    switch (rx[1])
+-    {
+-        case WL_CMD_POWER:         wl_handle_power(rx, len); break;
+-        case WL_CMD_TEMP_UP:       wl_handle_temp_up(rx, len); break;
+-        case WL_CMD_TEMP_DOWN:     wl_handle_temp_down(rx, len); break;
+-        case WL_CMD_SET_TEMP:      wl_handle_set_temp(rx, len); break;
+-        case WL_CMD_JUMP_SET:      wl_handle_jump_set(rx, len); break;
+-        case WL_CMD_QUERY_PROBE:   wl_handle_query_probe(rx, len); break;
+-        case WL_CMD_UNIT:          wl_handle_unit(rx, len); break;
+-        case WL_CMD_QUERY_STATUS:  wl_handle_query_status(rx, len); break;
+-        case WL_CMD_QUERY_SET_ALL: wl_handle_query_set_all(rx, len); break;
+-        case WL_CMD_QUERY_ACT_ALL: wl_handle_query_act_all(rx, len); break;
+-        case WL_CMD_BT_STATUS:
+-            s_bt_status = rx[2];
+-            if (rx[2] == 0x01u) {
+-                UI_SetBluetoothConnectionState(1u);
+-            } else {
+-                UI_SetBluetoothConnectionState(0u);
+-            }
+-            break;
+-        case WL_CMD_COEFF_SET:    wl_handle_coeff_set(rx, len); break;
+-        case WL_CMD_COEFF_QUERY:  wl_handle_coeff_query(rx, len); break;
+-        case WL_CMD_FW_INFO:       wl_handle_fw_info(rx, len); break;
+-        default:                   wl_ack_cmd2(rx[1], rx[2]); break;
+-    }
+-}
+-/**
+-  * @function Wireless_Init()
+-  * ---------------
+-  * @brief    Initialize wireless module state.
+-  * @param    None
+-  * @note     None
+-  */
++    s_rx_frame[s_rx_count++] = byte;
++    if (s_rx_count == 6u) {
++        uint16_t payload_length = (uint16_t)s_rx_frame[4] | ((uint16_t)s_rx_frame[5] << 8);
++        if (payload_length > MATHIS_MAX_PAYLOAD) { s_rx_count = 0u; s_rx_expected = 0u; return; }
++        s_rx_expected = (uint16_t)(payload_length + 8u);
++    }
++    if ((s_rx_expected != 0u) && (s_rx_count == s_rx_expected)) {
++        if (HandleFrame(s_rx_frame, s_rx_count) != 0u) { s_rx_count = 0u; s_rx_expected = 0u; }
++        else { ResyncBufferedFrame(); }
++    } else if (s_rx_count >= MATHIS_MAX_FRAME) {
++        s_rx_count = 0u; s_rx_expected = 0u;
++    }
++}
++
++static void SetConnection(uint8_t connected)
++{
++    connected = (connected != 0u) ? 1u : 0u;
++    if (s_connected != connected) {
++        s_connected = connected; UI_SetBluetoothConnectionState(connected);
++        g_mathis_ble_debug.telemetry_enabled = connected;
++        s_telemetry_ticks = 0u;
++        if (connected == 0u) {
++            ClearPending(); s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
++            s_rx_count = 0u; s_rx_expected = 0u;
++        }
++    }
++}
++
++static void FeedIncomingByte(uint8_t byte)
++{
++    /* FF 01 / FF 00 are accepted only as payload of a CRC-valid Mathis CMD. */
++    FeedProtocolByte(byte);
++}
++
++static uint8_t HandleModuleTelemetryEvent(const uint8_t *data, uint16_t length)
++{
++    /*
++     * Some EMB1082 firmware revisions report TX-notify subscription state as
++     * a standalone two-byte UART event. This is a module-local transport event,
++     * not an App Mathis message. Only recognise the exact two-byte DMA chunk
++     * while the framed parser is idle, so FF 01/FF 00 inside a split Mathis
++     * payload cannot be mistaken for a connection event.
++     */
++    if ((s_rx_count != 0u) || (length != 2u) || (data[0] != MATHIS_CMD_TELEMETRY_CTRL)) {
++        return 0u;
++    }
++    if (data[1] == MATHIS_TELEMETRY_START) {
++        g_mathis_ble_debug.module_start_events++;
++        SetConnection(1u);
++        return 1u;
++    }
++    if (data[1] == MATHIS_TELEMETRY_STOP) {
++        g_mathis_ble_debug.module_stop_events++;
++        SetConnection(0u);
++        return 1u;
++    }
++    return 0u;
++}
++
++static uint8_t QueueFrame(const uint8_t *data, uint8_t length)
++{
++    if ((length > sizeof(s_tx_queue[0].data)) || (s_tx_count >= TX_QUEUE_DEPTH)) { return 0u; }
++    memcpy(s_tx_queue[s_tx_tail].data, data, length); s_tx_queue[s_tx_tail].length = length;
++    s_tx_tail = (uint8_t)((s_tx_tail + 1u) % TX_QUEUE_DEPTH); s_tx_count++;
++    return 1u;
++}
++
++static int16_t EncodeTemperature(const MathisTelemetrySnapshot *snapshot, uint8_t channel)
++{
++    int32_t value;
++    uint8_t mask = (uint8_t)(1u << channel);
++    if ((snapshot->high_mask & mask) != 0u) { return 2000; }
++    if ((snapshot->low_mask & mask) != 0u) { return 3000; }
++    if ((snapshot->valid_mask & mask) == 0u) { return 4000; }
++    value = snapshot->temp_c[channel];
++    if (snapshot->units == unitF) { value = (value * 9 + ((value >= 0) ? 2 : -2)) / 5 + 32; }
++    return (int16_t)value;
++}
++
++static void QueueTelemetry(void)
++{
++    MathisTelemetrySnapshot snapshot;
++    uint8_t frame[20];
++    uint8_t mode;
++    uint8_t channel;
++    uint16_t crc;
++    UI_GetTelemetrySnapshot(&snapshot);
++    frame[0] = 0x5Au; frame[1] = 0x5Au; frame[2] = MATHIS_TYPE_TELEMETRY; frame[3] = s_tx_sequence;
++    frame[4] = 12u; frame[5] = 0u;
++    mode = (uint8_t)(snapshot.valid_mask & 0x0Fu);
++    if (snapshot.units == unitC) { mode |= 0x10u; }
++    frame[6] = mode;
++    for (channel = 0u; channel < 4u; channel++) {
++        int16_t value = EncodeTemperature(&snapshot, channel);
++        frame[7u + channel * 2u] = (uint8_t)value;
++        frame[8u + channel * 2u] = (uint8_t)((uint16_t)value >> 8);
++    }
++    frame[15] = snapshot.battery_percent; frame[16] = FW_RELEASE_NUMBER; frame[17] = snapshot.error_code;
++    crc = Mathis_Crc16(&frame[2], 16u); frame[18] = (uint8_t)crc; frame[19] = (uint8_t)(crc >> 8);
++    if (QueueFrame(frame, sizeof(frame)) != 0u) {
++        s_tx_sequence++;
++        g_mathis_ble_debug.telemetry_queued++;
++    }
++}
++
++static void ServiceTransmit(void)
++{
++    if ((s_tx_count == 0u) || (huart1.gState != HAL_UART_STATE_READY)) { return; }
++    if (HAL_UART_Transmit_DMA(&huart1, s_tx_queue[s_tx_head].data, s_tx_queue[s_tx_head].length) == HAL_OK) {
++        s_tx_head = (uint8_t)((s_tx_head + 1u) % TX_QUEUE_DEPTH); s_tx_count--;
++        g_mathis_ble_debug.telemetry_tx_started++;
++    }
++}
++
+ void Wireless_Init(void)
+ {
+-    COM1.rxFlag = 0u;
+-    COM1.rxLen = 0u;
+-    s_bt_status = 0u;
+-	
+-}
+-/**
+-  * @function WirelessTask()
+-  * --------------
+-  * @brief    Run the wireless receive and dispatch task.
+-  * @param    None
+-  * @note     None
+-  */
++    s_rx_count = 0u; s_rx_expected = 0u; s_connected = 0u;
++    s_tx_sequence = 0u; s_telemetry_ticks = 0u; s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
++    memset(&g_mathis_ble_debug, 0, sizeof(g_mathis_ble_debug));
++    ClearPending(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
++}
++
+ void WirelessTask(void)
+ {
+-    uint16_t len;
+-    uint8_t *rx;
+-
+-    if (COM1.rxFlag == 0u) {
+-        return;
+-    }
+-
+-    COM1.rxFlag = 0u;
+-    len = COM1.rxLen;
+-    if ((len < 4u) || (len > COM_RXSIZE)) {
+-        return;
+-    }
+-
+-    rx = COM1.rxBuf;
+-    if ((rx[0] != WL_HEAD) || (rx[len - 1u] != WL_TAIL)) {
+-        return;
+-    }
+-
+-    wl_dispatch(rx, len);
+-}
++    uint16_t i;
++    uint16_t length;
++    uint8_t channel;
++    length = COM_TakeRx(&COM1, s_uart_chunk, sizeof(s_uart_chunk));
++    if (length != 0u) {
++        g_mathis_ble_debug.uart_chunks++;
++        g_mathis_ble_debug.uart_bytes += length;
++        g_mathis_ble_debug.last_uart_length = length;
++        if (HandleModuleTelemetryEvent(s_uart_chunk, length) == 0u) {
++            for (i = 0u; i < length; i++) { FeedIncomingByte(s_uart_chunk[i]); }
++        }
++    }
++    for (channel = 0u; channel < TEMP_COEFF_CHANNEL_COUNT; channel++) {
++        if (s_pending[channel].parts != 0u) {
++            if (++s_pending[channel].age >= COEFF_TIMEOUT_TICKS_20MS) { memset(&s_pending[channel], 0, sizeof(s_pending[channel])); }
++        }
++    }
++    if (s_connected != 0u) {
++        if (++s_telemetry_ticks >= TELEMETRY_PERIOD_TICKS_20MS) { s_telemetry_ticks = 0u; QueueTelemetry(); }
++    }
++    ServiceTransmit();
++}
+--- 7/tw66gw02/BSP/wireless.h
++++ 8/tw66gw02/BSP/wireless.h
+@@ -1,40 +1,52 @@
+-/**
+-  ******************************************************************************
+-  * @file    wireless.h
+-  * @author 
+-  * @version V1.0
+-  * @date
+-  * @brief   Wireless protocol module interface definitions.
+-  ******************************************************************************
+-  */
++/** Mathis BLE application protocol over the pre-configured EMB1061 UART. */
+ #ifndef __WIRELESS_H__
+ #define __WIRELESS_H__
+ 
+ #include "config.h"
+ 
+-#define WL_HEAD                     0xFEu
+-#define WL_TAIL                     0xFFu
+-#define WL_TX_MAX                   64u
++#define MATHIS_START_BYTE          (0x5Au)
++#define MATHIS_MAX_PAYLOAD         (236u)
++#define MATHIS_MAX_FRAME           (244u)
++#define MATHIS_TYPE_CMD            (0x01u)
++#define MATHIS_TYPE_TELEMETRY      (0x81u)
+ 
+-#define WL_CMD_POWER                0x01u
+-#define WL_CMD_TEMP_UP              0x03u
+-#define WL_CMD_TEMP_DOWN            0x04u
+-#define WL_CMD_SET_TEMP             0x05u
+-#define WL_CMD_JUMP_SET             0x06u
+-#define WL_CMD_QUERY_PROBE          0x07u
+-#define WL_CMD_UNIT                 0x09u
+-#define WL_CMD_QUERY_STATUS         0x0Bu
+-#define WL_CMD_QUERY_SET_ALL        0x0Du
+-#define WL_CMD_QUERY_ACT_ALL        0x0Eu
+-#define WL_CMD_BT_STATUS            0x24u
+-#define WL_CMD_FW_INFO              0x5Fu
+-#define WL_CMD_COEFF_SET            0x60u
+-#define WL_CMD_COEFF_QUERY          0x61u
++#define MATHIS_CMD_SET_UNITS       (0x01u)
++#define MATHIS_CMD_POWER_OFF       (0x02u)
++#define MATHIS_CMD_COEFF_AB        (0x03u)
++#define MATHIS_CMD_FACTORY_RESET   (0x04u)
++#define MATHIS_CMD_COEFF_CD        (0x05u)
++#define MATHIS_CMD_COEFF_E         (0x06u)
+ 
+-#define WL_TEMP_MIN                 175u
+-#define WL_TEMP_MAX                 455u
++/* Framework-level telemetry control carried inside a valid CMD payload. */
++#define MATHIS_CMD_TELEMETRY_CTRL  (0xFFu)
++#define MATHIS_TELEMETRY_STOP      (0x00u)
++#define MATHIS_TELEMETRY_START     (0x01u)
++
++typedef struct {
++    volatile uint32_t uart_chunks;
++    volatile uint32_t uart_bytes;
++    volatile uint32_t frames_ok;
++    volatile uint32_t crc_errors;
++    volatile uint32_t length_errors;
++    volatile uint32_t cmd_frames;
++    volatile uint32_t start_frames;
++    volatile uint32_t stop_frames;
++    volatile uint32_t module_start_events;
++    volatile uint32_t module_stop_events;
++    volatile uint32_t telemetry_queued;
++    volatile uint32_t telemetry_tx_started;
++    volatile uint16_t last_uart_length;
++    volatile uint16_t last_payload_length;
++    volatile uint8_t last_type;
++    volatile uint8_t last_sequence;
++    volatile uint8_t last_command;
++    volatile uint8_t telemetry_enabled;
++} MathisBleDebug;
++
++extern MathisBleDebug g_mathis_ble_debug;
+ 
+ void Wireless_Init(void);
+ void WirelessTask(void);
++uint16_t Mathis_Crc16(const uint8_t *data, uint16_t length);
+ 
+ #endif
+--- 7/tw66gw02/COP/main_control.c
++++ 8/tw66gw02/COP/main_control.c
+@@ -8,6 +8,7 @@
+   ******************************************************************************
+   */
+ #include "config.h"
++#include <stddef.h>
+ 
+ _work_process work_process,work_process_backups;
+ _system_data  system_data;
+@@ -28,6 +29,14 @@
+ static uint8_t s_bt_hw_on = 0u;
+ static uint16_t s_bt_blink_ticks_100ms = 0u;
+ static uint16_t s_bt_pairing_ticks_100ms = 0u;
++static uint32_t s_idle_ticks_100ms = 0u;
++
++#define IDLE_AUTO_SHUTDOWN_TICKS_100MS (36000u)
++#define CONFIG_PAGE_A_ADDR              (0x0800F800u)
++#define CONFIG_PAGE_B_ADDR              (0x0800FC00u)
++#define CONFIG_MAGIC                    (0x4D415448u)
++#define CONFIG_VERSION                  (1u)
++#define CONFIG_COMMIT                   (0xA55Au)
+ 
+ static int16_t s_display_temp = 0;
+ /* 0:none, 1:-HI, 2:-LO, 3:--- */
+@@ -36,13 +45,6 @@
+ static _work_process s_last_work_process = idle;
+ static uint8_t s_probe_connected_last = 0u;
+ static uint8_t s_probe_absent_ticks_100ms = 0u;
+-static uint8_t s_main_outlier_hold_cnt[3] = {0u, 0u, 0u};
+-static uint8_t s_main_outlier_dynamic_cnt[3] = {0u, 0u, 0u};
+-static int16_t s_main_prev_src_c[3] = {0, 0, 0};
+-static uint8_t s_main_prev_src_valid[3] = {0u, 0u, 0u};
+-static int16_t s_fit_prev_c[4] = {0, 0, 0, 0};
+-static int16_t s_fit_trend_acc_c[4] = {0, 0, 0, 0};
+-static uint8_t s_fit_prev_valid[4] = {0u, 0u, 0u, 0u};
+ static float s_temp_coeff[TEMP_COEFF_CHANNEL_COUNT][TEMP_COEFF_TERM_COUNT] =
+ {
+     {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}, /* D surface: y = x by default */
+@@ -50,8 +52,93 @@
+     {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}  /* Cavity: y = x by default */
+ };
+ 
++typedef struct {
++    uint32_t magic;
++    uint16_t version;
++    uint16_t length;
++    uint32_t sequence;
++    uint8_t units;
++    uint8_t reserved[3];
++    float coeff[TEMP_COEFF_CHANNEL_COUNT][TEMP_COEFF_TERM_COUNT];
++    uint16_t crc;
++    uint16_t commit;
++} PersistedConfig;
++
++static uint32_t s_config_sequence = 0u;
++static uint32_t s_config_active_page = 0u;
++
+ static void BluetoothHwPowerOn(void);
+ static void BluetoothHwPowerOff(void);
++
++static uint16_t ConfigCrc16(const uint8_t *data, uint16_t length)
++{
++    uint16_t crc = 0xFFFFu;
++    uint16_t i;
++    uint8_t bit;
++    for (i = 0u; i < length; i++) {
++        crc ^= (uint16_t)data[i] << 8;
++        for (bit = 0u; bit < 8u; bit++) {
++            crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u) : (uint16_t)(crc << 1);
++        }
++    }
++    return crc;
++}
++
++static uint8_t ConfigRecordValid(const PersistedConfig *cfg)
++{
++    if ((cfg->magic != CONFIG_MAGIC) || (cfg->version != CONFIG_VERSION) ||
++        (cfg->length != sizeof(PersistedConfig)) || (cfg->commit != CONFIG_COMMIT) ||
++        ((cfg->units != unitC) && (cfg->units != unitF))) { return 0u; }
++    return (ConfigCrc16((const uint8_t *)cfg, (uint16_t)offsetof(PersistedConfig, crc)) == cfg->crc) ? 1u : 0u;
++}
++
++static void ConfigLoad(void)
++{
++    const PersistedConfig *a = (const PersistedConfig *)CONFIG_PAGE_A_ADDR;
++    const PersistedConfig *b = (const PersistedConfig *)CONFIG_PAGE_B_ADDR;
++    const PersistedConfig *selected = 0;
++    uint8_t va = ConfigRecordValid(a);
++    uint8_t vb = ConfigRecordValid(b);
++    if ((va != 0u) && (vb != 0u)) { selected = ((int32_t)(b->sequence - a->sequence) > 0) ? b : a; }
++    else if (va != 0u) { selected = a; }
++    else if (vb != 0u) { selected = b; }
++    if (selected != 0) {
++        system_data.units = selected->units;
++        memcpy(s_temp_coeff, selected->coeff, sizeof(s_temp_coeff));
++        s_config_sequence = selected->sequence;
++        s_config_active_page = (selected == a) ? CONFIG_PAGE_A_ADDR : CONFIG_PAGE_B_ADDR;
++    }
++}
++
++static uint8_t ConfigSave(void)
++{
++    PersistedConfig cfg;
++    FLASH_EraseInitTypeDef erase;
++    uint32_t page_error = 0u;
++    uint32_t target;
++    uint16_t offset;
++    const uint16_t *src = (const uint16_t *)&cfg;
++    memset(&cfg, 0xFF, sizeof(cfg));
++    cfg.magic = CONFIG_MAGIC; cfg.version = CONFIG_VERSION; cfg.length = sizeof(PersistedConfig);
++    cfg.sequence = s_config_sequence + 1u; cfg.units = system_data.units;
++    memcpy(cfg.coeff, s_temp_coeff, sizeof(s_temp_coeff));
++    cfg.crc = ConfigCrc16((const uint8_t *)&cfg, (uint16_t)offsetof(PersistedConfig, crc));
++    cfg.commit = CONFIG_COMMIT;
++    target = (s_config_active_page == CONFIG_PAGE_A_ADDR) ? CONFIG_PAGE_B_ADDR : CONFIG_PAGE_A_ADDR;
++    erase.TypeErase = FLASH_TYPEERASE_PAGES; erase.PageAddress = target; erase.NbPages = 1u;
++    if (HAL_FLASH_Unlock() != HAL_OK) { return 0u; }
++    if (HAL_FLASHEx_Erase(&erase, &page_error) != HAL_OK) { HAL_FLASH_Lock(); return 0u; }
++    for (offset = 0u; offset < (uint16_t)offsetof(PersistedConfig, commit); offset += 2u) {
++        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, target + offset, src[offset / 2u]) != HAL_OK) {
++            HAL_FLASH_Lock(); return 0u;
++        }
++    }
++    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, target + (uint32_t)offsetof(PersistedConfig, commit), cfg.commit) != HAL_OK) {
++        HAL_FLASH_Lock(); return 0u;
++    }
++    HAL_FLASH_Lock(); s_config_sequence = cfg.sequence; s_config_active_page = target;
++    return 1u;
++}
+ 
+ /**
+   * @function IsMainTempInvalid()
+@@ -148,96 +235,9 @@
+     if (y > 500.0f) { return TempHigh; }
+     if (y < 0.0f) { return TempLow; }
+ 
+-    return TempFromC(RoundFloatToInt16(y));
+-}
+-
+-
+-/**
+-  * @function CalcMainConsensusTemp()
+-  * -----------------------
+-  * @brief    Apply main-channel consensus correction for outlier suppression.
+-  * @param    src_idx - input parameter
+-  * @param    raw_temp - input parameter
+-  * @param    out_display_temp - input parameter
+-  * @note     None
+-  */
+-static uint8_t CalcMainConsensusTemp(uint8_t src_idx, int16_t raw_temp, int16_t *out_display_temp)
+-{
+-    // Store valid main-channel temperatures (converted to Celsius) for consensus calculation.
+-    int16_t t[3];
+-    // Hold consensus reference temperature derived from valid channels.
+-    int16_t ref;
+-    // Hold current source temperature converted to Celsius.
+-    int16_t src_c;
+-    // Hold absolute difference between source and reference.
+-    int16_t d;
+-    // Count how many main channels are currently valid.
+-    uint8_t vcnt = 0u;
+-
+-    // Reject invalid output pointer or unsupported source channel index.
+-    if ((out_display_temp == 0) || (src_idx > 2u)) {
+-        return 0u;
+-    }
+-
+-    // Collect valid main-channel temperatures for robust consensus.
+-    if (IsMainTempInvalid(system_data.pt1000_temp[0]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[0]); }
+-    if (IsMainTempInvalid(system_data.pt1000_temp[1]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[1]); }
+-    if (IsMainTempInvalid(system_data.pt1000_temp[2]) == 0u) { t[vcnt++] = TempToC(system_data.pt1000_temp[2]); }
+-
+-    // Need at least two valid channels to build a meaningful consensus.
+-    if (vcnt < 2u) {
+-        return 0u;
+-    }
+-
+-    // With two channels use mean value; with three channels use median for outlier robustness.
+-    if (vcnt == 2u) {
+-        ref = (int16_t)(((int32_t)t[0] + (int32_t)t[1]) / 2);
+-    } else {
+-        // Sort three values and take middle one as median.
+-        if (t[0] > t[1]) { int16_t x = t[0]; t[0] = t[1]; t[1] = x; }
+-        if (t[1] > t[2]) { int16_t x = t[1]; t[1] = t[2]; t[2] = x; }
+-        if (t[0] > t[1]) { int16_t x = t[0]; t[0] = t[1]; t[1] = x; }
+-        ref = t[1];
+-    }
+-
+-    // Convert source reading to Celsius so all thresholds stay unit-consistent.
+-    src_c = TempToC(raw_temp);
+-    if (src_c >= FIT_TEMP_C_THRESHOLD) {
+-        *out_display_temp = raw_temp;
+-        return 1u;
+-    }
+-    // Track dynamic behavior of the source channel to distinguish real movement from static drift.
+-    if (s_main_prev_src_valid[src_idx] != 0u) {
+-        int16_t step = (src_c >= s_main_prev_src_c[src_idx]) ? (src_c - s_main_prev_src_c[src_idx]) : (int16_t)(s_main_prev_src_c[src_idx] - src_c);
+-        // Count dynamic steps only when per-cycle movement reaches configured minimum.
+-        if (step >= FIT_MAIN_DYNAMIC_STEP_C) {
+-            if (s_main_outlier_dynamic_cnt[src_idx] < 255u) {
+-                s_main_outlier_dynamic_cnt[src_idx]++;
+-            }
+-        } else {
+-            // Reset dynamic counter when movement is too small.
+-            s_main_outlier_dynamic_cnt[src_idx] = 0u;
+-        }
+-    } else {
+-        // No previous sample means no dynamic evidence yet.
+-        s_main_outlier_dynamic_cnt[src_idx] = 0u;
+-    }
+-    // Save current source sample for next dynamic-step comparison.
+-    s_main_prev_src_c[src_idx] = src_c;
+-    s_main_prev_src_valid[src_idx] = 1u;
+-
+-    // Measure source deviation from consensus reference.
+-    d = (src_c >= ref) ? (src_c - ref) : (int16_t)(ref - src_c);
+-    // Enter outlier handling only when deviation exceeds configured threshold.
+-    if (d > FIT_MAIN_OUTLIER_DIFF_C) {
+-        *out_display_temp = raw_temp;
+-        return 1u;
+-    }
+-    // Source returned to consensus range, so clear outlier tracking state.
+-    s_main_outlier_hold_cnt[src_idx] = 0u;
+-    s_main_outlier_dynamic_cnt[src_idx] = 0u;
+-    return 0u;
+-}
++    return RoundFloatToInt16(y);
++}
++
+ 
+ ///**
+ //  * @function CalcFittedTemp()
+@@ -452,6 +452,7 @@
+     s_bt_connected_input = 0u;
+     work_process = start_up;
+     system_data.units = unitC;
++    ConfigLoad();
+     s_display_temp = 0;
+     s_display_special = 3u;
+     for (i = 0u; i < 9u; i++) {
+@@ -470,6 +471,7 @@
+   */
+ void UI_NotifyLocalInteraction(void)
+ {
++    s_idle_ticks_100ms = 0u;
+ }
+ 
+ /**
+@@ -535,7 +537,7 @@
+ {
+     if ((s_bt_state == BT_OFF) && (s_bt_hw_on == 0u)) {
+         UI_RequestBluetoothPairing();
+-    } else {
++    } else if (s_bt_state != BT_CONNECTED) {
+         UI_RequestBluetoothPowerOff();
+     }
+ }
+@@ -550,6 +552,7 @@
+ void UI_SetBluetoothConnectionState(uint8_t connected)
+ {
+     if (connected != 0u) {
++        if (s_bt_connected_input == 0u) { UI_NotifyLocalInteraction(); }
+         s_bt_connected_input = 1u;
+     } else {
+         s_bt_connected_input = 0u;
+@@ -615,13 +618,19 @@
+ uint8_t UI_SetTempCoeff(uint8_t src_idx, const float coeff[TEMP_COEFF_TERM_COUNT])
+ {
+     uint8_t i;
++    float previous[TEMP_COEFF_TERM_COUNT];
+ 
+     if ((src_idx >= TEMP_COEFF_CHANNEL_COUNT) || (coeff == 0)) {
+         return 0u;
+     }
+ 
+     for (i = 0u; i < TEMP_COEFF_TERM_COUNT; i++) {
++        previous[i] = s_temp_coeff[src_idx][i];
+         s_temp_coeff[src_idx][i] = coeff[i];
++    }
++    if (ConfigSave() == 0u) {
++        for (i = 0u; i < TEMP_COEFF_TERM_COUNT; i++) { s_temp_coeff[src_idx][i] = previous[i]; }
++        return 0u;
+     }
+     return 1u;
+ }
+@@ -638,6 +647,50 @@
+         coeff[i] = s_temp_coeff[src_idx][i];
+     }
+     return 1u;
++}
++
++uint8_t UI_SetUnits(uint8_t units, uint8_t persist)
++{
++    uint8_t previous;
++    if ((units != unitC) && (units != unitF)) { return 0u; }
++    if (system_data.units == units) { return 1u; }
++    previous = system_data.units;
++    system_data.units = units;
++    if ((persist != 0u) && (ConfigSave() == 0u)) { system_data.units = previous; return 0u; }
++    return 1u;
++}
++
++void UI_FactoryReset(void)
++{
++    system_data.units = unitC;
++    (void)ConfigSave();
++    UI_NotifyLocalInteraction();
++}
++
++void UI_GetTelemetrySnapshot(MathisTelemetrySnapshot *snapshot)
++{
++    uint8_t i;
++    static const uint8_t internal_index[3] = {2u, 1u, 0u};
++    if (snapshot == 0) { return; }
++    memset(snapshot, 0, sizeof(*snapshot));
++    snapshot->units = system_data.units;
++    for (i = 0u; i < 3u; i++) {
++        int16_t raw = system_data.pt1000_temp[internal_index[i]];
++        int16_t adjusted;
++        if ((raw == HaveTempErr) || (raw == TempDisconnected)) { snapshot->error_code = 0x02u; continue; }
++        adjusted = ApplyMainTempCoefficient(internal_index[i], raw);
++        if (adjusted == TempHigh) { snapshot->high_mask |= (uint8_t)(1u << i); continue; }
++        if (adjusted == TempLow) { snapshot->low_mask |= (uint8_t)(1u << i); continue; }
++        snapshot->temp_c[i] = adjusted; snapshot->valid_mask |= (uint8_t)(1u << i);
++    }
++    if (g_probe_connected == 0u) { snapshot->error_code = 0x02u; }
++    else if (g_probe_over_hi != 0u) { snapshot->high_mask |= 0x08u; }
++    else if (g_probe_over_lo != 0u) { snapshot->low_mask |= 0x08u; }
++    else { snapshot->temp_c[3] = system_data.pt1000_temp[3]; snapshot->valid_mask |= 0x08u; }
++    if (g_battery_mv <= 1100u) { snapshot->battery_percent = 0u; }
++    else if (g_battery_mv >= 1500u) { snapshot->battery_percent = 100u; }
++    else { snapshot->battery_percent = (uint8_t)(((uint32_t)(g_battery_mv - 1100u) * 100u) / 400u); }
++    if (g_battery_low != 0u) { snapshot->error_code = 0x01u; }
+ }
+ 
+ /**
+@@ -786,7 +839,7 @@
+             ch_temp = system_data.pt1000_temp[1];
+             if (ApplyTempSpecial(ch_temp) == 0u) {
+                 fitted_temp = ApplyMainTempCoefficient(1u, ch_temp);
+-                if (ApplyTempSpecial(fitted_temp) == 0u) { s_display_temp = fitted_temp; }
++                if (ApplyTempSpecial(fitted_temp) == 0u) { s_display_temp = TempFromC(fitted_temp); }
+ 						
+             }
+             break;
+@@ -795,7 +848,7 @@
+             ch_temp = system_data.pt1000_temp[0];
+             if (ApplyTempSpecial(ch_temp) == 0u) {
+                 fitted_temp = ApplyMainTempCoefficient(0u, ch_temp);
+-                if (ApplyTempSpecial(fitted_temp) == 0u) { s_display_temp = fitted_temp; }
++                if (ApplyTempSpecial(fitted_temp) == 0u) { s_display_temp = TempFromC(fitted_temp); }
+ 						
+             }
+             break;
+@@ -804,7 +857,7 @@
+             ch_temp = system_data.pt1000_temp[2];
+             if (ApplyTempSpecial(ch_temp) == 0u) {
+                 fitted_temp = ApplyMainTempCoefficient(2u, ch_temp);
+-                if (ApplyTempSpecial(fitted_temp) == 0u) { s_display_temp = fitted_temp; }
++                if (ApplyTempSpecial(fitted_temp) == 0u) { s_display_temp = TempFromC(fitted_temp); }
+ 		
+             }
+             break;
+@@ -832,6 +885,11 @@
+     }
+ }
+ 
++uint8_t UI_GetBluetoothState(void)
++{
++    return s_bt_state;
++}
++
+ /**
+   * @function MainControl()
+   * -------------
+@@ -845,8 +903,6 @@
+     uint8_t probe_was_absent_long;
+ 
+     LedTask();
+-	
+-    TempGetTask();
+ 	
+     probe_now = g_probe_connected;
+ 
+@@ -878,16 +934,15 @@
+ 
+     if (work_process != s_last_work_process) {
+         if (work_process == start_up) {
+-            if (probe_now != 0u) {
+-                DisplayMode = DISPLAY_MODE_PROBE;
+-            } else {
+-                DisplayMode = DISPLAY_MODE_D_SURFACE;
+-            }
+-        }
+-
+-    if (work_process == shutdown) {
++            Power_On;
++            DisplayMode = DISPLAY_MODE_D_SURFACE;
++            s_idle_ticks_100ms = 0u;
++        }
++
++        if (work_process == shutdown) {
+             s_bt_state = BT_OFF;
+             s_bt_icon_on = 0u;
++            BluetoothHwPowerOff();
+             Power_Off;
+         }
+ 
+@@ -896,6 +951,13 @@
+ 
+     BluetoothTask_100ms();
+     UpdateDisplayCache();
++
++    if ((work_process != idle) && (work_process != shutdown)) {
++        if (s_idle_ticks_100ms < IDLE_AUTO_SHUTDOWN_TICKS_100MS) { s_idle_ticks_100ms++; }
++        if (s_idle_ticks_100ms >= IDLE_AUTO_SHUTDOWN_TICKS_100MS) { work_process = shutdown; }
++    } else {
++        s_idle_ticks_100ms = 0u;
++    }
+ 
+         /* Two-step power-off:
+          * 1) enter shutdown immediately (screen off),
+--- 7/tw66gw02/COP/main_control.h
++++ 8/tw66gw02/COP/main_control.h
+@@ -20,6 +20,7 @@
+ #define PROBE_REINSERT_MIN_OFF_TICKS_100MS (5u)
+ #define TEMP_COEFF_CHANNEL_COUNT          (3u)
+ #define TEMP_COEFF_TERM_COUNT             (5u)
++#define MATHIS_MODEL_ID                    (0x04u)
+ 
+ enum {
+     BT_OFF = 0,
+@@ -27,6 +28,16 @@
+     BT_CONNECTED = 2,
+     BT_RECONNECTING = 3
+ };
++
++typedef struct {
++    int16_t temp_c[4];       /* Cavity, Left(O), Right(D), Probe */
++    uint8_t valid_mask;      /* bits 0..3 correspond to temp_c[] */
++    uint8_t high_mask;
++    uint8_t low_mask;
++    uint8_t units;
++    uint8_t battery_percent;
++    uint8_t error_code;
++} MathisTelemetrySnapshot;
+ 
+ void MainControl(void);
+ void SysDataInit(void);
+@@ -36,6 +47,7 @@
+ void UI_RequestBluetoothPowerOff(void);
+ void UI_RequestBluetoothToggle(void);
+ void UI_SetBluetoothConnectionState(uint8_t connected);
++uint8_t UI_GetBluetoothState(void);
+ int16_t UI_GetDisplayTemp(void);
+ uint8_t UI_GetDisplaySpecial(void);
+ uint8_t UI_GetBluetoothIconState(void);
+@@ -43,5 +55,8 @@
+ int16_t UI_GetAdjustedMainTemp(uint8_t src_idx);
+ uint8_t UI_SetTempCoeff(uint8_t src_idx, const float coeff[TEMP_COEFF_TERM_COUNT]);
+ uint8_t UI_GetTempCoeff(uint8_t src_idx, float coeff[TEMP_COEFF_TERM_COUNT]);
++uint8_t UI_SetUnits(uint8_t units, uint8_t persist);
++void UI_FactoryReset(void);
++void UI_GetTelemetrySnapshot(MathisTelemetrySnapshot *snapshot);
+ #endif
+ 
+--- 7/tw66gw02/Core/Inc/stm32f0xx_it.h
++++ 8/tw66gw02/Core/Inc/stm32f0xx_it.h
+@@ -55,7 +55,6 @@
+ void DMA1_Channel2_3_IRQHandler(void);
+ void DMA1_Channel4_5_IRQHandler(void);
+ void ADC1_IRQHandler(void);
+-void TIM3_IRQHandler(void);
+ void USART1_IRQHandler(void);
+ void USART2_IRQHandler(void);
+ /* USER CODE BEGIN EFP */
+--- 7/tw66gw02/Core/Inc/usart.h
++++ 8/tw66gw02/Core/Inc/usart.h
+@@ -44,7 +44,7 @@
+ void MX_USART2_UART_Init(void);
+ 
+ /* USER CODE BEGIN Prototypes */
+-#define COM_RXSIZE  1280
++#define COM_RXSIZE  256
+ 
+ 
+ /* DMA buffer length definitions */
+@@ -60,9 +60,11 @@
+   */
+ typedef struct
+ {
+-	uint8_t  rxBuf[COM_RXSIZE];  /* Receive buffer (1280 bytes) */
+-	uint16_t rxLen;              /* Number of bytes received */
+-	uint8_t  rxFlag;             /* Data ready flag (1 = data ready, 0 = no data) */
++	uint8_t  dmaBuf[COM_RXSIZE]; /* Buffer currently owned by RX DMA */
++	uint8_t  rxBuf[COM_RXSIZE];  /* Stable snapshot consumed by a task */
++	volatile uint16_t rxLen;
++	volatile uint8_t  rxFlag;
++	volatile uint32_t overrunCount;
+ } TypeDefCOM;
+ 
+ /* External communication structures for each UART */
+@@ -79,6 +81,7 @@
+ void com_init(void);
+ void _usart_callback(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, TypeDefCOM *com);
+ void uart_dma_poll_check(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, TypeDefCOM *com);
++uint16_t COM_TakeRx(TypeDefCOM *com, uint8_t *dest, uint16_t capacity);
+ void USART1_SendData(uint8_t *data, uint16_t num);
+ void USART2_SendData(uint8_t *data, uint16_t num);
+ HAL_StatusTypeDef USART2_SendData_DMA(uint8_t *data, uint16_t num);
+--- 7/tw66gw02/Core/Src/main.c
++++ 8/tw66gw02/Core/Src/main.c
+@@ -20,7 +20,6 @@
+ #include "main.h"
+ #include "adc.h"
+ #include "dma.h"
+-#include "tim.h"
+ #include "usart.h"
+ #include "gpio.h"
+ 
+@@ -92,7 +91,6 @@
+   MX_GPIO_Init();
+   MX_DMA_Init();
+   MX_ADC_Init();
+-  MX_TIM3_Init();
+   MX_USART1_UART_Init();
+   MX_USART2_UART_Init();
+   /* USER CODE BEGIN 2 */
+@@ -107,7 +105,7 @@
+  SCH_Add_Task(DisplayTask, 0 , 10); 
+  SCH_Add_Task(TempGetTask, 0 , 500);
+  SCH_Add_Task(MainControl, 0 , 100);
+-// SCH_Add_Task(WirelessTask, 0, 20);
++ SCH_Add_Task(WirelessTask, 0, 20);
+  
+   /* USER CODE END 2 */
+ 
+@@ -130,45 +128,52 @@
+   */
+ void SystemClock_Config(void)
+ {
+-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+-
+-  /** Initializes the RCC Oscillators according to the specified parameters
+-  * in the RCC_OscInitTypeDef structure.
+-  */
+-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI14;
+-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+-  RCC_OscInitStruct.HSI14State = RCC_HSI14_ON;
+-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+-  RCC_OscInitStruct.HSI14CalibrationValue = 16;
+-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL12;
+-  RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV1;
+-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+-  {
+-    Error_Handler();
+-  }
+-
+-  /** Initializes the CPU, AHB and APB buses clocks
+-  */
+-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+-                              |RCC_CLOCKTYPE_PCLK1;
+-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+-
+-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+-  {
+-    Error_Handler();
+-  }
+-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
+-  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
+-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+-  {
+-    Error_Handler();
+-  }
++  uint32_t timeout;
++
++  /* Fixed clock tree: HSI/2 * 12 = 48 MHz, AHB/APB1 undivided. Keeping this
++     board-specific path local avoids linking the generic RCC configuration
++     state machines into every application image. */
++  RCC->CR |= RCC_CR_HSION;
++  timeout = 0x10000u;
++  while (((RCC->CR & RCC_CR_HSIRDY) == 0u) && (--timeout != 0u)) {}
++  if (timeout == 0u) { Error_Handler(); }
++
++  /* A bootloader may enter the application while PLL is already SYSCLK. */
++  RCC->CFGR &= ~RCC_CFGR_SW;
++  timeout = 0x10000u;
++  while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI) && (--timeout != 0u)) {}
++  if (timeout == 0u) { Error_Handler(); }
++
++  RCC->CR2 = (RCC->CR2 & ~RCC_CR2_HSI14TRIM) |
++             (16u << RCC_CR2_HSI14TRIM_Pos) | RCC_CR2_HSI14ON;
++  timeout = 0x10000u;
++  while (((RCC->CR2 & RCC_CR2_HSI14RDY) == 0u) && (--timeout != 0u)) {}
++  if (timeout == 0u) { Error_Handler(); }
++
++  RCC->CR &= ~RCC_CR_PLLON;
++  timeout = 0x10000u;
++  while (((RCC->CR & RCC_CR_PLLRDY) != 0u) && (--timeout != 0u)) {}
++  if (timeout == 0u) { Error_Handler(); }
++
++  RCC->CFGR = (RCC->CFGR & ~(RCC_CFGR_SW | RCC_CFGR_HPRE |
++                RCC_CFGR_PPRE | RCC_CFGR_PLLSRC | RCC_CFGR_PLLMUL)) |
++              RCC_CFGR_PLLSRC_HSI_DIV2 | RCC_CFGR_PLLMUL12;
++  RCC->CFGR2 &= ~RCC_CFGR2_PREDIV;
++  FLASH->ACR = (FLASH->ACR & ~FLASH_ACR_LATENCY) | FLASH_ACR_LATENCY;
++
++  RCC->CR |= RCC_CR_PLLON;
++  timeout = 0x10000u;
++  while (((RCC->CR & RCC_CR_PLLRDY) == 0u) && (--timeout != 0u)) {}
++  if (timeout == 0u) { Error_Handler(); }
++
++  RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | RCC_CFGR_SW_PLL;
++  timeout = 0x10000u;
++  while (((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) && (--timeout != 0u)) {}
++  if (timeout == 0u) { Error_Handler(); }
++
++  RCC->CFGR3 &= ~RCC_CFGR3_USART1SW;
++  SystemCoreClock = 48000000u;
++  if (HAL_InitTick(TICK_INT_PRIORITY) != HAL_OK) { Error_Handler(); }
+ }
+ 
+ /* USER CODE BEGIN 4 */
+--- 7/tw66gw02/Core/Src/stm32f0xx_it.c
++++ 8/tw66gw02/Core/Src/stm32f0xx_it.c
+@@ -58,7 +58,6 @@
+ /* External variables --------------------------------------------------------*/
+ extern DMA_HandleTypeDef hdma_adc;
+ extern ADC_HandleTypeDef hadc;
+-extern TIM_HandleTypeDef htim3;
+ extern DMA_HandleTypeDef hdma_usart1_tx;
+ extern DMA_HandleTypeDef hdma_usart1_rx;
+ extern DMA_HandleTypeDef hdma_usart2_rx;
+@@ -209,20 +208,6 @@
+ }
+ 
+ /**
+-  * @brief This function handles TIM3 global interrupt.
+-  */
+-void TIM3_IRQHandler(void)
+-{
+-  /* USER CODE BEGIN TIM3_IRQn 0 */
+-
+-  /* USER CODE END TIM3_IRQn 0 */
+-  HAL_TIM_IRQHandler(&htim3);
+-  /* USER CODE BEGIN TIM3_IRQn 1 */
+-
+-  /* USER CODE END TIM3_IRQn 1 */
+-}
+-
+-/**
+   * @brief This function handles USART1 global interrupt.
+   */
+ void USART1_IRQHandler(void)
+--- 7/tw66gw02/Core/Src/usart.c
++++ 8/tw66gw02/Core/Src/usart.c
+@@ -285,12 +285,12 @@
+ void com_init(void)
+ {
+   __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
+-  HAL_UART_Receive_DMA(&huart1, COM1.rxBuf, COM_RXSIZE);
++  HAL_UART_Receive_DMA(&huart1, COM1.dmaBuf, COM_RXSIZE);
+ 
+   __HAL_UART_ENABLE_IT(&huart2, UART_IT_IDLE);
+ //  __HAL_DMA_ENABLE_IT(&hdma_usart2_rx, DMA_IT_HT);
+ //  __HAL_DMA_ENABLE_IT(&hdma_usart2_rx, DMA_IT_TC);
+-  HAL_UART_Receive_DMA(&huart2, COM2.rxBuf, COM_RXSIZE);
++  HAL_UART_Receive_DMA(&huart2, COM2.dmaBuf, COM_RXSIZE);
+ }
+ 
+ void _usart_callback(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, TypeDefCOM *com)
+@@ -300,13 +300,29 @@
+   if (__HAL_UART_GET_FLAG(huart, UART_FLAG_IDLE) != RESET)
+   {
+     __HAL_UART_CLEAR_IDLEFLAG(huart);
++    remain = __HAL_DMA_GET_COUNTER(hdma_uart);
+     HAL_UART_DMAStop(huart);
+ 
+-    remain = __HAL_DMA_GET_COUNTER(hdma_uart);
+-    com->rxLen = (uint16_t)(COM_RXSIZE - remain);
+-    com->rxFlag = 1u;
+-
+-    HAL_UART_Receive_DMA(huart, com->rxBuf, COM_RXSIZE);
++    if (remain <= COM_RXSIZE)
++    {
++      uint16_t received = (uint16_t)(COM_RXSIZE - remain);
++      if (received != 0u)
++      {
++        if (com->rxFlag == 0u)
++        {
++          memcpy(com->rxBuf, com->dmaBuf, received);
++          com->rxLen = received;
++          __DMB();
++          com->rxFlag = 1u;
++        }
++        else
++        {
++          com->overrunCount++;
++        }
++      }
++    }
++
++    HAL_UART_Receive_DMA(huart, com->dmaBuf, COM_RXSIZE);
+   }
+ }
+ 
+@@ -327,14 +343,40 @@
+ 
+   current_pos = (uint16_t)(COM_RXSIZE - __HAL_DMA_GET_COUNTER(hdma_uart));
+ 
+-  if ((current_pos == *last_pos) || (com->rxFlag == 1u))
++  if ((current_pos == *last_pos) || (com->rxFlag == 1u) || (current_pos > COM_RXSIZE))
+   {
+     return;
+   }
+ 
++  memcpy(com->rxBuf, com->dmaBuf, current_pos);
+   com->rxLen = current_pos;
++  __DMB();
+   com->rxFlag = 1u;
+   *last_pos = current_pos;
++}
++
++uint16_t COM_TakeRx(TypeDefCOM *com, uint8_t *dest, uint16_t capacity)
++{
++  uint16_t length = 0u;
++  uint32_t primask;
++
++  if ((com == NULL) || (dest == NULL) || (capacity == 0u))
++  {
++    return 0u;
++  }
++
++  primask = __get_PRIMASK();
++  __disable_irq();
++  if (com->rxFlag != 0u)
++  {
++    length = com->rxLen;
++    if (length > capacity) { length = capacity; }
++    memcpy(dest, com->rxBuf, length);
++    com->rxFlag = 0u;
++    com->rxLen = 0u;
++  }
++  if (primask == 0u) { __enable_irq(); }
++  return length;
+ }
+ 
+ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+--- 7/tw66gw02/MDK-ARM/tw66gw02.sct
++++ 8/tw66gw02/MDK-ARM/tw66gw02.sct
+@@ -2,8 +2,8 @@
+ ; *** Scatter-Loading Description File generated by uVision ***
+ ; *************************************************************
+ 
+-LR_IROM1 0x08000000 0x00010000  {    ; load region size_region
+-  ER_IROM1 0x08000000 0x00010000  {  ; load address = execution address
++LR_IROM1 0x08000000 0x0000F800  {    ; reserve final two 1KB pages for settings
++  ER_IROM1 0x08000000 0x0000F800  {  ; load address = execution address
+    *.o (RESET, +First)
+    *(InRoot$$Sections)
+    .ANY (+RO)
+--- 7/tw66gw02/MDK-ARM/tw66gw02.uvprojx
++++ 8/tw66gw02/MDK-ARM/tw66gw02.uvprojx
+@@ -277,7 +277,7 @@
+               <OCR_RVCT4>
+                 <Type>1</Type>
+                 <StartAddress>0x8000000</StartAddress>
+-                <Size>0x10000</Size>
++                <Size>0xf800</Size>
+               </OCR_RVCT4>
+               <OCR_RVCT5>
+                 <Type>1</Type>
+@@ -314,7 +314,7 @@
+           </ArmAdsMisc>
+           <Cads>
+             <interw>1</interw>
+-            <Optim>1</Optim>
++            <Optim>3</Optim>
+             <oTime>0</oTime>
+             <SplitLS>0</SplitLS>
+             <OneElfS>1</OneElfS>

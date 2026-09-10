@@ -1,0 +1,116 @@
+{
+  "id": "snapshot14_v100-to-v101_DEV",
+  "snapshot_date": "2026-09-10",
+  "classification": "DEV / 非量产交付",
+  "source_project": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02",
+  "git_base_head": "无提交",
+  "git_head_is_exact_build_commit": false,
+  "source_fingerprint_file": "source-fingerprint.json",
+  "source_fingerprint_sha256": "906e46fa991e48aa3eb751d11963d3dc8b1befcc7a7d4ff6114cea6e654f5af4",
+  "source_association": "本次清理后重新构建并通过 OTA 检查；当前源码指纹对应本次构建。",
+  "factory_version": 100,
+  "ota_version": 101,
+  "protocol_version": "待核实；公共 BLE 文档 v0.4 Draft 不等同于本包已验证协议版本",
+  "application_base": "0x08001800",
+  "bootloader_partition_kib": 6,
+  "bootloader_iteration": "development / RSA verification disabled",
+  "boot_api_version": "未在 manifest 声明",
+  "slot_kib": 27,
+  "hardware": "工程目标 STM32F030C8；板卡修订号及 MCU/BLE/手机 APP 适配组合待实机核实",
+  "build_tools": "Keil uVision / ARM Compiler 5.06 update 7；历史 Bootloader 原构建环境仅有现存脚本/日志依据",
+  "validation": {
+    "date": "2026-09-10",
+    "ota_size_sha256_crc32": "PASS",
+    "ota_payload_matches_application": "PASS",
+    "factory_boot_partition_and_application": "PASS",
+    "signature": "384-byte zero DEV placeholder checked",
+    "hardware": "PENDING",
+    "application_base": "0x08001800"
+  },
+  "files": [
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/App_Upload/mathis_ota_v101.manifest.json",
+      "file": "App_Upload/mathis_ota_v101.manifest.json",
+      "bytes": 483,
+      "sha256": "51a85e3218820ca4af222106c1f1f5587f941acaaed1da88d5b1a6602615d7c7"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/App_Upload/mathis_ota_v101.ota",
+      "file": "App_Upload/mathis_ota_v101.ota",
+      "bytes": 24404,
+      "sha256": "d3d96e56743123cbb024f2d253272fd4930a883fd845a5a0425a8a7429deae1e"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v100.bin",
+      "file": "Debug_Only/mathis_app_v100.bin",
+      "bytes": 24020,
+      "sha256": "8cb4fda8c202e48115b1396175115a80bcb4bf5a107ebeb44c9bccf1b05bfcb3"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v100.hex",
+      "file": "Debug_Only/mathis_app_v100.hex",
+      "bytes": 67617,
+      "sha256": "f443b17ee711101e814be428436364bfa0ecdc44c6f0e5c02abe09a7708fccb6"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v101.bin",
+      "file": "Debug_Only/mathis_app_v101.bin",
+      "bytes": 24020,
+      "sha256": "7f237f54f88f64d54cd3750a601f692fce8b94662afe992534d71d6ef729bfcd"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v101.hex",
+      "file": "Debug_Only/mathis_app_v101.hex",
+      "bytes": 67617,
+      "sha256": "b414fe9bd747ff88e2f6e2e250b919e7ec01e60d8b30481125ca4dbd1fb089b0"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/Factory_Flash/mathis_factory_v100.bin",
+      "file": "Factory_Flash/mathis_factory_v100.bin",
+      "bytes": 30164,
+      "sha256": "0e2b5c4c60b2de65d76c3278b51a38aa53563b00583efd5bec0554c590285cf9"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/Factory_Flash/mathis_factory_v100.hex",
+      "file": "Factory_Flash/mathis_factory_v100.hex",
+      "bytes": 74103,
+      "sha256": "59e9236719b606b5b75dfc6420fff3030378bb9362c6d6b1c0694fbc90bba57e"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/README.txt",
+      "file": "README.txt",
+      "bytes": 365,
+      "sha256": "ac2ebbc7193a92863b631ba474b1595b902ef6121d5feb74feebd909a7dd9d1d"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/Release_v100_to_v101/SHA256SUMS.txt",
+      "file": "Verification/Original_release_SHA256SUMS.txt",
+      "bytes": 416,
+      "sha256": "afc6c3211667bfb4898dbe78650be11393a4cda02deb87e764ab342c29877795"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/Bootloader/build/mathis_bootloader.bin",
+      "file": "Bootloader/mathis_bootloader.bin",
+      "bytes": 2292,
+      "sha256": "6b5a0ee884b80554bcd4e8cadf0bcad192481ce6fca5fe2b00a082a073dd3a5d"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/build_v100.log",
+      "file": "Verification/build_v100.log",
+      "bytes": 1637,
+      "sha256": "82f0fd1d68bb9974242c2cc7cddfae50dfcde5fe8fe125f59cbae17859d40a62"
+    },
+    {
+      "source": "01_固件工程/development/snapshot-14_refactor-from-10/tw66gw02/OTA_Artifacts/build_v101.log",
+      "file": "Verification/build_v101.log",
+      "bytes": 1637,
+      "sha256": "9ccba68c574d6c49f1af2196a00e57d51efd6c781d629abdeb7f22025dda856e"
+    },
+    {
+      "source": "00_项目索引/证据/第四步/snapshot14_ota_test.log",
+      "file": "Verification/snapshot14_ota_test.log",
+      "bytes": 160,
+      "sha256": "67f264bb337ed92d458f7c3d55cd4f72d6dd177451dd89aa8888bf86809446fa"
+    }
+  ]
+}

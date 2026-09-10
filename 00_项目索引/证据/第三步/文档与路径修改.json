@@ -1,0 +1,72 @@
+[
+  {
+    "path": "README.md",
+    "original_path": "README.md",
+    "before_sha256": "532e920ed245738b1bf12ad1fb13d381f3e6ad7a38eb15d5ddbdff23843c1300",
+    "after_sha256": "da0e52524ab658ffd9e72d2f25a4a71d4fee7c1e07df110f8e2f9f7f04a2560e",
+    "reason": "Relocate local documentation links"
+  },
+  {
+    "path": "版本1-13差异与14复制记录.md",
+    "original_path": "版本1-13差异与14复制记录.md",
+    "before_sha256": "5573bd985751e9bfa2053e797871af13fe2518e144b063e174ec6c3129562b3c",
+    "after_sha256": "12de9952b0ea7ad57e271f77793ca8fc96c304ec5ca8ec1d484a4dc79d613e8c",
+    "reason": "Relocate local documentation links"
+  },
+  {
+    "path": "00_项目索引/文件用途索引.md",
+    "original_path": "00_项目索引/文件用途索引.md",
+    "before_sha256": "2e32c99d2450a54e854fbc5a5ffac75c249bd0473df45c4c9385085850a5f816",
+    "after_sha256": "e887668dcd90c49c0b2b9a19bfb7d57b7d88abdd186de546afc92efcb79032bc",
+    "reason": "Relocate local documentation links"
+  },
+  {
+    "path": "00_项目索引/架构与迁移计划.md",
+    "original_path": "00_项目索引/架构与迁移计划.md",
+    "before_sha256": "131ffe3090865eb7f4d4e044dc16f3bf3926471aa6dfbda588d47d281936bef7",
+    "after_sha256": "beb35f9f6125c34b6846112ef7404f517dc7c205f8f4fbf96bcb707c40765d50",
+    "reason": "Relocate local documentation links"
+  },
+  {
+    "path": "00_项目索引/版本总表.md",
+    "original_path": "00_项目索引/版本总表.md",
+    "before_sha256": "2ca918bedd861c9195e40fce6b0986cf6422c36b673fc3fe00238c412e3e5074",
+    "after_sha256": "c4d888c9da8a5dc92ead4596d0ac6091590f86cc941f8bf81ff455d40cd64b7b",
+    "reason": "Relocate local documentation links"
+  },
+  {
+    "path": "04_测试与联调/README.md",
+    "original_path": "04_测试与联调/README.md",
+    "before_sha256": "2f0ba36417433171a3bcecf0cf25ee91e4c512b9f9e628bc8b3cac7d2e0205d2",
+    "after_sha256": "1b140438d8d264b984d75592872bf3ea4879a953db17221bc04152af0a0cbcab",
+    "reason": "Relocate local documentation links"
+  },
+  {
+    "path": "05_发布与交付/README.md",
+    "original_path": "05_发布与交付/README.md",
+    "before_sha256": "5635287d03d75347865308e245010456698266b3a0bc997ac7ac40d6e9d0b013",
+    "after_sha256": "fa9b1c354f0acf3763ffe4c5ffb219516534a3e53c2e99f254090cd2e36eb3ac",
+    "reason": "Relocate local documentation links"
+  },
+  {
+    "path": "01_固件工程/development/snapshot-13_poweroff-v104/tw66gw02/BuildV104Delivery.ps1",
+    "original_path": "13/tw66gw02/BuildV104Delivery.ps1",
+    "before_sha256": "8fd20f0c3d9efff8f0a47deb4e8919edcee2f4368f77b59dfcfa11412a8cd366",
+    "after_sha256": "d5a924917d93e6e2dcd4e31a964ecbc37edc4c72da35f4e8dacaa70efa7057b2",
+    "reason": "Preserve snapshot-12 key provider using relative default"
+  },
+  {
+    "path": "06_工具与参考/JFlash配置/tw66gw02_snapshot10.jflash",
+    "original_path": "tw66gw02.jflash",
+    "before_sha256": "421026ca2b6b0f5f27e09dd28a97fe8b7579af8137b13e4c2c4b22a44739a037",
+    "after_sha256": "830c69f2932bb9e0dc0d528db17d710237c43d87e51299cff4f856108d597c4c",
+    "reason": "Preserve J-Flash image selection for snapshot 10"
+  },
+  {
+    "path": "01_固件工程/main/PrepareFactoryBootImage.ps1",
+    "original_path": "PrepareFactoryBootImage.ps1",
+    "before_sha256": "e6bba671feca2344dbd3f4d561a7e70c578b00b7963760a70bc0c2fe5502a171",
+    "after_sha256": "27366f14f7bd1f8d5358a5d5518d0f4c7c96a9ffb18e9ce598be43c34cd8ea74",
+    "reason": "Generate ignored boot_image.s for reproducible main factory build"
+  }
+]

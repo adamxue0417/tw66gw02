@@ -1,0 +1,170 @@
+[
+  {
+    "original_source": "4/260323_Mathis_UI_Operational_Logic-V1.6.xlsx",
+    "current_source": "01_固件工程/history/snapshot-04_calibration/260323_Mathis_UI_Operational_Logic-V1.6.xlsx",
+    "public_target": "02_需求与协议/UI操作逻辑/原始需求/UI_Operational_Logic_V1.6.xlsx",
+    "original_source_sha256": "80b0a260ed1ee9d98cfd48065c0c43642d79ce022f375ac59607e2f00d42ae3d",
+    "public_target_sha256": "80b0a260ed1ee9d98cfd48065c0c43642d79ce022f375ac59607e2f00d42ae3d"
+  },
+  {
+    "original_source": "3/260323_Mathis_UI_Operational_Logic-V1.5.xlsx",
+    "current_source": "01_固件工程/history/snapshot-03_temperature-errors/260323_Mathis_UI_Operational_Logic-V1.5.xlsx",
+    "public_target": "02_需求与协议/UI操作逻辑/原始需求/UI_Operational_Logic_V1.5.xlsx",
+    "original_source_sha256": "7a1251b81acefee6177127e64e3ec7c4c8350ea81629839d4e3fdc1d7416323d",
+    "public_target_sha256": "7a1251b81acefee6177127e64e3ec7c4c8350ea81629839d4e3fdc1d7416323d"
+  },
+  {
+    "original_source": "260323_Mathis_UI_Operational_Logic-V1.6_完整解析.md",
+    "current_source": "260323_Mathis_UI_Operational_Logic-V1.6_完整解析.md",
+    "public_target": "02_需求与协议/UI操作逻辑/解析/260323_Mathis_UI_Operational_Logic-V1.6_完整解析.md",
+    "original_source_sha256": "e89675f8c38f83065bb1e900fcbc35ebb4d93d0ca4168bab5ae969723db91098",
+    "public_target_sha256": "d975154bd7443adc5c1936d802fb216b6d42b43a63c5aae3d261c6dcdbb4f987"
+  },
+  {
+    "original_source": "Mathis_operation_process.md",
+    "current_source": "Mathis_operation_process.md",
+    "public_target": "02_需求与协议/UI操作逻辑/解析/Mathis_operation_process.md",
+    "original_source_sha256": "a9d1d4d0e0ca5c37a25c48c17d025125961de0bae86f6198f4c39636e5bae8ff",
+    "public_target_sha256": "a9d1d4d0e0ca5c37a25c48c17d025125961de0bae86f6198f4c39636e5bae8ff"
+  },
+  {
+    "original_source": "10/mathis-ble-specification.md",
+    "current_source": "01_固件工程/history/snapshot-10_development-ota/mathis-ble-specification.md",
+    "public_target": "02_需求与协议/BLE协议/Mathis_BLE_Specification_v0.4_Draft.md",
+    "original_source_sha256": "9c886eef3d1f416512d65076f94a8893554f43c35683b00f7bd5955c0cf1af16",
+    "public_target_sha256": "9c886eef3d1f416512d65076f94a8893554f43c35683b00f7bd5955c0cf1af16"
+  },
+  {
+    "original_source": "10/mathis-ble-specification_old.md",
+    "current_source": "01_固件工程/history/snapshot-10_development-ota/mathis-ble-specification_old.md",
+    "public_target": "02_需求与协议/BLE协议/Mathis_BLE_Specification_v0.3_Draft.md",
+    "original_source_sha256": "9e7df6c66985e0230d47a6caeba6759ea85c4d2cdb1c91007764c167222dc902",
+    "public_target_sha256": "9e7df6c66985e0230d47a6caeba6759ea85c4d2cdb1c91007764c167222dc902"
+  },
+  {
+    "original_source": "3/protocolv1.0.docx",
+    "current_source": "01_固件工程/history/snapshot-03_temperature-errors/protocolv1.0.docx",
+    "public_target": "02_需求与协议/BLE协议/历史协议/protocolv1.0.docx",
+    "original_source_sha256": "3401c68c0eff295852bd987681a16bcf5fb82c362558a75756e6a2d6002f3122",
+    "public_target_sha256": "3401c68c0eff295852bd987681a16bcf5fb82c362558a75756e6a2d6002f3122"
+  },
+  {
+    "original_source": "3/protocolv1.0_en.docx",
+    "current_source": "01_固件工程/history/snapshot-03_temperature-errors/protocolv1.0_en.docx",
+    "public_target": "02_需求与协议/BLE协议/历史协议/protocolv1.0_en.docx",
+    "original_source_sha256": "e8ce4e755f219bd3894033f71e8c82f9ff2878b578cbdb84aaf1cd91a9949097",
+    "public_target_sha256": "e8ce4e755f219bd3894033f71e8c82f9ff2878b578cbdb84aaf1cd91a9949097"
+  },
+  {
+    "original_source": "3/protocolv1.0_fixed.docx",
+    "current_source": "01_固件工程/history/snapshot-03_temperature-errors/protocolv1.0_fixed.docx",
+    "public_target": "02_需求与协议/BLE协议/历史协议/protocolv1.0_fixed.docx",
+    "original_source_sha256": "46f8087bb3674f48c606303e10226a5505208df9057984bc61d68849d16732bc",
+    "public_target_sha256": "46f8087bb3674f48c606303e10226a5505208df9057984bc61d68849d16732bc"
+  },
+  {
+    "original_source": "5/protocolv1.docx",
+    "current_source": "01_固件工程/history/snapshot-05_units-display/protocolv1.docx",
+    "public_target": "02_需求与协议/BLE协议/历史协议/protocolv1.docx",
+    "original_source_sha256": "7a38e69da5fabd3aba17a40bdf6bee6b7bced384390bcc7c698e9b4987e23af3",
+    "public_target_sha256": "7a38e69da5fabd3aba17a40bdf6bee6b7bced384390bcc7c698e9b4987e23af3"
+  },
+  {
+    "original_source": "EMB1082_蓝牙接口说明.md",
+    "current_source": "01_固件工程/main/EMB1082_蓝牙接口说明.md",
+    "public_target": "02_需求与协议/模块接口/EMB1082_蓝牙接口说明.md",
+    "original_source_sha256": "247668bb06785b2acc3d6d71c7cee150c2183fa06a8342ee0b4c4207f7eba295",
+    "public_target_sha256": "247668bb06785b2acc3d6d71c7cee150c2183fa06a8342ee0b4c4207f7eba295"
+  },
+  {
+    "original_source": "TEST/base command.docx",
+    "current_source": "04_测试与联调/实验工程/TEST/base command.docx",
+    "public_target": "02_需求与协议/模块接口/base command.docx",
+    "original_source_sha256": "82a1ada507ede3d282a5f5e25acdb26cb72432cf93874f0482473ef5f66e1444",
+    "public_target_sha256": "82a1ada507ede3d282a5f5e25acdb26cb72432cf93874f0482473ef5f66e1444"
+  },
+  {
+    "original_source": "TEST/EMB101x系列合家亲蓝牙 AT 指令.docx",
+    "current_source": "04_测试与联调/实验工程/TEST/EMB101x系列合家亲蓝牙 AT 指令.docx",
+    "public_target": "02_需求与协议/模块接口/EMB101x系列合家亲蓝牙 AT 指令.docx",
+    "original_source_sha256": "ee93a3b8e4156680d0f405a640336a997ea878dd84faec642b0f29891e6cff10",
+    "public_target_sha256": "ee93a3b8e4156680d0f405a640336a997ea878dd84faec642b0f29891e6cff10"
+  },
+  {
+    "original_source": "TEST/功能指令.docx",
+    "current_source": "04_测试与联调/实验工程/TEST/功能指令.docx",
+    "public_target": "02_需求与协议/模块接口/功能指令.docx",
+    "original_source_sha256": "72c0c21ae33aca610075468a2219edc97f89fa86d2d39f147ff53044649ac1da",
+    "public_target_sha256": "72c0c21ae33aca610075468a2219edc97f89fa86d2d39f147ff53044649ac1da"
+  },
+  {
+    "original_source": "1/Pt1000温度阻值对照表.xls",
+    "current_source": "01_固件工程/history/snapshot-01_early-baseline/Pt1000温度阻值对照表.xls",
+    "public_target": "02_需求与协议/温度与校准/Pt1000温度阻值对照表.xls",
+    "original_source_sha256": "6ad9079c761683c36a5f31eb0159c3c6aecfed67dabbda5d1435633d5af5d816",
+    "public_target_sha256": "6ad9079c761683c36a5f31eb0159c3c6aecfed67dabbda5d1435633d5af5d816"
+  },
+  {
+    "original_source": "4/Coefficient proposal MATHIS.pptx",
+    "current_source": "01_固件工程/history/snapshot-04_calibration/Coefficient proposal MATHIS.pptx",
+    "public_target": "02_需求与协议/温度与校准/Coefficient proposal MATHIS.pptx",
+    "original_source_sha256": "3468bbd1763bb7e32c22c8873f66f5bf462e7e132ffb3e342a1da4b6a6e040a9",
+    "public_target_sha256": "3468bbd1763bb7e32c22c8873f66f5bf462e7e132ffb3e342a1da4b6a6e040a9"
+  },
+  {
+    "original_source": "TW66GW02-ON.pdf",
+    "current_source": "TW66GW02-ON.pdf",
+    "public_target": "03_硬件资料/TW66GW02-ON.pdf",
+    "original_source_sha256": "0d61e454e97e34515a0a6cd6f4a52b7bcf308705f48e8adbea41001b7a5f6b98",
+    "public_target_sha256": "0d61e454e97e34515a0a6cd6f4a52b7bcf308705f48e8adbea41001b7a5f6b98"
+  },
+  {
+    "original_source": "ostest/TW66GW02-ON_260408.pdf",
+    "current_source": "04_测试与联调/实验工程/ostest/TW66GW02-ON_260408.pdf",
+    "public_target": "03_硬件资料/历史版本/TW66GW02-ON_260408.pdf",
+    "original_source_sha256": "4a7d0bc3482cbc5191b93c23953307c8c68b2fb31654c372604c2cbe00681bf9",
+    "public_target_sha256": "4a7d0bc3482cbc5191b93c23953307c8c68b2fb31654c372604c2cbe00681bf9"
+  },
+  {
+    "original_source": "Mathis—Operational logic test-20260521.pptx",
+    "current_source": "Mathis—Operational logic test-20260521.pptx",
+    "public_target": "04_测试与联调/操作逻辑/Mathis—Operational logic test-20260521.pptx",
+    "original_source_sha256": "d0fca36401c8aa18f14ba4ac1caf8cc523ff357aa9a651f7ce09c7f73482cc3e",
+    "public_target_sha256": "d0fca36401c8aa18f14ba4ac1caf8cc523ff357aa9a651f7ce09c7f73482cc3e"
+  },
+  {
+    "original_source": "TEST/蓝牙单功能测试链.md",
+    "current_source": "04_测试与联调/实验工程/TEST/蓝牙单功能测试链.md",
+    "public_target": "04_测试与联调/BLE联调/蓝牙单功能测试链.md",
+    "original_source_sha256": "a27ddcd623553eeea00f405ac5f0c98c332c491fe3a6841ae39d0598995e1879",
+    "public_target_sha256": "a27ddcd623553eeea00f405ac5f0c98c332c491fe3a6841ae39d0598995e1879"
+  },
+  {
+    "original_source": "10/outputs/01a01df3-f219-70e3-823c-0747ab78d408/Mathis_UI_测试清单_v0.1.xlsx",
+    "current_source": "01_固件工程/history/snapshot-10_development-ota/outputs/01a01df3-f219-70e3-823c-0747ab78d408/Mathis_UI_测试清单_v0.1.xlsx",
+    "public_target": "04_测试与联调/测试清单/Mathis_UI_测试清单_v0.1.xlsx",
+    "original_source_sha256": "b447a51b8479ec58a11aa35059422a15b91f941d6d4b831201e98f4804564439",
+    "public_target_sha256": "b447a51b8479ec58a11aa35059422a15b91f941d6d4b831201e98f4804564439"
+  },
+  {
+    "original_source": "10/outputs/01a01df3-f219-70e3-823c-0747ab78d408/preview/APP基础测试.pdf",
+    "current_source": "01_固件工程/history/snapshot-10_development-ota/outputs/01a01df3-f219-70e3-823c-0747ab78d408/preview/APP基础测试.pdf",
+    "public_target": "04_测试与联调/测试清单/preview/APP基础测试.pdf",
+    "original_source_sha256": "6f45ab2e9a746cd8aaada4f0fa706ede1332b5f6cd474e68a77c07970a335731",
+    "public_target_sha256": "6f45ab2e9a746cd8aaada4f0fa706ede1332b5f6cd474e68a77c07970a335731"
+  },
+  {
+    "original_source": "10/outputs/01a01df3-f219-70e3-823c-0747ab78d408/preview/UI操作逻辑.pdf",
+    "current_source": "01_固件工程/history/snapshot-10_development-ota/outputs/01a01df3-f219-70e3-823c-0747ab78d408/preview/UI操作逻辑.pdf",
+    "public_target": "04_测试与联调/测试清单/preview/UI操作逻辑.pdf",
+    "original_source_sha256": "74ebb477940d078af64b10c60847f378034f74dc020fe99693f8b439a028ced7",
+    "public_target_sha256": "74ebb477940d078af64b10c60847f378034f74dc020fe99693f8b439a028ced7"
+  },
+  {
+    "original_source": "10/outputs/01a01df3-f219-70e3-823c-0747ab78d408/preview/测试概览.pdf",
+    "current_source": "01_固件工程/history/snapshot-10_development-ota/outputs/01a01df3-f219-70e3-823c-0747ab78d408/preview/测试概览.pdf",
+    "public_target": "04_测试与联调/测试清单/preview/测试概览.pdf",
+    "original_source_sha256": "eb02b02070b53bec8c3fe0a00b64e4abccfb972b9ac3ef76799737d6621f9021",
+    "public_target_sha256": "eb02b02070b53bec8c3fe0a00b64e4abccfb972b9ac3ef76799737d6621f9021"
+  }
+]

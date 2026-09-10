@@ -1,0 +1,54 @@
+{
+  "scope": "Directory migration and offline build/test verification only",
+  "main_factory": {
+    "status": "passed",
+    "errors": 0,
+    "warnings": 0,
+    "fix": "PrepareFactoryBootImage.ps1 generates boot_image.s"
+  },
+  "main_ota": {
+    "status": "passed",
+    "interrupted_swap_rollback_cases": 162
+  },
+  "snapshot14_ota": {
+    "status": "passed_after_regenerating_startup_diagnostics",
+    "interrupted_swap_rollback_cases": 162
+  },
+  "snapshot14_scripts": {
+    "status": "passed",
+    "checks": 43
+  },
+  "snapshot14_c": {
+    "status": "passed",
+    "checks": 260,
+    "independent_headers": 13,
+    "environment": "Same offline command completed outside sandbox after local Unicorn read permission error"
+  },
+  "v103_application": {
+    "status": "passed",
+    "bytes": 23240,
+    "signing_executed": false
+  },
+  "v104_application": {
+    "status": "passed",
+    "bytes": 24476,
+    "signing_executed": false
+  },
+  "v104_pc_ble": {
+    "status": "passed_offline_selftest",
+    "venv_entry_verified": true,
+    "hardware_connected": false
+  },
+  "v12_legacy_factory": {
+    "status": "failed_preexisting_layout_mismatch",
+    "bootloader_bytes": 8188,
+    "legacy_boot_region_bytes": 6144
+  },
+  "snapshot14_workbook_data": {
+    "status": "failed_reproduced_from_pre_migration_backup",
+    "message": "A test case does not contain 13 cells.",
+    "test_modified": false
+  },
+  "hardware_flashing": false,
+  "git_commit_created": false
+}

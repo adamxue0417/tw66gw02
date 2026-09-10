@@ -1,0 +1,250 @@
+--- 5/tw66gw02/BSP/wireless.c
++++ 7/tw66gw02/BSP/wireless.c
+@@ -95,58 +95,6 @@
+     *l = (uint8_t)(v % 10u);
+ }
+ 
+-static void wl_put_temp3(uint8_t offset, int16_t temp)
+-{
+-    uint8_t h, t, l;
+-
+-    if (wl_is_special_temp(temp) != 0u) {
+-        s_tx[offset] = 0x09u;
+-        s_tx[offset + 1u] = 0x06u;
+-        s_tx[offset + 2u] = 0x00u;
+-    } else {
+-        wl_split3((uint16_t)temp, &h, &t, &l);
+-        s_tx[offset] = h;
+-        s_tx[offset + 1u] = t;
+-        s_tx[offset + 2u] = l;
+-    }
+-}
+-
+-static uint8_t wl_get_temp_level(int16_t temp)
+-{
+-    int16_t temp_f;
+-
+-    if (wl_is_special_temp(temp) != 0u) {
+-        return 0x01u;
+-    }
+-
+-    temp_f = temp;
+-    if (system_data.units == unitC) {
+-        temp_f = (int16_t)(((int32_t)temp * 9) / 5 + 32);
+-    }
+-
+-    if (temp_f <= 100) { return 0x01u; }
+-    if (temp_f <= 167) { return 0x02u; }
+-    if (temp_f <= 234) { return 0x03u; }
+-    if (temp_f <= 300) { return 0x04u; }
+-    if (temp_f <= 367) { return 0x05u; }
+-    if (temp_f <= 434) { return 0x06u; }
+-    return 0x07u;
+-}
+-
+-static uint8_t wl_get_temp_status(int16_t main_temp, int16_t probe1_temp)
+-{
+-    uint8_t status = 0u;
+-
+-    if (wl_is_special_temp(main_temp) != 0u) {
+-        status |= 0x01u;
+-    }
+-    if (wl_is_special_temp(probe1_temp) != 0u) {
+-        status |= 0x02u;
+-    }
+-    status |= 0x04u; /* Probe2 is reserved/unsupported in this product. */
+-    return status;
+-}
+-
+ static int32_t wl_parse_s32_be(const uint8_t *p)
+ {
+     uint32_t u;
+@@ -240,7 +188,7 @@
+     uint16_t step;
+     uint8_t h, t, l;
+ 
+-    if ((len < 5u) || (rx[2] != 0x01u)) {
++    if ((len < 7u) || (rx[2] != 0x01u)) {
+         return;
+     }
+ 
+@@ -267,7 +215,7 @@
+     uint16_t step;
+     uint8_t h, t, l;
+ 
+-    if ((len < 5u) || (rx[2] != 0x01u)) {
++    if ((len < 7u) || (rx[2] != 0x01u)) {
+         return;
+     }
+ 
+@@ -385,7 +333,7 @@
+         return;
+     }
+ 
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_STATUS_WORK;
++    s_tx[0] = WL_HEAD; s_tx[1] = 0x1Bu;
+     s_tx[2] = (work_process == set) ? 0x01u : 0x02u;
+     s_tx[3] = ((work_process == idle) || (work_process == shutdown)) ? 0x02u : 0x01u;
+     s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u;
+@@ -396,70 +344,24 @@
+ 
+     in_t = wl_get_display_main_temp();
+     p1 = wl_get_probe_temp();
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_STATUS_TEMP;
+-    s_tx[2] = wl_get_temp_level(in_t);
++    s_tx[0] = WL_HEAD; s_tx[1] = 0x2Bu;
++    s_tx[2] = 0x01u;
+     s_tx[3] = (system_data.units == unitF) ? 0x01u : 0x02u;
+     s_tx[4] = 0x00u; s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u;
+-    wl_put_temp3(8u, in_t);
+-    wl_put_temp3(11u, p1);
+-    s_tx[14] = wl_get_temp_status(in_t, p1);
++    if (wl_is_special_temp(in_t) != 0u) { s_tx[8] = 0x09u; s_tx[9] = 0x06u; s_tx[10] = 0x00u; }
++    else { wl_split3((uint16_t)in_t, &h, &t, &l); s_tx[8] = h; s_tx[9] = t; s_tx[10] = l; }
++    if (wl_is_special_temp(p1) != 0u) { s_tx[11] = 0x09u; s_tx[12] = 0x06u; s_tx[13] = 0x00u; s_tx[14] = 0x02u; }
++    else { wl_split3((uint16_t)p1, &h, &t, &l); s_tx[11] = h; s_tx[12] = t; s_tx[13] = l; s_tx[14] = 0x00u; }
+     s_tx[15] = WL_TAIL;
+     wl_send(s_tx, 16u);
+ 
+-    s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_STATUS_OUTPUT;
++    s_tx[0] = WL_HEAD; s_tx[1] = 0x3Bu;
+     s_tx[2] = 0x09u; s_tx[3] = 0x06u; s_tx[4] = 0x00u; /* probe2 unsupported */
+-    s_tx[5] = 0x00u; /* Prime reserved */
+-    s_tx[6] = 0x00u; s_tx[7] = 0x00u; s_tx[8] = 0x00u; /* Fan/Mot/Hot reserved */
++    s_tx[5] = 0x00u; s_tx[6] = 0x00u; s_tx[7] = 0x00u; s_tx[8] = 0x00u;
+     s_tx[9] = 0x00u; s_tx[10] = 0x00u; s_tx[11] = 0x00u;
+     s_tx[12] = 0x00u; s_tx[13] = 0x00u; s_tx[14] = 0x00u;
+     s_tx[15] = WL_TAIL;
+     wl_send(s_tx, 16u);
+-}
+-
+-static void wl_handle_query_runtime(const uint8_t *rx, uint16_t len)
+-{
+-    (void)len;
+-    if (rx[2] != 0x01u) { return; }
+-
+-    s_tx[0] = WL_HEAD;
+-    s_tx[1] = WL_CMD_QUERY_RUNTIME;
+-    s_tx[2] = 0x00u;
+-    s_tx[3] = 0x00u;
+-    s_tx[4] = 0x00u;
+-    s_tx[5] = WL_TAIL;
+-    wl_send(s_tx, 6u);
+-}
+-
+-static void wl_handle_pid_pwm(const uint8_t *rx, uint16_t len)
+-{
+-    (void)rx;
+-    (void)len;
+-
+-    memset(s_tx, 0, 15u);
+-    s_tx[0] = WL_HEAD;
+-    s_tx[1] = WL_CMD_PID_PWM;
+-    s_tx[14] = WL_TAIL;
+-    wl_send(s_tx, 15u);
+-}
+-
+-static void wl_handle_shutdown_time(const uint8_t *rx, uint16_t len)
+-{
+-    if (rx[2] == 0x01u) {
+-        memset(s_tx, 0, 10u);
+-        s_tx[0] = WL_HEAD;
+-        s_tx[1] = WL_CMD_SHUTDOWN_TIME;
+-        s_tx[2] = 0x01u;
+-        s_tx[9] = WL_TAIL;
+-        wl_send(s_tx, 10u);
+-    } else if (rx[2] == 0x02u) {
+-        wl_send(rx, len);
+-    }
+-}
+-
+-static void wl_handle_prime(const uint8_t *rx, uint16_t len)
+-{
+-    (void)len;
+-    wl_ack_cmd2(WL_CMD_PRIME, rx[2]);
+ }
+ /**
+   * @function wl_handle_query_set_all()
+@@ -577,10 +479,9 @@
+ 
+     memset(s_tx, 0, 21u);
+     s_tx[0] = WL_HEAD; s_tx[1] = WL_CMD_FW_INFO; s_tx[2] = 0x01u;
+-    s_tx[5] = 0x01u;  /* firmware version 1 */
+-    s_tx[6] = 0x01u;  /* oven volume */
+-    s_tx[7] = 0x01u;  /* type */
+-    s_tx[8] = 0x01u;  /* supported probe count */
++    s_tx[5] = 0x01u;  /* volume */
++    s_tx[6] = 0x01u;  /* type */
++    s_tx[7] = 0x01u;  /* probe count */
+     s_tx[10] = 0x01u; s_tx[11] = 0x07u; s_tx[12] = 0x05u; /* grill min 175 */
+     s_tx[13] = 0x04u; s_tx[14] = 0x05u; s_tx[15] = 0x05u; /* grill max 455 */
+     s_tx[20] = WL_TAIL;
+@@ -608,9 +509,6 @@
+         case WL_CMD_QUERY_STATUS:  wl_handle_query_status(rx, len); break;
+         case WL_CMD_QUERY_SET_ALL: wl_handle_query_set_all(rx, len); break;
+         case WL_CMD_QUERY_ACT_ALL: wl_handle_query_act_all(rx, len); break;
+-        case WL_CMD_QUERY_RUNTIME: wl_handle_query_runtime(rx, len); break;
+-        case WL_CMD_PID_PWM:       wl_handle_pid_pwm(rx, len); break;
+-        case WL_CMD_WIFI_SYMBOL:   break;
+         case WL_CMD_BT_STATUS:
+             s_bt_status = rx[2];
+             if (rx[2] == 0x01u) {
+@@ -619,9 +517,6 @@
+                 UI_SetBluetoothConnectionState(0u);
+             }
+             break;
+-        case WL_CMD_SHUTDOWN_TIME: wl_handle_shutdown_time(rx, len); break;
+-        case WL_CMD_PRIME:         wl_handle_prime(rx, len); break;
+-        case WL_CMD_START_RECIPE:  break;
+         case WL_CMD_COEFF_SET:    wl_handle_coeff_set(rx, len); break;
+         case WL_CMD_COEFF_QUERY:  wl_handle_coeff_query(rx, len); break;
+         case WL_CMD_FW_INFO:       wl_handle_fw_info(rx, len); break;
+--- 5/tw66gw02/BSP/wireless.h
++++ 7/tw66gw02/BSP/wireless.h
+@@ -26,16 +26,7 @@
+ #define WL_CMD_QUERY_STATUS         0x0Bu
+ #define WL_CMD_QUERY_SET_ALL        0x0Du
+ #define WL_CMD_QUERY_ACT_ALL        0x0Eu
+-#define WL_CMD_QUERY_RUNTIME        0x0Fu
+-#define WL_CMD_STATUS_WORK          0x1Bu
+-#define WL_CMD_PID_PWM              0x1Fu
+-#define WL_CMD_STATUS_TEMP          0x2Bu
+-#define WL_CMD_WIFI_SYMBOL          0x23u
+ #define WL_CMD_BT_STATUS            0x24u
+-#define WL_CMD_SHUTDOWN_TIME        0x27u
+-#define WL_CMD_PRIME                0x28u
+-#define WL_CMD_STATUS_OUTPUT        0x3Bu
+-#define WL_CMD_START_RECIPE         0x31u
+ #define WL_CMD_FW_INFO              0x5Fu
+ #define WL_CMD_COEFF_SET            0x60u
+ #define WL_CMD_COEFF_QUERY          0x61u
+--- 5/tw66gw02/COP/main_control.c
++++ 7/tw66gw02/COP/main_control.c
+@@ -663,8 +663,7 @@
+ {
+     if (s_bt_hw_on == 0u) {
+         BT_On;
+- //       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+-        delay_ms(200);
++        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+         BT_Reset;
+         s_bt_hw_on = 1u;
+     }
+@@ -680,8 +679,8 @@
+ static void BluetoothHwPowerOff(void)
+ {
+     if (s_bt_hw_on != 0u) {
+-//        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+         BT_Off;
++        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, GPIO_PIN_RESET);
+         s_bt_hw_on = 0u;
+     }
+ }
+@@ -748,7 +747,6 @@
+             s_bt_state = BT_OFF;
+             s_bt_icon_on = 0u;
+             s_bt_connected_input = 0u;
+-            BluetoothHwPowerOff();
+         }
+     }
+ }

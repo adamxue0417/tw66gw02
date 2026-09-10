@@ -1,0 +1,3822 @@
+--- 9/tw66gw02/BSP/config.h
++++ 10/tw66gw02/BSP/config.h
+@@ -29,9 +29,6 @@
+ #include "screen_c8721.h"
+ //COP
+ #include "main_control.h"
+-#include "ota.h"
+-#include "ota_layout.h"
+-#include "ota_metadata.h"
+ //#include "idle.h"
+ //#include "test.h"
+ #include "start_up.h"
+@@ -39,7 +36,9 @@
+ //#include "set.h"
+ #include "shutdown.h"
+ #include "warning.h"
++//#include "ota.h"
+ //#include "pid.h"
++//#include "gagent_md5.h"
+ //OS
+ #include "TaskScheduler.h"
+ /****************************************************************************************************************/
+@@ -75,7 +74,10 @@
+ #define PGout(n)   BIT_ADDR(GPIOG_ODR_Addr,n)
+ #define PGin(n)    BIT_ADDR(GPIOG_IDR_Addr,n)
+ #define delay_ms(X)    HAL_Delay(X);   
+-#define system_version                   100u
++#ifndef MATHIS_FW_VERSION
++#define MATHIS_FW_VERSION                100u
++#endif
++#define system_version                   MATHIS_FW_VERSION
+ #define unitF                            0
+ #define unitC                            1
+ #define off                              0
+@@ -148,4 +150,3 @@
+ 
+ 
+ 
+-
+--- 9/tw66gw02/BSP/wireless.c
++++ 10/tw66gw02/BSP/wireless.c
+@@ -1,5 +1,6 @@
+-/** Mathis BLE framed protocol with stop-and-wait OTA transport. */
++/** Mathis BLE framed protocol, including the development OTA transport. */
+ #include "config.h"
++#include "ota_update.h"
+ 
+ #define TX_QUEUE_DEPTH              (4u)
+ #define TELEMETRY_PERIOD_TICKS_20MS (50u)
+@@ -9,7 +10,6 @@
+ typedef struct {
+     uint8_t data[20];
+     uint8_t length;
+-    uint8_t type;
+ } TxEntry;
+ 
+ typedef struct {
+@@ -29,12 +29,11 @@
+ static uint8_t s_tx_head;
+ static uint8_t s_tx_tail;
+ static uint8_t s_tx_count;
+-static uint8_t s_ota_was_paused;
+-static uint8_t s_ota_purge_pending;
+ static CoeffPending s_pending[TEMP_COEFF_CHANNEL_COUNT];
+ MathisBleDebug g_mathis_ble_debug;
+ 
+ static void SetConnection(uint8_t connected);
++static uint8_t QueueFrame(const uint8_t *data, uint8_t length);
+ 
+ uint16_t Mathis_Crc16(const uint8_t *data, uint16_t length)
+ {
+@@ -163,9 +162,7 @@
+     }
+     g_mathis_ble_debug.frames_ok++;
+     if (frame[2] == MATHIS_TYPE_CMD) { HandleCommand(&frame[6], payload_length); }
+-    else if ((frame[2] >= MATHIS_TYPE_OTA_BEGIN) && (frame[2] <= MATHIS_TYPE_OTA_ABORT)) {
+-        Ota_HandleMessage(frame[2], &frame[6], payload_length);
+-    }
++    else { (void)OtaUpdate_HandleFrame(frame[2], &frame[6], payload_length); }
+     return 1u;
+ }
+ 
+@@ -227,6 +224,7 @@
+         if (connected == 0u) {
+             ClearPending(); s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+             s_rx_count = 0u; s_rx_expected = 0u;
++            OtaUpdate_HandleDisconnect();
+         }
+     }
+ }
+@@ -262,29 +260,41 @@
+     return 0u;
+ }
+ 
+-static uint8_t QueueFrame(const uint8_t *data, uint8_t length, uint8_t type)
++static uint8_t QueueFrame(const uint8_t *data, uint8_t length)
+ {
+     if ((length > sizeof(s_tx_queue[0].data)) || (s_tx_count >= TX_QUEUE_DEPTH)) { return 0u; }
+-    memcpy(s_tx_queue[s_tx_tail].data, data, length); s_tx_queue[s_tx_tail].length = length; s_tx_queue[s_tx_tail].type = type;
++    memcpy(s_tx_queue[s_tx_tail].data, data, length); s_tx_queue[s_tx_tail].length = length;
+     s_tx_tail = (uint8_t)((s_tx_tail + 1u) % TX_QUEUE_DEPTH); s_tx_count++;
+     return 1u;
+ }
+ 
+-static void QueueOtaStatus(void)
+-{
+-    uint8_t payload[6];
+-    uint8_t payload_length;
+-    uint8_t frame[14];
++uint8_t Wireless_QueueProtocolFrame(uint8_t type, const uint8_t *payload, uint8_t payload_length)
++{
++    uint8_t frame[20];
+     uint16_t crc;
+-    if ((s_tx_count >= TX_QUEUE_DEPTH) || (Ota_PollStatus(payload, &payload_length) == 0U)) { return; }
++    uint8_t frame_length;
++    if (payload_length > 12u) { return 0u; }
+     frame[0] = MATHIS_START_BYTE; frame[1] = MATHIS_START_BYTE;
+-    frame[2] = MATHIS_TYPE_OTA_STATUS; frame[3] = s_tx_sequence++;
+-    frame[4] = payload_length; frame[5] = 0U;
+-    memcpy(&frame[6], payload, payload_length);
+-    crc = Mathis_Crc16(&frame[2], (uint16_t)(4U + payload_length));
+-    frame[6U + payload_length] = (uint8_t)crc;
+-    frame[7U + payload_length] = (uint8_t)(crc >> 8);
+-    (void)QueueFrame(frame, (uint8_t)(payload_length + 8U), MATHIS_TYPE_OTA_STATUS);
++    frame[2] = type; frame[3] = s_tx_sequence;
++    frame[4] = payload_length; frame[5] = 0u;
++    if ((payload_length != 0u) && (payload != 0)) { memcpy(&frame[6], payload, payload_length); }
++    crc = Mathis_Crc16(&frame[2], (uint16_t)(4u + payload_length));
++    frame[6u + payload_length] = (uint8_t)crc;
++    frame[7u + payload_length] = (uint8_t)(crc >> 8);
++    frame_length = (uint8_t)(payload_length + 8u);
++    if (QueueFrame(frame, frame_length) == 0u) { return 0u; }
++    s_tx_sequence++;
++    return 1u;
++}
++
++uint8_t Wireless_ProtocolTxIdle(void)
++{
++    return ((s_tx_count == 0u) && (huart1.gState == HAL_UART_STATE_READY)) ? 1u : 0u;
++}
++
++void Wireless_DiscardQueuedFrames(void)
++{
++    s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+ }
+ 
+ static int16_t EncodeTemperature(const MathisTelemetrySnapshot *snapshot, uint8_t channel)
+@@ -293,8 +303,7 @@
+     if ((snapshot->high_mask & mask) != 0u) { return 2000; }
+     if ((snapshot->low_mask & mask) != 0u) { return 3000; }
+     if ((snapshot->valid_mask & mask) == 0u) { return 4000; }
+-    /* Mathis BLE v0.4 always carries calibrated whole-number Celsius.
+-     * The unit flag is a display preference only. */
++    /* Mathis telemetry is always encoded in whole degrees Celsius. */
+     return snapshot->temp_c[channel];
+ }
+ 
+@@ -318,7 +327,7 @@
+     }
+     frame[15] = snapshot.battery_percent; frame[16] = FW_RELEASE_NUMBER; frame[17] = snapshot.error_code;
+     crc = Mathis_Crc16(&frame[2], 16u); frame[18] = (uint8_t)crc; frame[19] = (uint8_t)(crc >> 8);
+-    if (QueueFrame(frame, sizeof(frame), MATHIS_TYPE_TELEMETRY) != 0u) {
++    if (QueueFrame(frame, sizeof(frame)) != 0u) {
+         s_tx_sequence++;
+         g_mathis_ble_debug.telemetry_queued++;
+     }
+@@ -326,13 +335,10 @@
+ 
+ static void ServiceTransmit(void)
+ {
+-    uint8_t type;
+     if ((s_tx_count == 0u) || (huart1.gState != HAL_UART_STATE_READY)) { return; }
+-    type = s_tx_queue[s_tx_head].type;
+     if (HAL_UART_Transmit_DMA(&huart1, s_tx_queue[s_tx_head].data, s_tx_queue[s_tx_head].length) == HAL_OK) {
+         s_tx_head = (uint8_t)((s_tx_head + 1u) % TX_QUEUE_DEPTH); s_tx_count--;
+         g_mathis_ble_debug.telemetry_tx_started++;
+-        if (type == MATHIS_TYPE_TELEMETRY) { Ota_NotifyTelemetryTransmitted(); }
+     }
+ }
+ 
+@@ -340,10 +346,8 @@
+ {
+     s_rx_count = 0u; s_rx_expected = 0u; s_connected = 0u;
+     s_tx_sequence = 0u; s_telemetry_ticks = 0u; s_tx_head = 0u; s_tx_tail = 0u; s_tx_count = 0u;
+-    s_ota_was_paused = 0U; s_ota_purge_pending = 0U;
+     memset(&g_mathis_ble_debug, 0, sizeof(g_mathis_ble_debug));
+-    ClearPending(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
+-    Ota_Init();
++    ClearPending(); OtaUpdate_Init(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
+ }
+ 
+ void WirelessTask(void)
+@@ -365,25 +369,9 @@
+             if (++s_pending[channel].age >= COEFF_TIMEOUT_TICKS_20MS) { memset(&s_pending[channel], 0, sizeof(s_pending[channel])); }
+         }
+     }
+-    Ota_Task20ms();
+-    if ((Ota_TelemetryPaused() != 0U) && (s_ota_was_paused == 0U)) {
+-        /* Do not reuse a queue entry while UART DMA may still reference it. */
+-        s_ota_purge_pending = 1U;
+-        s_ota_was_paused = 1U;
+-    } else if (Ota_TelemetryPaused() == 0U) {
+-        s_ota_was_paused = 0U; s_ota_purge_pending = 0U;
+-    }
+-    if ((s_ota_purge_pending != 0U) && (huart1.gState == HAL_UART_STATE_READY)) {
+-        /* At the state transition all logical entries predate OTA and are
+-         * telemetry, so it is now safe to drop them and prioritize READY. */
+-        s_tx_head = 0U; s_tx_tail = 0U; s_tx_count = 0U; s_ota_purge_pending = 0U;
+-    }
+-    if (s_ota_purge_pending == 0U) { QueueOtaStatus(); }
+-    if ((s_connected != 0u) && (Ota_TelemetryPaused() == 0U)) {
++    OtaUpdate_Task20ms();
++    if ((s_connected != 0u) && (OtaUpdate_IsActive() == 0u)) {
+         if (++s_telemetry_ticks >= TELEMETRY_PERIOD_TICKS_20MS) { s_telemetry_ticks = 0u; QueueTelemetry(); }
+     }
+     ServiceTransmit();
+-    if ((Ota_ResetPending() != 0U) && (s_tx_count == 0U) && (huart1.gState == HAL_UART_STATE_READY)) {
+-        NVIC_SystemReset();
+-    }
+-}
++}
+--- 9/tw66gw02/BSP/wireless.h
++++ 10/tw66gw02/BSP/wireless.h
+@@ -1,4 +1,4 @@
+-/** Mathis BLE application protocol over the pre-configured EMB1082 UART. */
++/** Mathis BLE application protocol over the pre-configured EMB1061 UART. */
+ #ifndef __WIRELESS_H__
+ #define __WIRELESS_H__
+ 
+@@ -9,6 +9,7 @@
+ #define MATHIS_MAX_FRAME           (244u)
+ #define MATHIS_TYPE_CMD            (0x01u)
+ #define MATHIS_TYPE_TELEMETRY      (0x81u)
++#define MATHIS_TYPE_OTA_STATUS     (0x90u)
+ 
+ #define MATHIS_CMD_SET_UNITS       (0x01u)
+ #define MATHIS_CMD_POWER_OFF       (0x02u)
+@@ -48,5 +49,8 @@
+ void Wireless_Init(void);
+ void WirelessTask(void);
+ uint16_t Mathis_Crc16(const uint8_t *data, uint16_t length);
++uint8_t Wireless_QueueProtocolFrame(uint8_t type, const uint8_t *payload, uint8_t payload_length);
++uint8_t Wireless_ProtocolTxIdle(void);
++void Wireless_DiscardQueuedFrames(void);
+ 
+ #endif
+--- 9/tw66gw02/COP/main_control.c
++++ 10/tw66gw02/COP/main_control.c
+@@ -8,6 +8,8 @@
+   ******************************************************************************
+   */
+ #include "config.h"
++#include "ota_layout.h"
++#include <stddef.h>
+ 
+ _work_process work_process,work_process_backups;
+ _system_data  system_data;
+@@ -31,6 +33,11 @@
+ static uint32_t s_idle_ticks_100ms = 0u;
+ 
+ #define IDLE_AUTO_SHUTDOWN_TICKS_100MS (36000u)
++#define CONFIG_PAGE_A_ADDR              (OTA_CONFIG_A_BASE)
++#define CONFIG_PAGE_B_ADDR              (OTA_CONFIG_B_BASE)
++#define CONFIG_MAGIC                    (0x4D415448u)
++#define CONFIG_VERSION                  (1u)
++#define CONFIG_COMMIT                   (0xA55Au)
+ 
+ static int16_t s_display_temp = 0;
+ /* 0:none, 1:-HI, 2:-LO, 3:--- */
+@@ -46,26 +53,92 @@
+     {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}  /* Cavity: y = x by default */
+ };
+ 
++typedef struct {
++    uint32_t magic;
++    uint16_t version;
++    uint16_t length;
++    uint32_t sequence;
++    uint8_t units;
++    uint8_t reserved[3];
++    float coeff[TEMP_COEFF_CHANNEL_COUNT][TEMP_COEFF_TERM_COUNT];
++    uint16_t crc;
++    uint16_t commit;
++} PersistedConfig;
++
++static uint32_t s_config_sequence = 0u;
++static uint32_t s_config_active_page = 0u;
++
+ static void BluetoothHwPowerOn(void);
+ static void BluetoothHwPowerOff(void);
+ 
++static uint16_t ConfigCrc16(const uint8_t *data, uint16_t length)
++{
++    uint16_t crc = 0xFFFFu;
++    uint16_t i;
++    uint8_t bit;
++    for (i = 0u; i < length; i++) {
++        crc ^= (uint16_t)data[i] << 8;
++        for (bit = 0u; bit < 8u; bit++) {
++            crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u) : (uint16_t)(crc << 1);
++        }
++    }
++    return crc;
++}
++
++static uint8_t ConfigRecordValid(const PersistedConfig *cfg)
++{
++    if ((cfg->magic != CONFIG_MAGIC) || (cfg->version != CONFIG_VERSION) ||
++        (cfg->length != sizeof(PersistedConfig)) || (cfg->commit != CONFIG_COMMIT) ||
++        ((cfg->units != unitC) && (cfg->units != unitF))) { return 0u; }
++    return (ConfigCrc16((const uint8_t *)cfg, (uint16_t)offsetof(PersistedConfig, crc)) == cfg->crc) ? 1u : 0u;
++}
++
+ static void ConfigLoad(void)
+ {
+-    OtaPersistentConfig cfg;
+-    if ((OtaMetadataRead(OTA_RECORD_CONFIG, &cfg, sizeof(cfg)) != 0U) &&
+-        ((cfg.units == unitC) || (cfg.units == unitF))) {
+-        system_data.units = cfg.units;
+-        memcpy(s_temp_coeff, cfg.coeff, sizeof(s_temp_coeff));
++    const PersistedConfig *a = (const PersistedConfig *)CONFIG_PAGE_A_ADDR;
++    const PersistedConfig *b = (const PersistedConfig *)CONFIG_PAGE_B_ADDR;
++    const PersistedConfig *selected = 0;
++    uint8_t va = ConfigRecordValid(a);
++    uint8_t vb = ConfigRecordValid(b);
++    if ((va != 0u) && (vb != 0u)) { selected = ((int32_t)(b->sequence - a->sequence) > 0) ? b : a; }
++    else if (va != 0u) { selected = a; }
++    else if (vb != 0u) { selected = b; }
++    if (selected != 0) {
++        system_data.units = selected->units;
++        memcpy(s_temp_coeff, selected->coeff, sizeof(s_temp_coeff));
++        s_config_sequence = selected->sequence;
++        s_config_active_page = (selected == a) ? CONFIG_PAGE_A_ADDR : CONFIG_PAGE_B_ADDR;
+     }
+ }
+ 
+ static uint8_t ConfigSave(void)
+ {
+-    OtaPersistentConfig cfg;
++    PersistedConfig cfg;
++    FLASH_EraseInitTypeDef erase;
++    uint32_t page_error = 0u;
++    uint32_t target;
++    uint16_t offset;
++    const uint16_t *src = (const uint16_t *)&cfg;
+     memset(&cfg, 0xFF, sizeof(cfg));
+-    cfg.units = system_data.units;
++    cfg.magic = CONFIG_MAGIC; cfg.version = CONFIG_VERSION; cfg.length = sizeof(PersistedConfig);
++    cfg.sequence = s_config_sequence + 1u; cfg.units = system_data.units;
+     memcpy(cfg.coeff, s_temp_coeff, sizeof(s_temp_coeff));
+-    return OtaMetadataWrite(OTA_RECORD_CONFIG, &cfg, sizeof(cfg));
++    cfg.crc = ConfigCrc16((const uint8_t *)&cfg, (uint16_t)offsetof(PersistedConfig, crc));
++    cfg.commit = CONFIG_COMMIT;
++    target = (s_config_active_page == CONFIG_PAGE_A_ADDR) ? CONFIG_PAGE_B_ADDR : CONFIG_PAGE_A_ADDR;
++    erase.TypeErase = FLASH_TYPEERASE_PAGES; erase.PageAddress = target; erase.NbPages = 1u;
++    if (HAL_FLASH_Unlock() != HAL_OK) { return 0u; }
++    if (HAL_FLASHEx_Erase(&erase, &page_error) != HAL_OK) { HAL_FLASH_Lock(); return 0u; }
++    for (offset = 0u; offset < (uint16_t)offsetof(PersistedConfig, commit); offset += 2u) {
++        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, target + offset, src[offset / 2u]) != HAL_OK) {
++            HAL_FLASH_Lock(); return 0u;
++        }
++    }
++    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, target + (uint32_t)offsetof(PersistedConfig, commit), cfg.commit) != HAL_OK) {
++        HAL_FLASH_Lock(); return 0u;
++    }
++    HAL_FLASH_Lock(); s_config_sequence = cfg.sequence; s_config_active_page = target;
++    return 1u;
+ }
+ 
+ /**
+@@ -132,10 +205,16 @@
+   */
+ static int16_t TempFromC(int16_t c)
+ {
++    int32_t scaled;
++
+     if (system_data.units == unitC) {
+         return c;
+     }
+-    return (int16_t)(((int32_t)c * 9) / 5 + 32);
++
++    /* Round C * 9 / 5 to nearest, with half values away from zero. */
++    scaled = (int32_t)c * 9;
++    scaled = (scaled >= 0) ? ((scaled + 2) / 5) : ((scaled - 2) / 5);
++    return (int16_t)(scaled + 32);
+ }
+ 
+ static int16_t RoundFloatToInt16(float v)
+@@ -913,4 +992,3 @@
+ 
+ 
+ 
+-
+--- 9/tw66gw02/COP/ota.c
++++ 10/tw66gw02/COP/ota.c
+@@ -1,229 +1,369 @@
+-#include "config.h"
+-#include "ota.h"
+-#include "ota_layout.h"
+-#include "ota_crc.h"
+-#include "ota_metadata.h"
+-#include <string.h>
+-
+-#define OTA_ACCEPTED_CHUNK_SIZE 128U
+-#define OTA_TIMEOUT_TICKS       3000U
+-#define OTA_CONFIRM_TICKS       1500U
+-#define OTA_STATUS_QUEUE_DEPTH  4U
+-
+-typedef char OtaProtocolPayloadLimitCheck[
+-    ((OTA_PROTOCOL_CHUNK_DATA_MAX + OTA_CHUNK_OFFSET_SIZE) <= MATHIS_MAX_PAYLOAD) ? 1 : -1];
+-typedef char OtaAcceptedChunkLimitCheck[
+-    (OTA_ACCEPTED_CHUNK_SIZE <= OTA_PROTOCOL_CHUNK_DATA_MAX) ? 1 : -1];
+-
+-typedef struct { uint8_t length; uint8_t data[6]; } OtaStatusEntry;
+-
+-static OtaPersistentState s_persist;
+-static OtaStatusEntry s_status_queue[OTA_STATUS_QUEUE_DEPTH];
+-static uint8_t s_status_head, s_status_tail, s_status_count;
+-static uint16_t s_timeout_ticks, s_confirm_ticks;
+-static uint32_t s_last_offset;
+-static uint16_t s_last_length;
+-static uint8_t s_reset_pending, s_telemetry_transmitted;
+-
+-static uint32_t read_le32(const uint8_t *data)
+-{
+-    return (uint32_t)data[0] | ((uint32_t)data[1] << 8) |
+-           ((uint32_t)data[2] << 16) | ((uint32_t)data[3] << 24);
+-}
+-
+-static void queue_status(uint8_t status, uint32_t extra, uint8_t extra_length)
+-{
+-    OtaStatusEntry *entry;
+-    uint8_t i;
+-    if (s_status_count >= OTA_STATUS_QUEUE_DEPTH) { return; }
+-    entry = &s_status_queue[s_status_tail];
+-    entry->data[0] = status; entry->length = (uint8_t)(1U + extra_length);
+-    for (i = 0U; i < extra_length; ++i) { entry->data[1U + i] = (uint8_t)(extra >> (8U * i)); }
+-    s_status_tail = (uint8_t)((s_status_tail + 1U) % OTA_STATUS_QUEUE_DEPTH); ++s_status_count;
+-}
+-
+-static uint8_t persist_state(void)
+-{
+-    ++s_persist.generation;
+-    return OtaMetadataWrite(OTA_RECORD_STATE, &s_persist, sizeof(s_persist));
+-}
+-
+-static uint8_t erase_staging(void)
+-{
+-    FLASH_EraseInitTypeDef erase;
+-    uint32_t page_error = 0U;
+-    erase.TypeErase = FLASH_TYPEERASE_PAGES; erase.PageAddress = OTA_SLOT_B_BASE; erase.NbPages = OTA_SLOT_PAGE_COUNT;
+-    if (HAL_FLASH_Unlock() != HAL_OK) { return 0U; }
+-    if (HAL_FLASHEx_Erase(&erase, &page_error) != HAL_OK) { HAL_FLASH_Lock(); return 0U; }
+-    HAL_FLASH_Lock(); return 1U;
+-}
+-
+-static uint8_t write_chunk(uint32_t offset, const uint8_t *data, uint16_t length)
+-{
+-    uint16_t i, halfword;
+-    uint32_t address = OTA_SLOT_B_BASE + offset;
+-    if (HAL_FLASH_Unlock() != HAL_OK) { return 0U; }
+-    for (i = 0U; i < length; i += 2U) {
+-        halfword = data[i];
+-        halfword |= ((i + 1U) < length) ? ((uint16_t)data[i + 1U] << 8) : 0xFF00U;
+-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, address + i, halfword) != HAL_OK) {
+-            HAL_FLASH_Lock(); return 0U;
+-        }
+-    }
+-    HAL_FLASH_Lock(); return (memcmp((const void *)address, data, length) == 0) ? 1U : 0U;
+-}
+-
+-static uint8_t battery_percent(void)
+-{
+-    if (g_battery_mv <= 1100U) { return 0U; }
+-    if (g_battery_mv >= 1500U) { return 100U; }
+-    return (uint8_t)(((uint32_t)(g_battery_mv - 1100U) * 100U) / 400U);
+-}
+-
+-static void reset_download_state(void)
+-{
+-    s_persist.state = OTA_PERSIST_IDLE;
+-    s_persist.expected_artifact_size = 0U; s_persist.expected_crc32 = 0U; s_persist.next_offset = 0U;
+-    (void)persist_state(); s_timeout_ticks = 0U;
+-}
+-
+-static void abort_transfer(uint8_t reason)
+-{
+-    reset_download_state(); queue_status(OTA_STATUS_ABORTED, reason, 1U);
+-}
+-
+-static void handle_begin(const uint8_t *payload, uint16_t length)
+-{
+-    uint32_t image_size;
+-    if (length != 9U) { queue_status(OTA_STATUS_STORAGE, 0U, 0U); return; }
+-    if ((s_persist.state != OTA_PERSIST_IDLE) && (s_persist.state != OTA_PERSIST_CONFIRMED)) {
+-        queue_status(OTA_STATUS_BUSY, 0U, 0U); return;
+-    }
+-    if ((g_battery_low != 0U) || (battery_percent() < 30U)) { queue_status(OTA_STATUS_POWER, 0U, 0U); return; }
+-    if (work_process != idle) { queue_status(OTA_STATUS_BUSY, 0U, 0U); return; }
+-    image_size = read_le32(payload);
+-    if ((image_size <= OTA_RSA_SIGNATURE_SIZE) || (image_size > OTA_SLOT_SIZE)) {
+-        queue_status(OTA_STATUS_VERIFY_FAIL, OTA_FAIL_TOO_LARGE, 1U); return;
+-    }
+-    if (erase_staging() == 0U) { queue_status(OTA_STATUS_STORAGE, 0U, 0U); return; }
+-    s_persist.state = OTA_PERSIST_DOWNLOADING;
+-    s_persist.expected_artifact_size = image_size; s_persist.expected_crc32 = read_le32(&payload[4]);
+-    s_persist.target_firmware_version = payload[8]; s_persist.next_offset = 0U;
+-    s_last_offset = 0xFFFFFFFFUL; s_last_length = 0U; s_timeout_ticks = 0U;
+-    if (persist_state() == 0U) {
+-        s_persist.state = OTA_PERSIST_IDLE; s_persist.expected_artifact_size = 0U;
+-        s_persist.expected_crc32 = 0U; s_persist.next_offset = 0U;
+-        queue_status(OTA_STATUS_STORAGE, 0U, 0U); return;
+-    }
+-    queue_status(OTA_STATUS_READY, OTA_ACCEPTED_CHUNK_SIZE, 2U);
+-}
+-
+-static void handle_chunk(const uint8_t *payload, uint16_t length)
+-{
+-    uint32_t offset;
+-    uint16_t data_length;
+-    if ((s_persist.state != OTA_PERSIST_DOWNLOADING) || (length <= OTA_CHUNK_OFFSET_SIZE)) {
+-        queue_status(OTA_STATUS_BAD_OFFSET, 0U, 0U); return;
+-    }
+-    offset = read_le32(payload); data_length = (uint16_t)(length - OTA_CHUNK_OFFSET_SIZE);
+-    if ((data_length > OTA_ACCEPTED_CHUNK_SIZE) || ((offset + data_length) > s_persist.expected_artifact_size)) {
+-        queue_status(OTA_STATUS_BAD_OFFSET, 0U, 0U); return;
+-    }
+-    if (offset != s_persist.next_offset) {
+-        if ((offset == s_last_offset) && (data_length == s_last_length) &&
+-            (memcmp((const void *)(OTA_SLOT_B_BASE + offset), &payload[4], data_length) == 0)) {
+-            queue_status(OTA_STATUS_ACK, s_persist.next_offset, 4U);
+-        } else { queue_status(OTA_STATUS_BAD_OFFSET, 0U, 0U); }
+-        return;
+-    }
+-    if (write_chunk(offset, &payload[4], data_length) == 0U) { queue_status(OTA_STATUS_STORAGE, 0U, 0U); return; }
+-    s_last_offset = offset; s_last_length = data_length; s_persist.next_offset += data_length; s_timeout_ticks = 0U;
+-    queue_status(OTA_STATUS_ACK, s_persist.next_offset, 4U);
+-}
+-
+-static void verify_failed(uint8_t reason)
+-{
+-    queue_status(OTA_STATUS_VERIFY_FAIL, reason, 1U);
+-    reset_download_state();
+-}
+-
+-static void handle_commit(const uint8_t *payload, uint16_t length)
+-{
+-    OtaImageHeader header;
+-    OtaVerifyResult verify;
+-    uint32_t commit_crc;
+-    if ((s_persist.state != OTA_PERSIST_DOWNLOADING) || (length != 4U)) {
+-        verify_failed(OTA_FAIL_UNKNOWN); return;
+-    }
+-    commit_crc = read_le32(payload);
+-    if ((commit_crc != s_persist.expected_crc32) || (s_persist.next_offset != s_persist.expected_artifact_size) ||
+-        (OtaCrc32((const void *)OTA_SLOT_B_BASE, s_persist.expected_artifact_size) != commit_crc)) {
+-        verify_failed(OTA_FAIL_CRC); return;
+-    }
+-    if ((OTA_BOOT_API->magic != OTA_BOOT_API_MAGIC) || (OTA_BOOT_API->abi_version != OTA_BOOT_API_VERSION) ||
+-        (OTA_BOOT_API->verify_artifact == 0)) { verify_failed(OTA_FAIL_SIGNATURE); return; }
+-    verify = OTA_BOOT_API->verify_artifact(OTA_SLOT_B_BASE, s_persist.expected_artifact_size,
+-                                           commit_crc, s_persist.highest_security_version, &header);
+-    if ((verify != OTA_VERIFY_OK) || (header.firmware_version != s_persist.target_firmware_version)) {
+-        verify_failed((verify == OTA_VERIFY_ROLLBACK) ? OTA_FAIL_ROLLBACK : OTA_FAIL_SIGNATURE); return;
+-    }
+-    s_persist.state = OTA_PERSIST_VERIFIED_PENDING_SWAP;
+-    s_persist.slot_b.artifact_size = s_persist.expected_artifact_size; s_persist.slot_b.artifact_crc32 = commit_crc;
+-    s_persist.slot_b.security_version = header.security_version; s_persist.slot_b.firmware_version = header.firmware_version;
+-    s_persist.slot_b.valid = 1U;
+-    if (persist_state() == 0U) {
+-        s_persist.state = OTA_PERSIST_IDLE; s_persist.expected_artifact_size = 0U;
+-        s_persist.expected_crc32 = 0U; s_persist.next_offset = 0U;
+-        queue_status(OTA_STATUS_STORAGE, 0U, 0U); return;
+-    }
+-    queue_status(OTA_STATUS_VERIFY_OK, 0U, 0U); queue_status(OTA_STATUS_APPLYING, 0U, 0U); s_reset_pending = 1U;
+-}
+-
+-void Ota_Init(void)
+-{
+-    memset(&s_persist, 0, sizeof(s_persist));
+-    if (OtaMetadataRead(OTA_RECORD_STATE, &s_persist, sizeof(s_persist)) == 0U) { s_persist.state = OTA_PERSIST_IDLE; }
+-    s_status_head = s_status_tail = s_status_count = 0U; s_timeout_ticks = s_confirm_ticks = 0U;
+-    s_reset_pending = s_telemetry_transmitted = 0U; s_last_offset = 0xFFFFFFFFUL; s_last_length = 0U;
+-}
+-
+-void Ota_HandleMessage(uint8_t type, const uint8_t *payload, uint16_t length)
+-{
+-    if ((payload == 0) && (length != 0U)) { return; }
+-    if (type == MATHIS_TYPE_OTA_BEGIN) { handle_begin(payload, length); }
+-    else if (type == MATHIS_TYPE_OTA_CHUNK) { handle_chunk(payload, length); }
+-    else if (type == MATHIS_TYPE_OTA_COMMIT) { handle_commit(payload, length); }
+-    else if ((type == MATHIS_TYPE_OTA_ABORT) && (length == 0U)) { abort_transfer(0U); }
+-}
+-
+-void Ota_Task20ms(void)
+-{
+-    IWDG->KR = 0xAAAAU;
+-    if ((s_persist.state == OTA_PERSIST_DOWNLOADING) && (++s_timeout_ticks >= OTA_TIMEOUT_TICKS)) {
+-        abort_transfer(OTA_FAIL_TIMEOUT);
+-    }
+-    if (s_persist.state == OTA_PERSIST_INSTALLED_PENDING_CONFIRM) {
+-        if (s_confirm_ticks < OTA_CONFIRM_TICKS) { ++s_confirm_ticks; }
+-        if ((s_confirm_ticks >= OTA_CONFIRM_TICKS) && (s_telemetry_transmitted != 0U)) {
+-            s_persist.state = OTA_PERSIST_CONFIRMED; s_persist.boot_attempts = 0U;
+-            s_persist.highest_security_version = s_persist.slot_a.security_version; (void)persist_state();
+-        }
+-    }
+-}
+-
+-uint8_t Ota_PollStatus(uint8_t *payload, uint8_t *length)
+-{
+-    OtaStatusEntry *entry;
+-    if ((payload == 0) || (length == 0) || (s_status_count == 0U)) { return 0U; }
+-    entry = &s_status_queue[s_status_head]; memcpy(payload, entry->data, entry->length); *length = entry->length;
+-    s_status_head = (uint8_t)((s_status_head + 1U) % OTA_STATUS_QUEUE_DEPTH); --s_status_count; return 1U;
+-}
+-
+-uint8_t Ota_TelemetryPaused(void)
+-{
+-    return ((s_persist.state == OTA_PERSIST_DOWNLOADING) ||
+-            (s_persist.state == OTA_PERSIST_VERIFIED_PENDING_SWAP)) ? 1U : 0U;
+-}
+-
+-uint8_t Ota_ResetPending(void) { return s_reset_pending; }
+-void Ota_NotifyTelemetryTransmitted(void) { s_telemetry_transmitted = 1U; }
++/**
++  ******************************************************************************
++  * @file    ota.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   OTA and IAP upgrade implementation.
++  ******************************************************************************
++  */
++//#include "config.h"
++//_OTA_Date OTA_Date;
++///**
++// * @author  niu
++// * @date    2026.02.26
++// * @version 1.0
++// * 
++// */
++///***************************************************************************************************************************************************************/ 
++///**
++// * @return  none
++// * @note    none
++// * 
++// */
++//void FLASH_ErasePage(uint32_t addr)
++//{
++//    uint32_t PageError = 0;
++//    
++//    FLASH_EraseInitTypeDef  FlashEraseInit = 
++//    {
++//        .TypeErase = FLASH_TYPEERASE_PAGES,
++//        .PageAddress = addr,
++//        .NbPages = 1,
++//    };
++//    HAL_FLASHEx_Erase(&FlashEraseInit,&PageError);
++//}
++///**
++// * @param   none      
++// * @return  none
++// * @note    none
++// * 
++// */
++//void recv_bin_success(void)
++//{
++//	uint8_t i;
++//	uint16_t	flashBUF[2];
++//	
++//	flashBUF[0] = 0x1a1a;
++//	flashBUF[1] = 0x2b2b;
++//	HAL_FLASH_Unlock();
++
++//	}
++//	HAL_FLASH_Lock();
++//}
++///**
++// * @param   none      
++// * @return  none
++// * @note    none
++// * 
++// */
++//void download_success(void)
++//{
++//	recv_bin_success();
++//}
++///**
++// * @param   none      
++// * @return  none
++// * @note    none
++// * 
++// */
++//void SoftReset(void)
++//{  
++//}
++///**
++// * @return  none
++// * @note    none
++// * 
++// */
++//void iap_write_appbin(uint32_t appxaddr,uint8_t *appbuf,uint32_t appsize)
++//{
++//	uint16_t t;
++//	uint16_t i=0,j;
++//  static uint16_t iapbuf[1024];
++//  static uint32_t fwaddrShade=FLASH_BAK_ADDR;
++//	for(t=0;t<appsize;t+=2)
++//	{						    
++//				iapbuf[i++]=((uint16_t)appbuf[1]<<8)+(uint16_t)appbuf[0];
++//	}
++//	{
++//				HAL_FLASH_Unlock();
++//		    if(((fwaddr-fwaddrShade)==2048)||(fwaddr==FLASH_BAK_ADDR))
++//				{
++//					  fwaddrShade=fwaddr;
++//				    FLASH_ErasePage(fwaddr);
++//				}
++//				{
++//				}
++//				HAL_FLASH_Lock();
++//	}
++//}
++///*****************************************************************************************/
++///*****************************************************************************************/
++//#define FILE_MD5_MAX_LEN  32
++//#define SSL_MAX_LEN (FILE_MD5_MAX_LEN/2)
++// uint8_t g_ota_sta=0;
++// uint32_t g_ota_recv_sum=0;    
++// uint16_t g_ota_pg_numid=0;
++// uint16_t g_ota_pg_ok_cnt=0;
++// uint16_t g_ota_pg_nums=0;
++// uint32_t g_ota_bin_size=0;
++// uint8_t  g_ota_mcu_end=0;
++// uint32_t USART_RX_STA_BAK=0;
++// uint8_t g_direct_iap=0;
++// uint8_t g_ota_esp_start=0;
++// uint16_t g_ota_esp_cnt=0;
++// uint8_t md5_pass = 1;
++// uint8_t  OtaUpDateFail=0;
++// MD5_CTX g_ota_md5_ctx;
++// MD5_CTX package_md5_ctx;
++// uint8_t g_ota_bin_md5[SSL_MAX_LEN] = {0};
++// uint8_t g_ota_package_md5[SSL_MAX_LEN] = {0};
++// uint8_t bin_md5_calc[SSL_MAX_LEN];
++// uint8_t package_md5_calc[SSL_MAX_LEN] = {0};
++//// FE 40 04 + 1B-RESULT + 1B-PackageNum + FF
++//// RESULT: 1-pass, 2-fail
++//void UART1_ReportOtaPackageSta(uint8_t md5_res)
++//{
++//	uint8_t buf[8] = {0xFE, 0x40, 0x04, 0x01, 0x01, 0xFF};// Pass
++
++//	if (md5_res != 1) {
++//		buf[3] = 2;// Fail
++//	}
++
++//	buf[4] = g_ota_pg_numid;
++
++//	HAL_UART_Transmit_DMA(&huart3,buf,6);
++
++
++//}
++
++//void UART1_ReportOtaBinSta(uint8_t md5_res)
++//{
++//	uint8_t buf[5] = {0xFE, 0x40, 0x05, 0x02, 0xFF};// Pass
++
++////	if (md5_res != 1) {
++////		buf[3] = 2;// Fail
++////	}
++//  buf[3] = md5_res;
++//	HAL_UART_Transmit_DMA(&huart3,buf,5);
++//}
++//void bin_update(void)
++//{
++//	  system_data.ota_prcent=g_ota_pg_numid*100/g_ota_pg_nums;
++//		if((g_ota_mcu_end == 0) && (g_ota_sta == 3))
++//		{
++//					{
++//						// MD5 for total bin
++//						GAgent_MD5Init(&g_ota_md5_ctx);
++//						memset(bin_md5_calc, 0, SSL_MAX_LEN);
++//					}
++//					{  // 0-IDEL, 1-pass, 2-fail, 3-in progress
++//						//DisplayString("OTA STOP BY APP",0,0,0,0);
++//						USART_RX_STA_BAK=0;
++//						return;
++//					}
++//					{
++//						//DisplayString("OTA TOTALSIZE OVERFLOW",0,0,0,0);
++//						g_ota_sta = 2;                  //OTA FAIL
++//						UART1_ReportOtaPackageSta(0);
++//						USART_RX_STA_BAK=0;
++//						return;
++//					}
++//					{
++//						//DisplayString("OTA PGNUM OVERFLOW",0,0,0,0);
++//						g_ota_sta = 2;                  //OTA FAIL
++//						UART1_ReportOtaPackageSta(0);
++//						USART_RX_STA_BAK=0;
++//						return;
++//					}
++//					
++//					GAgent_MD5Init(&package_md5_ctx);
++//					GAgent_MD5Update(&package_md5_ctx, COM3.rxBuf, (USART_RX_STA_BAK&0xFFFF));
++//					
++//					{
++//						USART_RX_STA_BAK=0;
++//						md5_pass = 0;
++//						g_ota_sta = 2;                  //OTA FAIL
++//						UART1_ReportOtaPackageSta(0);
++//						//DisplayString("OTA FAIL",0,0,0,0);
++//					} 
++//					{
++//						md5_pass = 1;
++//						g_ota_sta = 3;                  //OTA In process
++//					}
++//					{
++//						 
++//						iap_write_appbin(FLASH_BAK_ADDR+g_ota_recv_sum, COM3.rxBuf, (USART_RX_STA_BAK&0xFFFF));
++//			 
++//						g_ota_recv_sum += USART_RX_STA_BAK&0xFFFF;
++//						UART1_ReportOtaPackageSta(1);
++//					}
++//					USART_RX_STA_BAK=0;
++//		}			     
++//		{
++//				{
++//							//DisplayString("OTA 1ERR",0,0,0,0);
++//							g_ota_sta = 1;
++//							UART1_ReportOtaBinSta(2);// Fail (fe 40 5 2 ff)
++//				} 
++//				else 
++//				{
++//							{
++//										md5_pass = 0;
++//										g_ota_sta = 1;
++//										OtaUpDateFail=1;
++//										UART1_ReportOtaBinSta(2);// Fail (fe 40 5 2 ff)
++//										//DisplayString("OTA 2ERR",0,0,0,0);
++//							} 
++//							else
++//							{
++//										md5_pass = 1;
++//										g_ota_esp_start=1;
++//										g_ota_sta = 2;
++//										UART1_ReportOtaBinSta(1);// Pass
++//										//delay_ms(1000);
++//										g_ota_mcu_end = 0;
++//										download_success();// Mark Flag in Flash
++//										SoftReset();
++//							}
++//				}
++//	 }
++//}
++//void OTA_MCU_Task(uint8_t *data)
++//{
++//	uint8_t snd_len = 0;
++//	uint32_t num=0;
++//  uint8_t snd_buf[95];
++//	if(work_process == idle){return;}
++//	if (COM3.rxFlag ==0) {return;}
++//	COM3.rxFlag=0;
++//	num=COM3.rxLen;
++//	snd_len = num;
++//	USART_RX_STA_BAK=num;
++//	if((data[0] == 0xfe)&&(data[1] == 0x40)&&(data[num-1]==0xFF)&&(num<=30)){
++//				switch(data[2])
++//				{
++//					// FE 40 01 01 FF
++//					case 0x01:
++//						switch(data[3])
++//						{
++//							case 0x01:// OTA Start
++
++//								if (g_direct_iap >= 2) {
++//									g_direct_iap = 3;
++//								} else {
++//									g_direct_iap = 1;
++//								}
++//								work_process=ota;system_data.ota_process=0;								
++//								g_ota_sta = 3;
++//								g_ota_mcu_end = 0;
++//								g_ota_recv_sum = 0;
++//								g_ota_pg_numid = 0;
++//								g_ota_pg_nums = 0;
++//								g_ota_bin_size = 0;
++//								g_ota_pg_ok_cnt = 0;
++//								memcpy(snd_buf, data, num);
++//								break;
++//							case 0x02://OTA End
++//								g_ota_mcu_end = 1;
++//								memcpy(snd_buf, data, num);
++//								break;
++//							default:
++//								//g_ota_mcu_end = 0;	
++//								snd_len = 0;
++//							break;
++//						}
++//						break;
++//					// FE 40 02 + 3B-Size + 1B-TotalPackagesNum + MD5 + FF
++//					case 0x02:// Total Packages & MD5
++//						g_ota_pg_nums = data[6];
++//						g_ota_bin_size = (data[3]<<16) + (data[4]<<8) + data[5];
++//						memcpy(g_ota_bin_md5, data+7, SSL_MAX_LEN);
++//						memcpy(snd_buf, data, num);
++//						break;
++//					// After Recved 03 ACK, APP will send the package data
++//					case 0x03:// Divided Package & MD5    FE 40 03 + 1B-PackageNum + MD5 + FF
++//						g_ota_pg_numid = data[3];
++////					if(g_ota_pg_numid==2)
++////					OTA_Date.PackageDateReceiveFlash=0;	
++//						memcpy(g_ota_package_md5, data+4, SSL_MAX_LEN);
++//						g_ota_esp_cnt	= (uint16_t)data[20]; //UpdatePercent=(u16)data[20];
++//						OTA_Date.PackageDateReceiveReady=1;
++//						memcpy(snd_buf, data, num);
++//						break;
++//					
++//					case 0x06:// Query OTA Sta   FE 40 06 01 FF
++//						memcpy(snd_buf, data, num);
++//						snd_buf[3] = g_ota_sta;// 0-idle, 1-pass, 2-fail, 3-in progress
++//						break;
++//					
++//					case 0x07:// Force to Stop OTA   FE 40 07 01 FF
++//						g_ota_sta = 2;
++//						if (g_direct_iap >= 2) {
++//							g_direct_iap = 4;
++//						}
++//						g_ota_recv_sum = 0;
++//						g_ota_pg_numid = 0;
++//						g_ota_pg_nums = 0;
++//						g_ota_bin_size = 0;
++//						g_ota_pg_ok_cnt = 0;
++//						memcpy(snd_buf, data, num);
++//						break;
++//					default:
++//						snd_len = 0;
++//						break;
++//				}
++//																													
++//		snd_len = 0;data[1] =0;data[num-1]=0;COM3.rxLen=0;
++
++//			OTA_Date.PackageDateReceiveReady=0;COM3.rxLen=0;
++//			bin_update();
++//		}
++//	else if((work_process==ota)&&(system_data.ota_process==0)){COM3.rxLen=0;}
++//}
++
++//void OTA_screen_Task(uint8_t *data)
++//{
++//		if(work_process== idle){return;}
++//		if(COM3.rxFlag==0) {return;}
++//		COM3.rxFlag=0;
++//		{
++//				work_process=ota;system_data.ota_process=1;
++//			 
++//				HAL_UART_Transmit(&huart3, data, COM3.rxLen, 1000);
++//	 
++//				data[1] = 0x00;COM3.rxLen=0;
++//		}
++//		{
++//				 COM3.rxFlag=0;
++//				if((COM3.rxBuf[0] == 0xfe)&&(COM3.rxBuf[1] == 0x50)&&(COM3.rxBuf[COM3.rxLen-1]==0xFF)&&(COM3.rxLen<=30))
++//				{
++//					   HAL_UART_Transmit_DMA(&huart3,COM3.rxBuf,COM3.rxLen);
++//						 COM3.rxBuf[0]=0;
++//						 COM3.rxLen=0;
++//				}
++//		}
++//		//if((TouchScreenState==ota_mode)&&(SystemData.ota_process==1)){COM5.RX_Cnt=0;}
++//}
++//void OTA_ESP32(uint8_t *data)
++//{
++// if(COM3.rxFlag==0) {return;}
++// COM3.rxFlag=0;
++// COM3.rxLen=0;
++// if(data[1]!=0x34) return;
++// if(data[2]!=0XFF) {system_data.ota_prcent = data[2];}
++//}
++
++
++//void ota_control(void)
++//{
++//     OTA_MCU_Task(COM3.rxBuf);	   
++//	   OTA_screen_Task(COM3.rxBuf);
++//	   OTA_ESP32(COM3.rxBuf);	
++//}
++
++
++
++
++
++
+--- 9/tw66gw02/COP/ota.h
++++ 10/tw66gw02/COP/ota.h
+@@ -1,45 +1,51 @@
+-#ifndef MATHIS_OTA_H
+-#define MATHIS_OTA_H
++/**
++  ******************************************************************************
++  * @file    ota.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   OTA and IAP upgrade interface definitions.
++  ******************************************************************************
++  */
++#ifndef __OTA_H__
++#define __OTA_H__
++#include "config.h"
++#define UPGRADEaddr1      0x08005000		// offset:20KB
++#define FLASH_BAK_ADDR		0x08024800
++typedef struct 
++{
++  uint8_t McuVersionSucess;
++	uint8_t WifiYmodeSucess;
++//	u32 g_ota_recv_sum;
++  uint16_t g_ota_pg_numid; 
++	uint8_t g_ota_pg_nums;
++	uint8_t  McuRestart;
++	uint8_t  YModemFlag;
++	uint32_t FileZise;    
++	uint32_t PackageSize;
++	uint8_t PackageDateReceiveFlash;
++	uint8_t PackageDateReceiveReady;
++	uint8_t PackagALLReceiveFlash;
++	uint8_t SucessFlag;
++	uint8_t iapMode;
++	uint16_t crcSum;
++	uint8_t OTAStartFlag;	
++}_OTA_Date;
++extern _OTA_Date OTA_Date;
++void FLASH_ErasePage(uint32_t addr);
++void SoftReset(void);
++void download_success(void);
++void iap_write_appbin(uint32_t appxaddr,uint8_t *appbuf,uint32_t appsize);
++void iap_write_data_to_TouchScreen(uint16_t screenaddr, uint8_t *appbuf, uint8_t appsize);
++void iap_write_32_data_to_TouchScreen(uint16_t fwid);
++void iap_wirte_data_from_TouchScreen(uint16_t fwid);
++void check_data_from_TouchScreen(void);
++void ota_read_OK_from_TouchScreen(uint8_t* w_32_status);
++void re_TouchScreen(void);
++void stop_DGUS(void);
++void update_date_to_TouchScreen(uint8_t updata_mode,uint8_t* snd_buf);
++void ota_control(void);
++#endif
+ 
+-#include <stdint.h>
+ 
+-#define MATHIS_TYPE_OTA_BEGIN   0x10U
+-#define MATHIS_TYPE_OTA_CHUNK   0x11U
+-#define MATHIS_TYPE_OTA_COMMIT  0x12U
+-#define MATHIS_TYPE_OTA_ABORT   0x13U
+-#define MATHIS_TYPE_OTA_STATUS  0x90U
+ 
+-/* OTA_CHUNK payload is [offset:u32][data].  The complete Mathis payload is
+- * capped at 236 bytes, leaving at most 232 bytes of image data in v1. */
+-#define OTA_CHUNK_OFFSET_SIZE       4U
+-#define OTA_PROTOCOL_CHUNK_DATA_MAX 232U
+-
+-#define OTA_STATUS_IDLE         0x00U
+-#define OTA_STATUS_READY        0x01U
+-#define OTA_STATUS_TRANSFERRING 0x02U
+-#define OTA_STATUS_ACK          0x03U
+-#define OTA_STATUS_VERIFY_OK    0x04U
+-#define OTA_STATUS_VERIFY_FAIL  0x05U
+-#define OTA_STATUS_APPLYING     0x06U
+-#define OTA_STATUS_ABORTED      0x07U
+-#define OTA_STATUS_POWER        0x08U
+-#define OTA_STATUS_STORAGE      0x09U
+-#define OTA_STATUS_BUSY         0x0AU
+-#define OTA_STATUS_BAD_OFFSET   0x0BU
+-
+-#define OTA_FAIL_CRC            0x01U
+-#define OTA_FAIL_SIGNATURE      0x02U
+-#define OTA_FAIL_TOO_LARGE      0x03U
+-#define OTA_FAIL_TIMEOUT        0x04U
+-#define OTA_FAIL_ROLLBACK       0x05U
+-#define OTA_FAIL_UNKNOWN        0xFFU
+-
+-void Ota_Init(void);
+-void Ota_Task20ms(void);
+-void Ota_HandleMessage(uint8_t type, const uint8_t *payload, uint16_t length);
+-uint8_t Ota_PollStatus(uint8_t *payload, uint8_t *length);
+-uint8_t Ota_TelemetryPaused(void);
+-uint8_t Ota_ResetPending(void);
+-void Ota_NotifyTelemetryTransmitted(void);
+-
+-#endif
+--- 9/tw66gw02/Core/Src/main.c
++++ 10/tw66gw02/Core/Src/main.c
+@@ -26,6 +26,8 @@
+ /* Private includes ----------------------------------------------------------*/
+ /* USER CODE BEGIN Includes */
+ #include "config.h"
++#include "ota_boot.h"
++#include "ota_layout.h"
+ /* USER CODE END Includes */
+ 
+ /* Private typedef -----------------------------------------------------------*/
+@@ -66,6 +68,10 @@
+   */
+ int main(void)
+ {
++	/* Retain board power immediately after the C runtime has initialized. */
++	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
++	GPIOB->BSRR = GPIO_BSRR_BS_3;
++	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_APP_MAIN;
+ 
+   /* USER CODE BEGIN 1 */
+ 
+@@ -75,6 +81,7 @@
+ 
+   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+   HAL_Init();
++	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_HAL_READY;
+ 
+   /* USER CODE BEGIN Init */
+ 
+@@ -82,6 +89,7 @@
+ 
+   /* Configure the system clock */
+   SystemClock_Config();
++	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_CLOCK_READY;
+ 
+   /* USER CODE BEGIN SysInit */
+ 
+@@ -93,11 +101,15 @@
+   MX_ADC_Init();
+   MX_USART1_UART_Init();
+   MX_USART2_UART_Init();
++	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_PERIPH_READY;
+   /* USER CODE BEGIN 2 */
+   
+ 	SysDataInit();
++	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_DATA_READY;
++	if (OtaBoot_IsTrial() != 0u) { UI_RequestBluetoothPairing(); }
+ 	Temp_Get_Init();
+ 	Screen_C8721_Init();
++	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_SCREEN_READY;
+   com_init();
+   Wireless_Init();
+ 	
+@@ -106,6 +118,7 @@
+  SCH_Add_Task(TempGetTask, 0 , 500);
+  SCH_Add_Task(MainControl, 0 , 100);
+  SCH_Add_Task(WirelessTask, 0, 20);
++ SCH_Add_Task(OtaBoot_ConfirmRunningImage, 10000, 0);
+  
+   /* USER CODE END 2 */
+ 
+@@ -113,6 +126,7 @@
+   /* USER CODE BEGIN WHILE */
+   while (1)
+   {
++	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_LOOP_RUNNING;
+     /* USER CODE END WHILE */
+ 
+     /* USER CODE BEGIN 3 */
+@@ -188,6 +202,7 @@
+ {
+   /* USER CODE BEGIN Error_Handler_Debug */
+   /* User can add his own implementation to report the HAL error return state */
++  *(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_APP_ERROR;
+   __disable_irq();
+   while (1)
+   {
+--- 9/tw66gw02/Core/Src/system_stm32f0xx.c
++++ 10/tw66gw02/Core/Src/system_stm32f0xx.c
+@@ -125,6 +125,15 @@
+   */
+ void SystemInit(void)
+ {
++  /* PB3 is the board power-hold latch.  Assert it before the C runtime and
++     application initialization so a momentary power-button start cannot drop
++     out while the image is booting. */
++  RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
++  (void)RCC->AHBENR;
++  GPIOB->BSRR = GPIO_BSRR_BS_3;
++  GPIOB->MODER = (GPIOB->MODER & ~(3u << (3u * 2u))) |
++                 (1u << (3u * 2u));
++  GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
+   /* NOTE :SystemInit(): This function is called at startup just after reset and 
+                          before branch to main program. This call is made inside
+                          the "startup_stm32f0xx.s" file.
+@@ -246,4 +255,3 @@
+ /**
+   * @}
+   */
+-
+--- 9/tw66gw02/MDK-ARM/startup_stm32f030x8.s
++++ 10/tw66gw02/MDK-ARM/startup_stm32f030x8.s
+@@ -30,7 +30,7 @@
+ ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
+ ; </h>
+ 
+-Stack_Size		EQU     0xE00
++Stack_Size		EQU     0x400
+ 
+                 AREA    STACK, NOINIT, READWRITE, ALIGN=3
+ Stack_Mem       SPACE   Stack_Size
+@@ -41,7 +41,7 @@
+ ;   <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
+ ; </h>
+ 
+-Heap_Size      EQU     0x40
++Heap_Size      EQU     0x200
+ 
+                 AREA    HEAP, NOINIT, READWRITE, ALIGN=3
+ __heap_base
+--- 9/tw66gw02/MDK-ARM/tw66gw02.uvprojx
++++ 10/tw66gw02/MDK-ARM/tw66gw02.uvprojx
+@@ -70,9 +70,9 @@
+             <nStopU2X>0</nStopU2X>
+           </BeforeCompile>
+           <BeforeMake>
+-            <RunUserProg1>0</RunUserProg1>
++            <RunUserProg1>1</RunUserProg1>
+             <RunUserProg2>0</RunUserProg2>
+-            <UserProg1Name></UserProg1Name>
++            <UserProg1Name>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "..\PrepareFactoryBootImage.ps1"</UserProg1Name>
+             <UserProg2Name></UserProg2Name>
+             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
+             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
+@@ -80,10 +80,10 @@
+             <nStopB2X>0</nStopB2X>
+           </BeforeMake>
+           <AfterMake>
+-            <RunUserProg1>0</RunUserProg1>
+-            <RunUserProg2>0</RunUserProg2>
+-            <UserProg1Name></UserProg1Name>
+-            <UserProg2Name></UserProg2Name>
++            <RunUserProg1>1</RunUserProg1>
++            <RunUserProg2>1</RunUserProg2>
++            <UserProg1Name>cmd.exe /C copy /Y "tw66gw02\\tw66gw02.hex" "tw66gw02.hex"</UserProg1Name>
++            <UserProg2Name>cmd.exe /C copy /Y "tw66gw02\\tw66gw02.hex" "..\\tw66gw02.hex"</UserProg2Name>
+             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
+             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
+             <nStopA1X>0</nStopA1X>
+@@ -276,8 +276,8 @@
+               </OCR_RVCT3>
+               <OCR_RVCT4>
+                 <Type>1</Type>
+-                <StartAddress>0x8004000</StartAddress>
+-                <Size>0x5e80</Size>
++                <StartAddress>0x8000000</StartAddress>
++                <Size>0xf800</Size>
+               </OCR_RVCT4>
+               <OCR_RVCT5>
+                 <Type>1</Type>
+@@ -301,8 +301,8 @@
+               </OCR_RVCT8>
+               <OCR_RVCT9>
+                 <Type>0</Type>
+-                <StartAddress>0x200000c0</StartAddress>
+-                <Size>0x1f40</Size>
++                <StartAddress>0x20000000</StartAddress>
++                <Size>0x2000</Size>
+               </OCR_RVCT9>
+               <OCR_RVCT10>
+                 <Type>0</Type>
+@@ -340,7 +340,7 @@
+               <MiscControls></MiscControls>
+               <Define>USE_HAL_DRIVER,STM32F030x8</Define>
+               <Undefine></Undefine>
+-              <IncludePath>../Core/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F0xx/Include;../Drivers/CMSIS/Include;../MDK-ARM;../BSP;../COP;../OS;../Common</IncludePath>
++              <IncludePath>../Core/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc;../Drivers/STM32F0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F0xx/Include;../Drivers/CMSIS/Include;../MDK-ARM;../BSP;../COP;../OS</IncludePath>
+             </VariousControls>
+           </Cads>
+           <Aads>
+@@ -362,16 +362,16 @@
+             </VariousControls>
+           </Aads>
+           <LDads>
+-            <umfTarg>1</umfTarg>
++            <umfTarg>0</umfTarg>
+             <Ropi>0</Ropi>
+             <Rwpi>0</Rwpi>
+             <noStLib>0</noStLib>
+             <RepFail>1</RepFail>
+-            <useFile>0</useFile>
++            <useFile>1</useFile>
+             <TextAddressRange></TextAddressRange>
+             <DataAddressRange></DataAddressRange>
+             <pXoBase></pXoBase>
+-            <ScatterFile>tw66gw02.sct</ScatterFile>
++            <ScatterFile>.\tw66gw02_factory.sct</ScatterFile>
+             <IncludeLibs></IncludeLibs>
+             <IncludeLibsPath></IncludeLibsPath>
+             <Misc></Misc>
+@@ -388,6 +388,11 @@
+               <FileName>startup_stm32f030x8.s</FileName>
+               <FileType>2</FileType>
+               <FilePath>startup_stm32f030x8.s</FilePath>
++            </File>
++            <File>
++              <FileName>boot_image.o</FileName>
++              <FileType>3</FileType>
++              <FilePath>boot_image.o</FilePath>
+             </File>
+           </Files>
+         </Group>
+@@ -1110,6 +1115,16 @@
+               <FilePath>..\COP\main_control.c</FilePath>
+             </File>
+             <File>
++              <FileName>ota_boot.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\COP\ota_boot.c</FilePath>
++            </File>
++            <File>
++              <FileName>ota_update.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\COP\ota_update.c</FilePath>
++            </File>
++            <File>
+               <FileName>shutdown.c</FileName>
+               <FileType>1</FileType>
+               <FilePath>..\COP\shutdown.c</FilePath>
+@@ -1128,31 +1143,6 @@
+               <FileName>warning.c</FileName>
+               <FileType>1</FileType>
+               <FilePath>..\COP\warning.c</FilePath>
+-            </File>
+-            <File>
+-              <FileName>ota.c</FileName>
+-              <FileType>1</FileType>
+-              <FilePath>..\COP\ota.c</FilePath>
+-            </File>
+-          </Files>
+-        </Group>
+-        <Group>
+-          <GroupName>OTA/Common</GroupName>
+-          <Files>
+-            <File>
+-              <FileName>ota_crc.c</FileName>
+-              <FileType>1</FileType>
+-              <FilePath>..\Common\ota_crc.c</FilePath>
+-            </File>
+-            <File>
+-              <FileName>ota_metadata.c</FileName>
+-              <FileType>1</FileType>
+-              <FilePath>..\Common\ota_metadata.c</FilePath>
+-            </File>
+-            <File>
+-              <FileName>ota_image_header.c</FileName>
+-              <FileType>1</FileType>
+-              <FilePath>..\Common\ota_image_header.c</FilePath>
+             </File>
+           </Files>
+         </Group>
+--- 9/tw66gw02/BSP/ota_layout.h
++++ 10/tw66gw02/BSP/ota_layout.h
+@@ -0,0 +1,76 @@
++#ifndef MATHIS_OTA_LAYOUT_H
++#define MATHIS_OTA_LAYOUT_H
++
++#include <stdint.h>
++
++/* STM32F030C8: 64 KiB flash, 1 KiB erase pages. */
++#define OTA_FLASH_BASE               (0x08000000u)
++#define OTA_FLASH_END                (0x08010000u)
++#define OTA_PAGE_SIZE                (0x00000400u)
++
++#define OTA_BOOT_BASE                (0x08000000u)
++#define OTA_BOOT_SIZE                (0x00001800u) /* 6 KiB */
++#define OTA_APP_BASE                 (0x08001800u)
++#define OTA_APP_SLOT_SIZE            (0x00006C00u) /* 27 KiB */
++#define OTA_STAGE_BASE               (0x08008400u)
++#define OTA_STAGE_SIZE               (0x00006C00u) /* 27 KiB */
++#define OTA_SCRATCH_BASE             (0x0800F000u)
++#define OTA_METADATA_BASE            (0x0800F400u)
++#define OTA_CONFIG_A_BASE            (0x0800F800u)
++#define OTA_CONFIG_B_BASE            (0x0800FC00u)
++
++#define OTA_SIGNATURE_SIZE           (384u)
++#define OTA_MAX_ARTIFACT_SIZE        (OTA_STAGE_SIZE)
++#define OTA_MAX_APPLICATION_SIZE     (OTA_APP_SLOT_SIZE - OTA_SIGNATURE_SIZE)
++#define OTA_ACCEPTED_CHUNK_SIZE      (232u)
++#define OTA_VECTOR_BYTES             (192u)
++#define OTA_APP_RAM_BASE             (0x200000C0u)
++#define OTA_APP_RAM_END              (0x20001FF0u)
++#define OTA_BOOT_TRACE_ADDRESS       (0x20001FF0u) /* 16-byte development trace */
++#define OTA_BOOT_TRACE_ENTERED       (0xB0070001u)
++#define OTA_BOOT_TRACE_VECTOR_OK     (0xB0070002u)
++#define OTA_BOOT_TRACE_REMAP_OK      (0xB0070003u)
++#define OTA_BOOT_TRACE_APP_MAIN      (0xA9900001u)
++#define OTA_BOOT_TRACE_HAL_READY     (0xA9900002u)
++#define OTA_BOOT_TRACE_CLOCK_READY   (0xA9900003u)
++#define OTA_BOOT_TRACE_PERIPH_READY  (0xA9900004u)
++#define OTA_BOOT_TRACE_DATA_READY    (0xA9900005u)
++#define OTA_BOOT_TRACE_SCREEN_READY  (0xA9900006u)
++#define OTA_BOOT_TRACE_LOOP_RUNNING  (0xA9900007u)
++#define OTA_BOOT_TRACE_APP_ERROR     (0xA99000EEu)
++
++#define OTA_METADATA_MAGIC           (0x4F544131u) /* "OTA1" */
++#define OTA_METADATA_FORMAT          (1u)
++#define OTA_METADATA_COMMIT          (0xA55Au)
++#define OTA_MARKER_TRIAL             (0x71A1u)
++#define OTA_MARKER_TRIAL_INV         (0x8E5Eu)
++#define OTA_MARKER_CONFIRMED         (0xC04Fu)
++#define OTA_MARKER_CONFIRMED_INV     (0x3FB0u)
++#define OTA_MARKER_ROLLBACK_DONE     (0xB44Bu)
++#define OTA_MARKER_ROLLBACK_DONE_INV (0x4BB4u)
++
++#define OTA_META_TRIAL_OFFSET        (32u)
++#define OTA_META_CONFIRMED_OFFSET    (36u)
++#define OTA_META_ROLLBACK_OFFSET     (40u)
++#define OTA_META_FORWARD_LOG_OFFSET  (64u)
++#define OTA_META_ROLLBACK_LOG_OFFSET (512u)
++#define OTA_SLOT_PAGE_COUNT          (OTA_APP_SLOT_SIZE / OTA_PAGE_SIZE)
++#define OTA_SWAP_STEP_COUNT          (OTA_SLOT_PAGE_COUNT * 3u)
++
++typedef struct
++{
++    uint32_t magic;
++    uint16_t format;
++    uint16_t header_size;
++    uint32_t artifact_size;
++    uint32_t application_size;
++    uint32_t artifact_crc32;
++    uint8_t target_version;
++    uint8_t flags;
++    uint16_t reserved0;
++    uint32_t header_crc32;
++    uint16_t commit;
++    uint16_t reserved1;
++} OtaMetadataHeader;
++
++#endif
+--- 9/tw66gw02/Bootloader/boot_main.c
++++ 10/tw66gw02/Bootloader/boot_main.c
+@@ -0,0 +1,289 @@
++#include "stm32f030x8.h"
++#include "ota_layout.h"
++
++#define BOOT_ERROR_MASK       (FLASH_SR_PGERR | FLASH_SR_WRPERR)
++#define BOOT_LOG_TOKEN_BASE   (0x5A00u)
++
++#define BOOT_TRACE(value)     (*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = (value))
++
++/* PB3 drives the board power-hold latch.  A push button only supplies the
++ * initial pulse, so the bootloader must take ownership before doing any flash
++ * recovery or jumping to the application. */
++static void HoldBoardPower(void)
++{
++    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
++    (void)RCC->AHBENR;
++    GPIOB->BSRR = GPIO_BSRR_BS_3;
++    GPIOB->MODER = (GPIOB->MODER & ~(3u << (3u * 2u))) |
++                   (1u << (3u * 2u));
++    GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
++}
++
++/* Called directly by Reset_Handler, before the C runtime initializes RAM. */
++void SystemInit(void)
++{
++    HoldBoardPower();
++}
++
++/* Change MSP and branch without allowing the C compiler to emit a stack
++ * epilogue after MSP has changed.  CONTROL and PRIMASK are restored to their
++ * reset-state values for the application. */
++__asm static void BranchToApplication(uint32_t stack, uint32_t reset)
++{
++    MSR     MSP, r0
++    MOVS    r0, #0
++    MSR     CONTROL, r0
++    ISB
++    CPSIE   i
++    BX      r1
++}
++
++static uint32_t Crc32Update(uint32_t crc, const uint8_t *data, uint32_t length)
++{
++    uint32_t i;
++    uint8_t bit;
++    for (i = 0u; i < length; i++) {
++        crc ^= data[i];
++        for (bit = 0u; bit < 8u; bit++) {
++            crc = (crc & 1u) ? ((crc >> 1) ^ 0xEDB88320u) : (crc >> 1);
++        }
++    }
++    return crc;
++}
++
++static uint8_t MarkerValid(uint32_t offset, uint16_t marker, uint16_t inverse)
++{
++    const uint16_t *p = (const uint16_t *)(OTA_METADATA_BASE + offset);
++    return ((p[0] == marker) && (p[1] == inverse)) ? 1u : 0u;
++}
++
++static uint8_t HeaderValid(const OtaMetadataHeader *header)
++{
++    uint32_t crc;
++    if ((header->magic != OTA_METADATA_MAGIC) ||
++        (header->format != OTA_METADATA_FORMAT) ||
++        (header->header_size != sizeof(OtaMetadataHeader)) ||
++        (header->commit != OTA_METADATA_COMMIT) ||
++        (header->artifact_size <= OTA_SIGNATURE_SIZE) ||
++        (header->artifact_size > OTA_MAX_ARTIFACT_SIZE) ||
++        (header->application_size != (header->artifact_size - OTA_SIGNATURE_SIZE)) ||
++        (header->application_size > OTA_MAX_APPLICATION_SIZE)) { return 0u; }
++    crc = Crc32Update(0xFFFFFFFFu, (const uint8_t *)header, 24u) ^ 0xFFFFFFFFu;
++    return (crc == header->header_crc32) ? 1u : 0u;
++}
++
++static uint8_t ImageVectorValid(uint32_t address, uint32_t length)
++{
++    uint32_t stack;
++    uint32_t reset;
++    if ((length < OTA_VECTOR_BYTES) || (length > OTA_MAX_APPLICATION_SIZE)) { return 0u; }
++    stack = *(const uint32_t *)address;
++    reset = *(const uint32_t *)(address + 4u);
++    if ((stack < OTA_APP_RAM_BASE) || (stack > OTA_APP_RAM_END) || ((stack & 3u) != 0u)) { return 0u; }
++    if ((reset & 1u) == 0u) { return 0u; }
++    reset &= ~1u;
++    return ((reset >= OTA_APP_BASE) && (reset < (OTA_APP_BASE + length))) ? 1u : 0u;
++}
++
++static uint8_t FlashWait(void)
++{
++    uint32_t timeout = 0x01000000u;
++    while (((FLASH->SR & FLASH_SR_BSY) != 0u) && (--timeout != 0u)) {}
++    if (timeout == 0u) { return 0u; }
++    if ((FLASH->SR & BOOT_ERROR_MASK) != 0u) {
++        FLASH->SR = BOOT_ERROR_MASK; return 0u;
++    }
++    if ((FLASH->SR & FLASH_SR_EOP) != 0u) { FLASH->SR = FLASH_SR_EOP; }
++    return 1u;
++}
++
++static uint8_t FlashUnlock(void)
++{
++    if ((FLASH->CR & FLASH_CR_LOCK) != 0u) {
++        FLASH->KEYR = FLASH_KEY1; FLASH->KEYR = FLASH_KEY2;
++    }
++    return ((FLASH->CR & FLASH_CR_LOCK) == 0u) ? 1u : 0u;
++}
++
++static uint8_t FlashErasePage(uint32_t address)
++{
++    if ((address < OTA_APP_BASE) || (address >= OTA_CONFIG_A_BASE) ||
++        ((address & (OTA_PAGE_SIZE - 1u)) != 0u)) { return 0u; }
++    if (FlashWait() == 0u) { return 0u; }
++    FLASH->CR |= FLASH_CR_PER; FLASH->AR = address; FLASH->CR |= FLASH_CR_STRT;
++    if (FlashWait() == 0u) { FLASH->CR &= ~FLASH_CR_PER; return 0u; }
++    FLASH->CR &= ~FLASH_CR_PER;
++    return 1u;
++}
++
++static uint8_t FlashProgramHalfword(uint32_t address, uint16_t value)
++{
++    if ((address < OTA_APP_BASE) || (address >= OTA_CONFIG_A_BASE) || ((address & 1u) != 0u)) { return 0u; }
++    if (*(const uint16_t *)address == value) { return 1u; }
++    if (*(const uint16_t *)address != 0xFFFFu) { return 0u; }
++    if (FlashWait() == 0u) { return 0u; }
++    FLASH->CR |= FLASH_CR_PG;
++    *(volatile uint16_t *)address = value;
++    if (FlashWait() == 0u) { FLASH->CR &= ~FLASH_CR_PG; return 0u; }
++    FLASH->CR &= ~FLASH_CR_PG;
++    return (*(const uint16_t *)address == value) ? 1u : 0u;
++}
++
++static uint8_t CopyPage(uint32_t destination, uint32_t source, uint32_t valid_bytes)
++{
++    uint32_t offset;
++    uint16_t value;
++    if (FlashErasePage(destination) == 0u) { return 0u; }
++    for (offset = 0u; offset < OTA_PAGE_SIZE; offset += 2u) {
++        value = (offset < valid_bytes) ? *(const uint16_t *)(source + offset) : 0xFFFFu;
++        if ((value != 0xFFFFu) && (FlashProgramHalfword(destination + offset, value) == 0u)) { return 0u; }
++    }
++    for (offset = 0u; offset < OTA_PAGE_SIZE; offset += 2u) {
++        value = (offset < valid_bytes) ? *(const uint16_t *)(source + offset) : 0xFFFFu;
++        if (*(const uint16_t *)(destination + offset) != value) { return 0u; }
++    }
++    return 1u;
++}
++
++static uint16_t LogToken(uint16_t step)
++{
++    return (uint16_t)(BOOT_LOG_TOKEN_BASE | (step & 0x00FFu));
++}
++
++static uint16_t CompletedSteps(uint32_t log_offset)
++{
++    uint16_t step;
++    const uint16_t *entry = (const uint16_t *)(OTA_METADATA_BASE + log_offset);
++    for (step = 0u; step < OTA_SWAP_STEP_COUNT; step++) {
++        uint16_t token = LogToken((uint16_t)(step + 1u));
++        if ((entry[step * 2u] != token) || (entry[step * 2u + 1u] != (uint16_t)~token)) { break; }
++    }
++    return step;
++}
++
++static uint8_t AppendStep(uint32_t log_offset, uint16_t step)
++{
++    uint32_t address = OTA_METADATA_BASE + log_offset + ((uint32_t)(step - 1u) * 4u);
++    uint16_t token = LogToken(step);
++    if (FlashProgramHalfword(address, token) == 0u) { return 0u; }
++    return FlashProgramHalfword(address + 2u, (uint16_t)~token);
++}
++
++static uint8_t WriteMarker(uint32_t offset, uint16_t marker, uint16_t inverse)
++{
++    if (FlashProgramHalfword(OTA_METADATA_BASE + offset, marker) == 0u) { return 0u; }
++    return FlashProgramHalfword(OTA_METADATA_BASE + offset + 2u, inverse);
++}
++
++static uint8_t RunSwap(uint32_t log_offset, uint32_t incoming_size, uint8_t trim_incoming)
++{
++    uint16_t completed = CompletedSteps(log_offset);
++    while (completed < OTA_SWAP_STEP_COUNT) {
++        uint16_t page = (uint16_t)(completed / 3u);
++        uint16_t phase = (uint16_t)(completed % 3u);
++        uint32_t page_offset = (uint32_t)page * OTA_PAGE_SIZE;
++        uint32_t valid = OTA_PAGE_SIZE;
++        if ((trim_incoming != 0u) && (page_offset >= incoming_size)) { valid = 0u; }
++        else if ((trim_incoming != 0u) && ((page_offset + OTA_PAGE_SIZE) > incoming_size)) {
++            valid = incoming_size - page_offset;
++        }
++        if (phase == 0u) {
++            if (CopyPage(OTA_SCRATCH_BASE, OTA_APP_BASE + page_offset, OTA_PAGE_SIZE) == 0u) { return 0u; }
++        } else if (phase == 1u) {
++            if (CopyPage(OTA_APP_BASE + page_offset, OTA_STAGE_BASE + page_offset, valid) == 0u) { return 0u; }
++        } else {
++            if (CopyPage(OTA_STAGE_BASE + page_offset, OTA_SCRATCH_BASE, OTA_PAGE_SIZE) == 0u) { return 0u; }
++        }
++        completed++;
++        if (AppendStep(log_offset, completed) == 0u) { return 0u; }
++    }
++    return 1u;
++}
++
++static void JumpToApplication(void)
++{
++    uint32_t i;
++    uint32_t stack;
++    uint32_t reset;
++    uint32_t *vectors = (uint32_t *)0x20000000u;
++    /* The slot includes the 384-byte artifact signature reserve, while the
++     * installed application does not.  Passing OTA_APP_SLOT_SIZE here makes
++     * ImageVectorValid reject every normal application as oversized. */
++    if (ImageVectorValid(OTA_APP_BASE, OTA_MAX_APPLICATION_SIZE) == 0u) {
++        BOOT_TRACE(0xB00700EEu);
++        while (1) {}
++    }
++    BOOT_TRACE(OTA_BOOT_TRACE_VECTOR_OK);
++    for (i = 0u; i < (OTA_VECTOR_BYTES / 4u); i++) {
++        vectors[i] = *(const uint32_t *)(OTA_APP_BASE + i * 4u);
++    }
++    stack = vectors[0]; reset = vectors[1];
++    __disable_irq();
++    SysTick->CTRL = 0u; SysTick->LOAD = 0u; SysTick->VAL = 0u;
++    NVIC->ICER[0] = 0xFFFFFFFFu;
++    NVIC->ICPR[0] = 0xFFFFFFFFu;
++    SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk | SCB_ICSR_PENDSVCLR_Msk;
++    FLASH->CR |= FLASH_CR_LOCK;
++    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
++    (void)RCC->APB2ENR;
++    SYSCFG->CFGR1 = (SYSCFG->CFGR1 & ~SYSCFG_CFGR1_MEM_MODE) | SYSCFG_CFGR1_MEM_MODE_0 | SYSCFG_CFGR1_MEM_MODE_1;
++    __DSB(); __ISB();
++    if ((SYSCFG->CFGR1 & SYSCFG_CFGR1_MEM_MODE) != SYSCFG_CFGR1_MEM_MODE) {
++        BOOT_TRACE(0xB00700EFu);
++        while (1) {}
++    }
++    BOOT_TRACE(OTA_BOOT_TRACE_REMAP_OK);
++    BranchToApplication(stack, reset);
++    while (1) {}
++}
++
++int main(void)
++{
++    const OtaMetadataHeader *header = (const OtaMetadataHeader *)OTA_METADATA_BASE;
++    uint8_t valid;
++    HoldBoardPower();
++    BOOT_TRACE(OTA_BOOT_TRACE_ENTERED);
++    valid = HeaderValid(header);
++    if (FlashUnlock() == 0u) { JumpToApplication(); }
++    if (valid != 0u) {
++        uint8_t trial = MarkerValid(OTA_META_TRIAL_OFFSET, OTA_MARKER_TRIAL, OTA_MARKER_TRIAL_INV);
++        uint8_t confirmed = MarkerValid(OTA_META_CONFIRMED_OFFSET, OTA_MARKER_CONFIRMED, OTA_MARKER_CONFIRMED_INV);
++        uint8_t rollback_done = MarkerValid(OTA_META_ROLLBACK_OFFSET, OTA_MARKER_ROLLBACK_DONE, OTA_MARKER_ROLLBACK_DONE_INV);
++        if ((trial == 0u) && (rollback_done == 0u)) {
++            uint16_t completed = CompletedSteps(OTA_META_FORWARD_LOG_OFFSET);
++            uint8_t staged_valid = 1u;
++            if (completed == 0u) {
++                uint32_t crc = Crc32Update(0xFFFFFFFFu, (const uint8_t *)OTA_STAGE_BASE,
++                                           header->artifact_size) ^ 0xFFFFFFFFu;
++                staged_valid = ((crc == header->artifact_crc32) &&
++                                (ImageVectorValid(OTA_STAGE_BASE, header->application_size) != 0u)) ? 1u : 0u;
++            }
++            if ((staged_valid != 0u) &&
++                (RunSwap(OTA_META_FORWARD_LOG_OFFSET, header->application_size, 1u) != 0u)) {
++                if (WriteMarker(OTA_META_TRIAL_OFFSET, OTA_MARKER_TRIAL, OTA_MARKER_TRIAL_INV) != 0u) {
++                    JumpToApplication();
++                }
++                NVIC_SystemReset();
++            }
++            completed = CompletedSteps(OTA_META_FORWARD_LOG_OFFSET);
++            if (completed != 0u) { NVIC_SystemReset(); }
++            (void)FlashErasePage(OTA_METADATA_BASE);
++        } else if ((trial != 0u) && (confirmed == 0u) && (rollback_done == 0u)) {
++            if (RunSwap(OTA_META_ROLLBACK_LOG_OFFSET, OTA_APP_SLOT_SIZE, 0u) != 0u) {
++                if (WriteMarker(OTA_META_ROLLBACK_OFFSET, OTA_MARKER_ROLLBACK_DONE,
++                                OTA_MARKER_ROLLBACK_DONE_INV) != 0u) {
++                    (void)FlashErasePage(OTA_METADATA_BASE);
++                    JumpToApplication();
++                }
++            }
++            NVIC_SystemReset();
++        } else if (rollback_done != 0u) {
++            (void)FlashErasePage(OTA_METADATA_BASE);
++            JumpToApplication();
++        } else {
++            JumpToApplication();
++        }
++    }
++    JumpToApplication();
++    return 0;
++}
+--- 9/tw66gw02/Bootloader/bootloader.sct
++++ 10/tw66gw02/Bootloader/bootloader.sct
+@@ -0,0 +1,14 @@
++; STM32F030C8 development OTA bootloader: 6 KiB at flash base.
++LR_BOOT 0x08000000 0x00001800
++{
++  ER_BOOT 0x08000000 0x00001800
++  {
++    *.o (RESET, +First)
++    *(InRoot$$Sections)
++    .ANY (+RO)
++  }
++  RW_BOOT 0x20000000 0x00002000
++  {
++    .ANY (+RW +ZI)
++  }
++}
+--- 9/tw66gw02/Bootloader/build_bootloader.ps1
++++ 10/tw66gw02/Bootloader/build_bootloader.ps1
+@@ -0,0 +1,40 @@
++param(
++    [string]$KeilRoot = 'C:\Keil_v5'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = Split-Path -Parent $PSScriptRoot
++$outputDir = Join-Path $PSScriptRoot 'build'
++New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
++
++$compiler = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armcc.exe'
++$assembler = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armasm.exe'
++$linker = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armlink.exe'
++$fromelf = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\fromelf.exe'
++$cmsisDevice = Join-Path $projectRoot 'Drivers\CMSIS\Device\ST\STM32F0xx\Include'
++$cmsisCore = Join-Path $projectRoot 'Drivers\CMSIS\Include'
++$bsp = Join-Path $projectRoot 'BSP'
++
++& $assembler --cpu Cortex-M0 --pd '__MICROLIB SETA 0' --xref --debug `
++    -o (Join-Path $outputDir 'startup.o') (Join-Path $projectRoot 'MDK-ARM\startup_stm32f030x8.s')
++if ($LASTEXITCODE -ne 0) { throw 'Bootloader startup assembly failed.' }
++
++& $compiler -c --cpu Cortex-M0 --c99 -O3 -Ospace --split_sections --debug `
++    -DSTM32F030x8 -I $cmsisDevice -I $cmsisCore -I $bsp `
++    -o (Join-Path $outputDir 'boot_main.o') (Join-Path $PSScriptRoot 'boot_main.c')
++if ($LASTEXITCODE -ne 0) { throw 'Bootloader C compilation failed.' }
++
++& $linker --cpu Cortex-M0 --strict --summary_stderr `
++    --scatter (Join-Path $PSScriptRoot 'bootloader.sct') `
++    -o (Join-Path $outputDir 'mathis_bootloader.axf') `
++    (Join-Path $outputDir 'startup.o') (Join-Path $outputDir 'boot_main.o')
++if ($LASTEXITCODE -ne 0) { throw 'Bootloader link failed.' }
++
++& $fromelf --i32combined --output (Join-Path $outputDir 'mathis_bootloader.hex') (Join-Path $outputDir 'mathis_bootloader.axf')
++if ($LASTEXITCODE -ne 0) { throw 'Bootloader HEX generation failed.' }
++& $fromelf --bin --output (Join-Path $outputDir 'mathis_bootloader.bin') (Join-Path $outputDir 'mathis_bootloader.axf')
++if ($LASTEXITCODE -ne 0) { throw 'Bootloader BIN generation failed.' }
++
++$bootSize = (Get-Item (Join-Path $outputDir 'mathis_bootloader.bin')).Length
++if ($bootSize -gt 0x1800) { throw "Bootloader is $bootSize bytes; limit is 6144 bytes." }
++Write-Host "Bootloader built: $bootSize bytes"
+--- 9/tw66gw02/Bootloader/build_min_bootloader.ps1
++++ 10/tw66gw02/Bootloader/build_min_bootloader.ps1
+@@ -0,0 +1,41 @@
++param(
++    [string]$KeilRoot = 'C:\Keil_v5'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = Split-Path -Parent $PSScriptRoot
++$outputDir = Join-Path $PSScriptRoot 'build_min'
++New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
++
++$compiler = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armcc.exe'
++$assembler = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armasm.exe'
++$linker = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armlink.exe'
++$fromelf = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\fromelf.exe'
++$cmsisDevice = Join-Path $projectRoot 'Drivers\CMSIS\Device\ST\STM32F0xx\Include'
++$cmsisCore = Join-Path $projectRoot 'Drivers\CMSIS\Include'
++$bsp = Join-Path $projectRoot 'BSP'
++
++& $assembler --cpu Cortex-M0 --pd '__MICROLIB SETA 0' --xref --debug `
++    -o (Join-Path $outputDir 'startup.o') (Join-Path $projectRoot 'MDK-ARM\startup_stm32f030x8.s')
++if ($LASTEXITCODE -ne 0) { throw 'Minimal bootloader startup assembly failed.' }
++
++& $compiler -c --cpu Cortex-M0 --c99 -O3 -Ospace --split_sections --debug `
++    -DSTM32F030x8 -I $cmsisDevice -I $cmsisCore -I $bsp `
++    -o (Join-Path $outputDir 'min_boot_main.o') (Join-Path $PSScriptRoot 'min_boot_main.c')
++if ($LASTEXITCODE -ne 0) { throw 'Minimal bootloader compilation failed.' }
++
++& $linker --cpu Cortex-M0 --strict --summary_stderr `
++    --scatter (Join-Path $PSScriptRoot 'bootloader.sct') `
++    -o (Join-Path $outputDir 'mathis_min_bootloader.axf') `
++    (Join-Path $outputDir 'startup.o') (Join-Path $outputDir 'min_boot_main.o')
++if ($LASTEXITCODE -ne 0) { throw 'Minimal bootloader link failed.' }
++
++& $fromelf --bin --output (Join-Path $outputDir 'mathis_min_bootloader.bin') `
++    (Join-Path $outputDir 'mathis_min_bootloader.axf')
++if ($LASTEXITCODE -ne 0) { throw 'Minimal bootloader BIN generation failed.' }
++& $fromelf --i32combined --output (Join-Path $outputDir 'mathis_min_bootloader.hex') `
++    (Join-Path $outputDir 'mathis_min_bootloader.axf')
++if ($LASTEXITCODE -ne 0) { throw 'Minimal bootloader HEX generation failed.' }
++
++$size = (Get-Item (Join-Path $outputDir 'mathis_min_bootloader.bin')).Length
++Write-Host "Minimal bootloader built: $size bytes"
+--- 9/tw66gw02/Bootloader/min_boot_main.c
++++ 10/tw66gw02/Bootloader/min_boot_main.c
+@@ -0,0 +1,68 @@
++#include "stm32f030x8.h"
++#include "ota_layout.h"
++
++#define TRACE(value) (*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = (value))
++
++static void HoldBoardPower(void)
++{
++    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
++    (void)RCC->AHBENR;
++    GPIOB->BSRR = GPIO_BSRR_BS_3;
++    GPIOB->MODER = (GPIOB->MODER & ~(3u << 6u)) | (1u << 6u);
++    GPIOB->OTYPER &= ~GPIO_OTYPER_OT_3;
++}
++
++void SystemInit(void)
++{
++    HoldBoardPower();
++}
++
++__asm static void BranchToApplication(uint32_t stack, uint32_t reset)
++{
++    MSR     MSP, r0
++    MOVS    r0, #0
++    MSR     CONTROL, r0
++    ISB
++    CPSIE   i
++    BX      r1
++}
++
++int main(void)
++{
++    uint32_t i;
++    uint32_t stack = *(const uint32_t *)OTA_APP_BASE;
++    uint32_t reset = *(const uint32_t *)(OTA_APP_BASE + 4u);
++    uint32_t *vectors = (uint32_t *)0x20000000u;
++
++    HoldBoardPower();
++    TRACE(0xB0071001u);
++    if ((stack < OTA_APP_RAM_BASE) || (stack > OTA_APP_RAM_END) ||
++        ((stack & 3u) != 0u) || ((reset & 1u) == 0u) ||
++        ((reset & ~1u) < OTA_APP_BASE) ||
++        ((reset & ~1u) >= (OTA_APP_BASE + OTA_APP_SLOT_SIZE))) {
++        TRACE(0xB00710EEu);
++        while (1) {}
++    }
++
++    __disable_irq();
++    for (i = 0u; i < (OTA_VECTOR_BYTES / 4u); i++) {
++        vectors[i] = *(const uint32_t *)(OTA_APP_BASE + i * 4u);
++    }
++    SysTick->CTRL = 0u;
++    NVIC->ICER[0] = 0xFFFFFFFFu;
++    NVIC->ICPR[0] = 0xFFFFFFFFu;
++    SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk | SCB_ICSR_PENDSVCLR_Msk;
++    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
++    (void)RCC->APB2ENR;
++    SYSCFG->CFGR1 = (SYSCFG->CFGR1 & ~SYSCFG_CFGR1_MEM_MODE) |
++                    SYSCFG_CFGR1_MEM_MODE;
++    __DSB();
++    __ISB();
++    if ((SYSCFG->CFGR1 & SYSCFG_CFGR1_MEM_MODE) != SYSCFG_CFGR1_MEM_MODE) {
++        TRACE(0xB00710EFu);
++        while (1) {}
++    }
++    TRACE(0xB0071003u);
++    BranchToApplication(stack, reset);
++    while (1) {}
++}
+--- 9/tw66gw02/BuildKeilFactoryTarget.ps1
++++ 10/tw66gw02/BuildKeilFactoryTarget.ps1
+@@ -0,0 +1,62 @@
++param(
++    [string]$KeilRoot = 'C:\Keil_v5'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = $PSScriptRoot
++$mdkDir = Join-Path $projectRoot 'MDK-ARM'
++$artifactDir = Join-Path $projectRoot 'OTA_Artifacts'
++$generatedProject = Join-Path $mdkDir 'tw66gw02_factory.generated.uvprojx'
++$log = Join-Path $artifactDir 'build_factory_keil.log'
++$uv4 = Join-Path $KeilRoot 'UV4\UV4.exe'
++$fromelf = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\fromelf.exe'
++
++New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
++& (Join-Path $projectRoot 'PrepareFactoryBootImage.ps1') -KeilRoot $KeilRoot
++if ($LASTEXITCODE -ne 0) { throw 'Factory boot image preparation failed.' }
++
++try {
++    $template = Get-Content (Join-Path $mdkDir 'tw66gw02.uvprojx') -Raw -Encoding UTF8
++    $disabledBeforeMake = @'
++          <BeforeMake>
++            <RunUserProg1>0</RunUserProg1>
++            <RunUserProg2>0</RunUserProg2>
++            <UserProg1Name></UserProg1Name>
++            <UserProg2Name></UserProg2Name>
++            <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
++            <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
++            <nStopB1X>0</nStopB1X>
++            <nStopB2X>0</nStopB2X>
++          </BeforeMake>
++'@
++    $template = [regex]::Replace($template, '(?s)          <BeforeMake>.*?          </BeforeMake>',
++                                 $disabledBeforeMake, 1)
++    [IO.File]::WriteAllText($generatedProject, $template, [Text.UTF8Encoding]::new($false))
++    if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log -Force }
++    & $uv4 -r $generatedProject -t tw66gw02 -j0 -o $log
++
++    $deadline = [DateTime]::UtcNow.AddSeconds(120)
++    do {
++        Start-Sleep -Milliseconds 250
++        if (Test-Path -LiteralPath $log) {
++            $logText = Get-Content $log -Raw -Encoding Default
++            if ($logText -match 'Build Time Elapsed:') { break }
++        }
++    } while ([DateTime]::UtcNow -lt $deadline)
++    if (!(Test-Path -LiteralPath $log) -or ($logText -notmatch '0 Error\(s\)')) {
++        throw "Keil factory target failed or timed out. See $log"
++    }
++
++    $axf = Join-Path $mdkDir 'tw66gw02\tw66gw02.axf'
++    $hex = Join-Path $artifactDir 'keil_factory_v100.hex'
++    $bin = Join-Path $artifactDir 'keil_factory_v100.bin'
++    Copy-Item -Force (Join-Path $mdkDir 'tw66gw02\tw66gw02.hex') $hex
++    & $fromelf --bincombined --output $bin $axf
++    if ($LASTEXITCODE -ne 0) { throw 'Keil factory BIN generation failed.' }
++    Write-Host "Keil factory target: $axf"
++    Write-Host "Factory HEX: $hex"
++    Write-Host "Factory BIN: $bin"
++}
++finally {
++    if (Test-Path -LiteralPath $generatedProject) { Remove-Item -LiteralPath $generatedProject -Force }
++}
+--- 9/tw66gw02/BuildOtaArtifacts.ps1
++++ 10/tw66gw02/BuildOtaArtifacts.ps1
+@@ -0,0 +1,186 @@
++param(
++    [ValidateRange(0,255)][int]$FactoryVersion = 100,
++    [ValidateRange(0,255)][int]$OtaVersion = 101,
++    [string]$KeilRoot = 'C:\Keil_v5'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = $PSScriptRoot
++$mdkDir = Join-Path $projectRoot 'MDK-ARM'
++$outputDir = Join-Path $projectRoot 'OTA_Artifacts'
++$generatedProject = Join-Path $mdkDir 'tw66gw02_ota.generated.uvprojx'
++$uv4 = Join-Path $KeilRoot 'UV4\UV4.exe'
++$fromelf = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\fromelf.exe'
++
++New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
++
++function Invoke-AppBuild([int]$Version, [string]$Label) {
++    $template = Get-Content (Join-Path $mdkDir 'tw66gw02.uvprojx') -Raw -Encoding UTF8
++    $disabledAfterMake = @'
++          <AfterMake>
++            <RunUserProg1>0</RunUserProg1>
++            <RunUserProg2>0</RunUserProg2>
++            <UserProg1Name></UserProg1Name>
++            <UserProg2Name></UserProg2Name>
++            <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
++            <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
++            <nStopA1X>0</nStopA1X>
++            <nStopA2X>0</nStopA2X>
++          </AfterMake>
++'@
++    $template = [regex]::Replace($template, '(?s)          <AfterMake>.*?          </AfterMake>',
++                                 $disabledAfterMake, 1)
++    $temporaryOutput = ".\tw66gw02_ota_$Label\"
++    $template = $template.Replace('<OutputDirectory>.\tw66gw02\</OutputDirectory>',
++                                  "<OutputDirectory>$temporaryOutput</OutputDirectory>")
++    $template = $template.Replace(
++        '<Define>USE_HAL_DRIVER,STM32F030x8</Define>',
++        "<Define>USE_HAL_DRIVER,STM32F030x8,MATHIS_FW_VERSION=$Version</Define>")
++    $template = $template.Replace('.\tw66gw02_factory.sct', '.\tw66gw02_app.sct')
++    $bootObjectEntry = @'
++            <File>
++              <FileName>boot_image.o</FileName>
++              <FileType>3</FileType>
++              <FilePath>boot_image.o</FilePath>
++            </File>
++'@
++    $template = $template.Replace($bootObjectEntry, '')
++    [IO.File]::WriteAllText($generatedProject, $template, [Text.UTF8Encoding]::new($false))
++    $log = Join-Path $outputDir "build_$Label.log"
++    if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log -Force }
++    & $uv4 -r $generatedProject -t tw66gw02 -j0 -o $log
++    if ($LASTEXITCODE -ne 0) { throw "Application build $Label failed. See $log" }
++    $deadline = [DateTime]::UtcNow.AddSeconds(120)
++    do {
++        Start-Sleep -Milliseconds 250
++        if (Test-Path -LiteralPath $log) {
++            $logText = Get-Content $log -Raw -Encoding Default
++            if ($logText -match 'Build Time Elapsed:') { break }
++        }
++    } while ([DateTime]::UtcNow -lt $deadline)
++    if (!(Test-Path -LiteralPath $log) -or ($logText -notmatch 'Build Time Elapsed:')) {
++        throw "Timed out waiting for Keil to build $Label."
++    }
++    if ($logText -notmatch '0 Error\(s\)') { throw "Application build $Label failed. See $log" }
++    $temporaryOutputDir = Join-Path $mdkDir "tw66gw02_ota_$Label"
++    $axf = Join-Path $temporaryOutputDir 'tw66gw02.axf'
++    $bin = Join-Path $outputDir "mathis_app_$Label.bin"
++    $hex = Join-Path $outputDir "mathis_app_$Label.hex"
++    & $fromelf --bin --output $bin $axf
++    if ($LASTEXITCODE -ne 0) { throw "BIN generation for $Label failed." }
++    Copy-Item -Force (Join-Path $temporaryOutputDir 'tw66gw02.hex') $hex
++    $size = (Get-Item $bin).Length
++    if ($size -gt 0x6A80) { throw "Application $Label is $size bytes; maximum is 27264 bytes." }
++    return @{ Bin = $bin; Hex = $hex; Size = $size }
++}
++
++function Get-Crc32([byte[]]$Bytes) {
++    [uint32]$crc = [uint32]::MaxValue
++    foreach ($value in $Bytes) {
++        $crc = $crc -bxor [uint32]$value
++        for ($bit = 0; $bit -lt 8; $bit++) {
++            if (($crc -band 1) -ne 0) { $crc = ($crc -shr 1) -bxor [uint32]3988292384 }
++            else { $crc = $crc -shr 1 }
++        }
++    }
++    return [uint32]($crc -bxor [uint32]::MaxValue)
++}
++
++function Merge-IntelHex([string]$First, [string]$Second, [string]$Destination) {
++    $lines = [Collections.Generic.List[string]]::new()
++    foreach ($line in (Get-Content $First)) { if ($line -ne ':00000001FF') { $lines.Add($line) } }
++    foreach ($line in (Get-Content $Second)) { if ($line -ne ':00000001FF') { $lines.Add($line) } }
++    $lines.Add(':00000001FF')
++    [IO.File]::WriteAllLines($Destination, $lines, [Text.Encoding]::ASCII)
++}
++
++try {
++    & (Join-Path $projectRoot 'Bootloader\build_bootloader.ps1') -KeilRoot $KeilRoot
++    if ($LASTEXITCODE -ne 0) { throw 'Bootloader build failed.' }
++    $factory = Invoke-AppBuild $FactoryVersion "v$FactoryVersion"
++    $ota = Invoke-AppBuild $OtaVersion "v$OtaVersion"
++
++    $bootHex = Join-Path $projectRoot 'Bootloader\build\mathis_bootloader.hex'
++    $bootBin = Join-Path $projectRoot 'Bootloader\build\mathis_bootloader.bin'
++    $factoryHex = Join-Path $outputDir "mathis_factory_v$FactoryVersion.hex"
++    Merge-IntelHex $bootHex $factory.Hex $factoryHex
++
++    [byte[]]$bootBytes = [IO.File]::ReadAllBytes($bootBin)
++    [byte[]]$factoryAppBytes = [IO.File]::ReadAllBytes($factory.Bin)
++    [byte[]]$factoryBytes = New-Object byte[] (0x1800 + $factoryAppBytes.Length)
++    for ($index = 0; $index -lt $factoryBytes.Length; $index++) { $factoryBytes[$index] = 0xFF }
++    [Array]::Copy($bootBytes, 0, $factoryBytes, 0, $bootBytes.Length)
++    [Array]::Copy($factoryAppBytes, 0, $factoryBytes, 0x1800, $factoryAppBytes.Length)
++    $factoryBin = Join-Path $outputDir "mathis_factory_v$FactoryVersion.bin"
++    [IO.File]::WriteAllBytes($factoryBin, $factoryBytes)
++
++    [byte[]]$appBytes = [IO.File]::ReadAllBytes($ota.Bin)
++    [byte[]]$artifact = New-Object byte[] ($appBytes.Length + 384)
++    [Array]::Copy($appBytes, 0, $artifact, 0, $appBytes.Length)
++    $otaFile = Join-Path $outputDir "mathis_ota_v$OtaVersion.ota"
++    [IO.File]::WriteAllBytes($otaFile, $artifact)
++    $crc = Get-Crc32 $artifact
++    $sha256Provider = [Security.Cryptography.SHA256]::Create()
++    try {
++        $sha256 = -join ($sha256Provider.ComputeHash($artifact) | ForEach-Object { $_.ToString('x2') })
++    }
++    finally {
++        $sha256Provider.Dispose()
++    }
++    $manifest = [ordered]@{
++        format = 'mathis-dev-ota-v1'
++        warning = 'DEVELOPMENT OTA - NOT FOR PRODUCTION; RSA verification and anti-rollback are disabled'
++        target_version = $OtaVersion
++        application_size = $appBytes.Length
++        signature_size = 384
++        artifact_size = $artifact.Length
++        crc32_iso_hdlc = ('0x{0:X8}' -f $crc)
++        sha256 = $sha256
++        application_base = '0x08001800'
++        development_signature_placeholder = $true
++    }
++    $manifestPath = Join-Path $outputDir "mathis_ota_v$OtaVersion.manifest.json"
++    $manifest | ConvertTo-Json | Set-Content -Encoding UTF8 $manifestPath
++
++    # Produce a physically separated hand-off tree so a raw application image
++    # cannot be confused with either the complete factory image or App OTA file.
++    $releaseRoot = Join-Path $outputDir "Release_v${FactoryVersion}_to_v${OtaVersion}"
++    $factoryDelivery = Join-Path $releaseRoot 'Factory_Flash'
++    $appDelivery = Join-Path $releaseRoot 'App_Upload'
++    $debugDelivery = Join-Path $releaseRoot 'Debug_Only'
++    New-Item -ItemType Directory -Force -Path $factoryDelivery,$appDelivery,$debugDelivery | Out-Null
++    Copy-Item -Force $factoryHex,$factoryBin -Destination $factoryDelivery
++    Copy-Item -Force $otaFile,$manifestPath -Destination $appDelivery
++    Copy-Item -Force $factory.Bin,$factory.Hex,$ota.Bin,$ota.Hex -Destination $debugDelivery
++
++    $deliveryFiles = @(
++        Join-Path $factoryDelivery (Split-Path -Leaf $factoryHex)
++        Join-Path $factoryDelivery (Split-Path -Leaf $factoryBin)
++        Join-Path $appDelivery (Split-Path -Leaf $otaFile)
++        Join-Path $appDelivery (Split-Path -Leaf $manifestPath)
++    )
++    $checksumLines = foreach ($deliveryFile in $deliveryFiles) {
++        $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $deliveryFile).Hash.ToLowerInvariant()
++        $relativeDeliveryPath = $deliveryFile.Substring($releaseRoot.Length + 1)
++        "$hash  $relativeDeliveryPath"
++    }
++    [IO.File]::WriteAllLines((Join-Path $releaseRoot 'SHA256SUMS.txt'), $checksumLines,
++                             [Text.UTF8Encoding]::new($false))
++    $releaseNote = @"
++Mathis development OTA v$FactoryVersion -> v$OtaVersion
++DEVELOPMENT ONLY - RSA verification and anti-rollback are disabled.
++
++Factory_Flash: full-chip erase, then program mathis_factory_v$FactoryVersion.hex with Keil.
++App_Upload: bundle mathis_ota_v$OtaVersion.ota and use the adjacent manifest values.
++Debug_Only: relocated application-only images; never use these as factory images or App artifacts.
++"@
++    [IO.File]::WriteAllText((Join-Path $releaseRoot 'README.txt'), $releaseNote,
++                            [Text.UTF8Encoding]::new($false))
++    Write-Host "Factory image: $factoryHex"
++    Write-Host "Factory binary: $factoryBin (program at 0x08000000)"
++    Write-Host "OTA artifact: $otaFile ($($artifact.Length) bytes, CRC $('0x{0:X8}' -f $crc))"
++    Write-Host "Separated delivery: $releaseRoot"
++}
++finally {
++    if (Test-Path -LiteralPath $generatedProject) { Remove-Item -LiteralPath $generatedProject -Force }
++}
+--- 9/tw66gw02/BuildStartupDiagnostic.ps1
++++ 10/tw66gw02/BuildStartupDiagnostic.ps1
+@@ -0,0 +1,91 @@
++param(
++    [ValidateRange(0,255)][int]$Version = 100,
++    [string]$KeilRoot = 'C:\Keil_v5'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = $PSScriptRoot
++$mdkDir = Join-Path $projectRoot 'MDK-ARM'
++$outputDir = Join-Path $projectRoot 'OTA_Artifacts'
++$generatedProject = Join-Path $mdkDir 'tw66gw02_direct.generated.uvprojx'
++$uv4 = Join-Path $KeilRoot 'UV4\UV4.exe'
++$fromelf = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\fromelf.exe'
++$log = Join-Path $outputDir 'build_direct_v100.log'
++
++New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
++
++try {
++    $template = Get-Content (Join-Path $mdkDir 'tw66gw02.uvprojx') -Raw -Encoding UTF8
++    $disabledAfterMake = @'
++          <AfterMake>
++            <RunUserProg1>0</RunUserProg1>
++            <RunUserProg2>0</RunUserProg2>
++            <UserProg1Name></UserProg1Name>
++            <UserProg2Name></UserProg2Name>
++            <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
++            <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
++            <nStopA1X>0</nStopA1X>
++            <nStopA2X>0</nStopA2X>
++          </AfterMake>
++'@
++    $template = [regex]::Replace($template, '(?s)          <AfterMake>.*?          </AfterMake>',
++                                 $disabledAfterMake, 1)
++    $template = $template.Replace('<OutputDirectory>.\tw66gw02\</OutputDirectory>',
++                                  '<OutputDirectory>.\tw66gw02_direct\</OutputDirectory>')
++    $template = $template.Replace(
++        '<Define>USE_HAL_DRIVER,STM32F030x8</Define>',
++        "<Define>USE_HAL_DRIVER,STM32F030x8,MATHIS_FW_VERSION=$Version</Define>")
++    $template = $template.Replace('.\tw66gw02_factory.sct', '.\tw66gw02_direct.sct')
++    $bootObjectEntry = @'
++            <File>
++              <FileName>boot_image.o</FileName>
++              <FileType>3</FileType>
++              <FilePath>boot_image.o</FilePath>
++            </File>
++'@
++    $template = $template.Replace($bootObjectEntry, '')
++    [IO.File]::WriteAllText($generatedProject, $template, [Text.UTF8Encoding]::new($false))
++    if (Test-Path -LiteralPath $log) { Remove-Item -LiteralPath $log -Force }
++    & $uv4 -r $generatedProject -t tw66gw02 -j0 -o $log
++    # UV4 may hand the build to an already-running instance and return 1 before
++    # that instance creates the log.  The completed log is authoritative.
++    $deadline = [DateTime]::UtcNow.AddSeconds(120)
++    do {
++        Start-Sleep -Milliseconds 250
++        if (Test-Path -LiteralPath $log) {
++            $logText = Get-Content $log -Raw -Encoding Default
++            if ($logText -match 'Build Time Elapsed:') { break }
++        }
++    } while ([DateTime]::UtcNow -lt $deadline)
++    if (!(Test-Path -LiteralPath $log) -or ($logText -notmatch '0 Error\(s\)')) {
++        throw "Direct-start diagnostic build failed or timed out. See $log"
++    }
++
++    $directOutputDir = Join-Path $mdkDir 'tw66gw02_direct'
++    $axf = Join-Path $directOutputDir 'tw66gw02.axf'
++    $bin = Join-Path $outputDir 'diagnostic_direct_v100.bin'
++    $hex = Join-Path $outputDir 'diagnostic_direct_v100.hex'
++    & $fromelf --bin --output $bin $axf
++    if ($LASTEXITCODE -ne 0) { throw 'Direct-start BIN generation failed.' }
++    Copy-Item -Force (Join-Path $directOutputDir 'tw66gw02.hex') $hex
++    Write-Host "Direct-start diagnostic: $bin (program once at 0x08000000)"
++
++    & (Join-Path $projectRoot 'Bootloader\build_min_bootloader.ps1') -KeilRoot $KeilRoot
++    if ($LASTEXITCODE -ne 0) { throw 'Minimal bootloader diagnostic build failed.' }
++    [byte[]]$minBoot = [IO.File]::ReadAllBytes(
++        (Join-Path $projectRoot 'Bootloader\build_min\mathis_min_bootloader.bin'))
++    [byte[]]$relocatedApp = [IO.File]::ReadAllBytes(
++        (Join-Path $outputDir "mathis_app_v$Version.bin"))
++    [byte[]]$minFactory = New-Object byte[] (0x1800 + $relocatedApp.Length)
++    for ($index = 0; $index -lt $minFactory.Length; $index++) { $minFactory[$index] = 0xFF }
++    [Array]::Copy($minBoot, 0, $minFactory, 0, $minBoot.Length)
++    [Array]::Copy($relocatedApp, 0, $minFactory, 0x1800, $relocatedApp.Length)
++    $minFactoryPath = Join-Path $outputDir 'diagnostic_minboot_factory_v100.bin'
++    [IO.File]::WriteAllBytes($minFactoryPath, $minFactory)
++    Write-Host "Minimal-boot diagnostic: $minFactoryPath (program once at 0x08000000)"
++}
++finally {
++    if ((Test-Path -LiteralPath $log) -and (Test-Path -LiteralPath $generatedProject)) {
++        Remove-Item -LiteralPath $generatedProject -Force
++    }
++}
+--- 9/tw66gw02/COP/gagent_md5.c
++++ 10/tw66gw02/COP/gagent_md5.c
+@@ -0,0 +1,217 @@
++/**
++  ******************************************************************************
++  * @file    gagent_md5.c
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   GAgent MD5 algorithm implementation.
++  ******************************************************************************
++  */
++#include "config.h"
++unsigned char PADDING[] = { 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
++/**
++  * @function GAgent_MD5Init()
++  * ----------------
++  * @brief    Initialize an MD5 context.
++  * @param    context - input parameter
++  * @note     None
++  */
++void GAgent_MD5Init(MD5_CTX *context)
++{
++	context->count[0] = 0;
++	context->count[1] = 0;
++	context->state[0] = 0x67452301;
++	context->state[1] = 0xEFCDAB89;
++	context->state[2] = 0x98BADCFE;
++	context->state[3] = 0x10325476;
++}
++/**
++  * @function GAgent_MD5Update()
++  * ------------------
++  * @brief    Update the MD5 context with input data.
++  * @param    context - input parameter
++  * @param    input - input parameter
++  * @param    inputlen - input parameter
++  * @note     None
++  */
++void GAgent_MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen)
++{
++	unsigned int i = 0, index = 0, partlen = 0;
++	index = (context->count[0] >> 3) & 0x3F;
++	partlen = 64 - index;
++	context->count[0] += inputlen << 3;
++	if (context->count[0] < (inputlen << 3))
++		context->count[1]++;
++	context->count[1] += inputlen >> 29;
++
++	if (inputlen >= partlen)
++	{
++		memcpy(&context->buffer[index], input, partlen);
++		GAgent_MD5Transform(context->state, context->buffer);
++		for (i = partlen; i + 64 <= inputlen; i += 64)
++			GAgent_MD5Transform(context->state, &input[i]);
++		index = 0;
++	}
++	else
++	{
++		i = 0;
++	}
++	memcpy(&context->buffer[index], &input[i], inputlen - i);
++}
++/**
++  * @function GAgent_MD5Final()
++  * -----------------
++  * @brief    Finalize MD5 calculation and output digest.
++  * @param    context - input parameter
++  * @param    digest - input parameter
++  * @note     None
++  */
++void GAgent_MD5Final(MD5_CTX *context, unsigned char digest[16])
++{
++	unsigned int index = 0, padlen = 0;
++	unsigned char bits[8];
++	index = (context->count[0] >> 3) & 0x3F;
++	padlen = (index < 56) ? (56 - index) : (120 - index);
++	GAgent_MD5Encode(bits, context->count, 8);
++	GAgent_MD5Update(context, PADDING, padlen);
++	GAgent_MD5Update(context, bits, 8);
++	GAgent_MD5Encode(digest, context->state, 16);
++}
++/**
++  * @function GAgent_MD5Encode()
++  * ------------------
++  * @brief    Encode 32-bit words into little-endian bytes.
++  * @param    output - input parameter
++  * @param    input - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
++void GAgent_MD5Encode(unsigned char *output, unsigned int *input, unsigned int len)
++{
++	unsigned int i = 0, j = 0;
++	while (j < len)
++	{
++		output[j] = input[i] & 0xFF;
++		output[j + 1] = (input[i] >> 8) & 0xFF;
++		output[j + 2] = (input[i] >> 16) & 0xFF;
++		output[j + 3] = (input[i] >> 24) & 0xFF;
++		i++;
++		j += 4;
++	}
++}
++/**
++  * @function GAgent_MD5Decode()
++  * ------------------
++  * @brief    Decode little-endian bytes into 32-bit words.
++  * @param    output - input parameter
++  * @param    input - input parameter
++  * @param    len - input parameter
++  * @note     None
++  */
++void GAgent_MD5Decode(unsigned int *output, unsigned char *input, unsigned int len)
++{
++	unsigned int i = 0, j = 0;
++	while (j < len)
++	{
++		output[i] = (input[j]) |
++				(input[j + 1] << 8) |
++				(input[j + 2] << 16) |
++				(input[j + 3] << 24);
++		i++;
++		j += 4;
++	}
++}
++/**
++  * @function GAgent_MD5Transform()
++  * ---------------------
++  * @brief    Transform one 64-byte MD5 block.
++  * @param    state - input parameter
++  * @param    block - input parameter
++  * @note     None
++  */
++void GAgent_MD5Transform(unsigned int state[4], unsigned char block[64])
++{
++	unsigned int a = state[0];
++	unsigned int b = state[1];
++	unsigned int c = state[2];
++	unsigned int d = state[3];
++	unsigned int x[64];
++	GAgent_MD5Decode(x, block, 64);
++	FF(a, b, c, d, x[0], 7, 0xd76aa478); /* 1 */
++	FF(d, a, b, c, x[1], 12, 0xe8c7b756); /* 2 */
++	FF(c, d, a, b, x[2], 17, 0x242070db); /* 3 */
++	FF(b, c, d, a, x[3], 22, 0xc1bdceee); /* 4 */
++	FF(a, b, c, d, x[4], 7, 0xf57c0faf); /* 5 */
++	FF(d, a, b, c, x[5], 12, 0x4787c62a); /* 6 */
++	FF(c, d, a, b, x[6], 17, 0xa8304613); /* 7 */
++	FF(b, c, d, a, x[7], 22, 0xfd469501); /* 8 */
++	FF(a, b, c, d, x[8], 7, 0x698098d8); /* 9 */
++	FF(d, a, b, c, x[9], 12, 0x8b44f7af); /* 10 */
++	FF(c, d, a, b, x[10], 17, 0xffff5bb1); /* 11 */
++	FF(b, c, d, a, x[11], 22, 0x895cd7be); /* 12 */
++	FF(a, b, c, d, x[12], 7, 0x6b901122); /* 13 */
++	FF(d, a, b, c, x[13], 12, 0xfd987193); /* 14 */
++	FF(c, d, a, b, x[14], 17, 0xa679438e); /* 15 */
++	FF(b, c, d, a, x[15], 22, 0x49b40821); /* 16 */
++
++	/* Round 2 */
++	GG(a, b, c, d, x[1], 5, 0xf61e2562); /* 17 */
++	GG(d, a, b, c, x[6], 9, 0xc040b340); /* 18 */
++	GG(c, d, a, b, x[11], 14, 0x265e5a51); /* 19 */
++	GG(b, c, d, a, x[0], 20, 0xe9b6c7aa); /* 20 */
++	GG(a, b, c, d, x[5], 5, 0xd62f105d); /* 21 */
++	GG(d, a, b, c, x[10], 9, 0x2441453); /* 22 */
++	GG(c, d, a, b, x[15], 14, 0xd8a1e681); /* 23 */
++	GG(b, c, d, a, x[4], 20, 0xe7d3fbc8); /* 24 */
++	GG(a, b, c, d, x[9], 5, 0x21e1cde6); /* 25 */
++	GG(d, a, b, c, x[14], 9, 0xc33707d6); /* 26 */
++	GG(c, d, a, b, x[3], 14, 0xf4d50d87); /* 27 */
++	GG(b, c, d, a, x[8], 20, 0x455a14ed); /* 28 */
++	GG(a, b, c, d, x[13], 5, 0xa9e3e905); /* 29 */
++	GG(d, a, b, c, x[2], 9, 0xfcefa3f8); /* 30 */
++	GG(c, d, a, b, x[7], 14, 0x676f02d9); /* 31 */
++	GG(b, c, d, a, x[12], 20, 0x8d2a4c8a); /* 32 */
++
++	/* Round 3 */
++	HH(a, b, c, d, x[5], 4, 0xfffa3942); /* 33 */
++	HH(d, a, b, c, x[8], 11, 0x8771f681); /* 34 */
++	HH(c, d, a, b, x[11], 16, 0x6d9d6122); /* 35 */
++	HH(b, c, d, a, x[14], 23, 0xfde5380c); /* 36 */
++	HH(a, b, c, d, x[1], 4, 0xa4beea44); /* 37 */
++	HH(d, a, b, c, x[4], 11, 0x4bdecfa9); /* 38 */
++	HH(c, d, a, b, x[7], 16, 0xf6bb4b60); /* 39 */
++	HH(b, c, d, a, x[10], 23, 0xbebfbc70); /* 40 */
++	HH(a, b, c, d, x[13], 4, 0x289b7ec6); /* 41 */
++	HH(d, a, b, c, x[0], 11, 0xeaa127fa); /* 42 */
++	HH(c, d, a, b, x[3], 16, 0xd4ef3085); /* 43 */
++	HH(b, c, d, a, x[6], 23, 0x4881d05); /* 44 */
++	HH(a, b, c, d, x[9], 4, 0xd9d4d039); /* 45 */
++	HH(d, a, b, c, x[12], 11, 0xe6db99e5); /* 46 */
++	HH(c, d, a, b, x[15], 16, 0x1fa27cf8); /* 47 */
++	HH(b, c, d, a, x[2], 23, 0xc4ac5665); /* 48 */
++
++	/* Round 4 */
++	II(a, b, c, d, x[0], 6, 0xf4292244); /* 49 */
++	II(d, a, b, c, x[7], 10, 0x432aff97); /* 50 */
++	II(c, d, a, b, x[14], 15, 0xab9423a7); /* 51 */
++	II(b, c, d, a, x[5], 21, 0xfc93a039); /* 52 */
++	II(a, b, c, d, x[12], 6, 0x655b59c3); /* 53 */
++	II(d, a, b, c, x[3], 10, 0x8f0ccc92); /* 54 */
++	II(c, d, a, b, x[10], 15, 0xffeff47d); /* 55 */
++	II(b, c, d, a, x[1], 21, 0x85845dd1); /* 56 */
++	II(a, b, c, d, x[8], 6, 0x6fa87e4f); /* 57 */
++	II(d, a, b, c, x[15], 10, 0xfe2ce6e0); /* 58 */
++	II(c, d, a, b, x[6], 15, 0xa3014314); /* 59 */
++	II(b, c, d, a, x[13], 21, 0x4e0811a1); /* 60 */
++	II(a, b, c, d, x[4], 6, 0xf7537e82); /* 61 */
++	II(d, a, b, c, x[11], 10, 0xbd3af235); /* 62 */
++	II(c, d, a, b, x[2], 15, 0x2ad7d2bb); /* 63 */
++	II(b, c, d, a, x[9], 21, 0xeb86d391); /* 64 */
++	state[0] += a;
++	state[1] += b;
++	state[2] += c;
++	state[3] += d;
++}
+--- 9/tw66gw02/COP/gagent_md5.h
++++ 10/tw66gw02/COP/gagent_md5.h
+@@ -0,0 +1,58 @@
++/**
++  ******************************************************************************
++  * @file    gagent_md5.h
++  * @author 
++  * @version V1.0
++  * @date
++  * @brief   GAgent MD5 context, macro and function declarations.
++  ******************************************************************************
++  */
++#ifndef _GAGENT_MD5_H
++#define _GAGENT_MD5_H
++#include "config.h"
++
++typedef struct
++{
++	unsigned int count[2];
++	unsigned int state[4];
++	unsigned char buffer[64];
++} MD5_CTX;
++
++#define F(x,y,z) ((x & y) | (~x & z))
++#define G(x,y,z) ((x & z) | (y & ~z))
++#define H(x,y,z) (x^y^z)
++#define I(x,y,z) (y ^ (x | ~z))
++#define ROTATE_LEFT(x,n) ((x << n) | (x >> (32-n)))
++#define FF(a,b,c,d,x,s,ac) \
++{ \
++	a += F(b,c,d) + x + ac; \
++	a = ROTATE_LEFT(a,s); \
++	a += b; \
++}
++#define GG(a,b,c,d,x,s,ac) \
++{ \
++	a += G(b,c,d) + x + ac; \
++	a = ROTATE_LEFT(a,s); \
++	a += b; \
++}
++#define HH(a,b,c,d,x,s,ac) \
++{ \
++	a += H(b,c,d) + x + ac; \
++	a = ROTATE_LEFT(a,s); \
++	a += b; \
++}
++#define II(a,b,c,d,x,s,ac) \
++{ \
++	a += I(b,c,d) + x + ac; \
++	a = ROTATE_LEFT(a,s); \
++	a += b; \
++}
++
++void GAgent_MD5Init(MD5_CTX *context);
++void GAgent_MD5Update(MD5_CTX *context, unsigned char *input, unsigned int inputlen);
++void GAgent_MD5Final(MD5_CTX *context, unsigned char digest[16]);
++void GAgent_MD5Transform(unsigned int state[4], unsigned char block[64]);
++void GAgent_MD5Encode(unsigned char *output, unsigned int *input, unsigned int len);
++void GAgent_MD5Decode(unsigned int *output, unsigned char *input, unsigned int len);
++
++#endif
+--- 9/tw66gw02/COP/ota_boot.c
++++ 10/tw66gw02/COP/ota_boot.c
+@@ -0,0 +1,50 @@
++#include "config.h"
++#include "ota_layout.h"
++#include "ota_boot.h"
++
++static uint8_t MarkerValid(uint32_t address, uint16_t marker, uint16_t inverse)
++{
++    const volatile uint16_t *p = (const volatile uint16_t *)address;
++    return ((p[0] == marker) && (p[1] == inverse)) ? 1u : 0u;
++}
++
++static uint8_t HeaderPresent(void)
++{
++    const OtaMetadataHeader *header = (const OtaMetadataHeader *)OTA_METADATA_BASE;
++    return ((header->magic == OTA_METADATA_MAGIC) &&
++            (header->format == OTA_METADATA_FORMAT) &&
++            (header->header_size == sizeof(OtaMetadataHeader)) &&
++            (header->commit == OTA_METADATA_COMMIT)) ? 1u : 0u;
++}
++
++uint8_t OtaBoot_IsTrial(void)
++{
++    if (HeaderPresent() == 0u) { return 0u; }
++    if (MarkerValid(OTA_METADATA_BASE + OTA_META_TRIAL_OFFSET,
++                    OTA_MARKER_TRIAL, OTA_MARKER_TRIAL_INV) == 0u) { return 0u; }
++    return (MarkerValid(OTA_METADATA_BASE + OTA_META_CONFIRMED_OFFSET,
++                        OTA_MARKER_CONFIRMED, OTA_MARKER_CONFIRMED_INV) == 0u) ? 1u : 0u;
++}
++
++uint8_t OtaBoot_CanStartUpdate(void)
++{
++    if (HeaderPresent() == 0u) { return 1u; }
++    return MarkerValid(OTA_METADATA_BASE + OTA_META_CONFIRMED_OFFSET,
++                       OTA_MARKER_CONFIRMED, OTA_MARKER_CONFIRMED_INV);
++}
++
++void OtaBoot_ConfirmRunningImage(void)
++{
++    uint32_t address;
++    const volatile uint16_t *marker;
++    if (OtaBoot_IsTrial() == 0u) { return; }
++    address = OTA_METADATA_BASE + OTA_META_CONFIRMED_OFFSET;
++    marker = (const volatile uint16_t *)address;
++    if (HAL_FLASH_Unlock() != HAL_OK) { return; }
++    if (((marker[0] == OTA_MARKER_CONFIRMED) ||
++         (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, address, OTA_MARKER_CONFIRMED) == HAL_OK)) &&
++        (marker[1] != OTA_MARKER_CONFIRMED_INV)) {
++        (void)HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, address + 2u, OTA_MARKER_CONFIRMED_INV);
++    }
++    (void)HAL_FLASH_Lock();
++}
+--- 9/tw66gw02/COP/ota_boot.h
++++ 10/tw66gw02/COP/ota_boot.h
+@@ -0,0 +1,10 @@
++#ifndef MATHIS_OTA_BOOT_H
++#define MATHIS_OTA_BOOT_H
++
++#include <stdint.h>
++
++uint8_t OtaBoot_IsTrial(void);
++uint8_t OtaBoot_CanStartUpdate(void);
++void OtaBoot_ConfirmRunningImage(void);
++
++#endif
+--- 9/tw66gw02/COP/ota_update.c
++++ 10/tw66gw02/COP/ota_update.c
+@@ -0,0 +1,314 @@
++#include "config.h"
++#include "ota_layout.h"
++#include "ota_boot.h"
++#include "ota_update.h"
++
++#define OTA_TYPE_BEGIN             (0x10u)
++#define OTA_TYPE_CHUNK             (0x11u)
++#define OTA_TYPE_COMMIT            (0x12u)
++#define OTA_TYPE_ABORT             (0x13u)
++#define OTA_TYPE_STATUS            (0x90u)
++
++#define OTA_STATUS_READY           (0x01u)
++#define OTA_STATUS_ACK             (0x03u)
++#define OTA_STATUS_VERIFY_OK       (0x04u)
++#define OTA_STATUS_VERIFY_FAILED   (0x05u)
++#define OTA_STATUS_APPLYING        (0x06u)
++#define OTA_STATUS_ABORTED         (0x07u)
++#define OTA_STATUS_POWER           (0x08u)
++#define OTA_STATUS_STORAGE         (0x09u)
++#define OTA_STATUS_BUSY            (0x0Au)
++#define OTA_STATUS_BAD_OFFSET      (0x0Bu)
++
++#define OTA_REASON_CRC             (0x01u)
++#define OTA_REASON_SIZE            (0x03u)
++#define OTA_REASON_TIMEOUT         (0x04u)
++#define OTA_REASON_UNKNOWN         (0xFFu)
++#define OTA_TIMEOUT_TICKS_20MS     (3000u)
++#define OTA_RESET_DELAY_TICKS      (25u)
++
++enum
++{
++    OTA_STATE_IDLE = 0,
++    OTA_STATE_READY,
++    OTA_STATE_TRANSFERRING,
++    OTA_STATE_APPLYING
++};
++
++typedef struct
++{
++    uint32_t artifact_size;
++    uint32_t expected_crc;
++    uint32_t next_offset;
++    uint32_t last_offset;
++    uint16_t last_length;
++    uint16_t timeout_ticks;
++    uint16_t reset_ticks;
++    uint8_t target_version;
++    uint8_t state;
++} OtaSession;
++
++static OtaSession s_ota;
++
++static uint32_t ReadU32Le(const uint8_t *p)
++{
++    return (uint32_t)p[0] | ((uint32_t)p[1] << 8) |
++           ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
++}
++
++static void WriteU32Le(uint8_t *p, uint32_t value)
++{
++    p[0] = (uint8_t)value; p[1] = (uint8_t)(value >> 8);
++    p[2] = (uint8_t)(value >> 16); p[3] = (uint8_t)(value >> 24);
++}
++
++static uint32_t Crc32Update(uint32_t crc, const uint8_t *data, uint32_t length)
++{
++    uint32_t i;
++    uint8_t bit;
++    for (i = 0u; i < length; i++) {
++        crc ^= data[i];
++        for (bit = 0u; bit < 8u; bit++) {
++            crc = (crc & 1u) ? ((crc >> 1) ^ 0xEDB88320u) : (crc >> 1);
++        }
++    }
++    return crc;
++}
++
++static uint32_t FlashCrc32(uint32_t address, uint32_t length)
++{
++    return Crc32Update(0xFFFFFFFFu, (const uint8_t *)address, length) ^ 0xFFFFFFFFu;
++}
++
++static uint8_t QueueStatus(uint8_t status, const uint8_t *extra, uint8_t extra_length)
++{
++    uint8_t payload[5];
++    payload[0] = status;
++    if ((extra_length != 0u) && (extra != 0)) { memcpy(&payload[1], extra, extra_length); }
++    return Wireless_QueueProtocolFrame(OTA_TYPE_STATUS, payload, (uint8_t)(extra_length + 1u));
++}
++
++static void QueueReason(uint8_t status, uint8_t reason)
++{
++    (void)QueueStatus(status, &reason, 1u);
++}
++
++static uint8_t EraseRange(uint32_t address, uint32_t pages)
++{
++    FLASH_EraseInitTypeDef erase;
++    uint32_t page_error = 0u;
++    erase.TypeErase = FLASH_TYPEERASE_PAGES;
++    erase.PageAddress = address;
++    erase.NbPages = pages;
++    if (HAL_FLASH_Unlock() != HAL_OK) { return 0u; }
++    if (HAL_FLASHEx_Erase(&erase, &page_error) != HAL_OK) {
++        (void)HAL_FLASH_Lock(); return 0u;
++    }
++    (void)HAL_FLASH_Lock();
++    return 1u;
++}
++
++static uint8_t ProgramBytes(uint32_t address, const uint8_t *data, uint16_t length)
++{
++    uint16_t offset;
++    uint16_t value;
++    if ((address & 1u) != 0u) { return 0u; }
++    if (HAL_FLASH_Unlock() != HAL_OK) { return 0u; }
++    for (offset = 0u; offset < length; offset += 2u) {
++        value = data[offset];
++        if ((uint16_t)(offset + 1u) < length) { value |= (uint16_t)data[offset + 1u] << 8; }
++        else { value |= 0xFF00u; }
++        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, address + offset, value) != HAL_OK) {
++            (void)HAL_FLASH_Lock(); return 0u;
++        }
++    }
++    (void)HAL_FLASH_Lock();
++    return (memcmp((const void *)address, data, length) == 0) ? 1u : 0u;
++}
++
++static uint8_t ApplicationVectorValid(uint32_t application_size)
++{
++    uint32_t stack;
++    uint32_t reset;
++    if ((application_size < OTA_VECTOR_BYTES) || (application_size > OTA_MAX_APPLICATION_SIZE)) { return 0u; }
++    stack = *(const uint32_t *)OTA_STAGE_BASE;
++    reset = *(const uint32_t *)(OTA_STAGE_BASE + 4u);
++    if ((stack < OTA_APP_RAM_BASE) || (stack > OTA_APP_RAM_END) || ((stack & 3u) != 0u)) { return 0u; }
++    reset &= ~1u;
++    return ((reset >= OTA_APP_BASE) && (reset < (OTA_APP_BASE + application_size))) ? 1u : 0u;
++}
++
++static uint8_t WriteMetadata(void)
++{
++    OtaMetadataHeader header;
++    uint16_t offset;
++    const uint16_t *source = (const uint16_t *)&header;
++    memset(&header, 0xFF, sizeof(header));
++    header.magic = OTA_METADATA_MAGIC;
++    header.format = OTA_METADATA_FORMAT;
++    header.header_size = sizeof(header);
++    header.artifact_size = s_ota.artifact_size;
++    header.application_size = s_ota.artifact_size - OTA_SIGNATURE_SIZE;
++    header.artifact_crc32 = s_ota.expected_crc;
++    header.target_version = s_ota.target_version;
++    header.flags = 0u;
++    header.reserved0 = 0xFFFFu;
++    header.header_crc32 = Crc32Update(0xFFFFFFFFu, (const uint8_t *)&header, 24u) ^ 0xFFFFFFFFu;
++    header.commit = OTA_METADATA_COMMIT;
++    header.reserved1 = 0xFFFFu;
++    if (EraseRange(OTA_METADATA_BASE, 1u) == 0u) { return 0u; }
++    if (HAL_FLASH_Unlock() != HAL_OK) { return 0u; }
++    for (offset = 0u; offset < 28u; offset += 2u) {
++        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, OTA_METADATA_BASE + offset,
++                              source[offset / 2u]) != HAL_OK) {
++            (void)HAL_FLASH_Lock(); return 0u;
++        }
++    }
++    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, OTA_METADATA_BASE + 28u,
++                          OTA_METADATA_COMMIT) != HAL_OK) {
++        (void)HAL_FLASH_Lock(); return 0u;
++    }
++    (void)HAL_FLASH_Lock();
++    return 1u;
++}
++
++static void ReturnIdle(void)
++{
++    memset(&s_ota, 0, sizeof(s_ota));
++}
++
++static void AbortSession(uint8_t reason)
++{
++    QueueReason(OTA_STATUS_ABORTED, reason);
++    ReturnIdle();
++}
++
++static void HandleBegin(const uint8_t *payload, uint16_t length)
++{
++    MathisTelemetrySnapshot snapshot;
++    uint8_t ready[2];
++    uint32_t size;
++    if (s_ota.state != OTA_STATE_IDLE) { (void)QueueStatus(OTA_STATUS_BUSY, 0, 0u); return; }
++    if (length != 9u) { QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_SIZE); return; }
++    size = ReadU32Le(payload);
++    if ((size <= OTA_SIGNATURE_SIZE) || (size > OTA_MAX_ARTIFACT_SIZE)) {
++        QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_SIZE); return;
++    }
++    if (OtaBoot_CanStartUpdate() == 0u) { (void)QueueStatus(OTA_STATUS_BUSY, 0, 0u); return; }
++    UI_GetTelemetrySnapshot(&snapshot);
++    if (snapshot.battery_percent < 30u) { (void)QueueStatus(OTA_STATUS_POWER, 0, 0u); return; }
++    if ((EraseRange(OTA_STAGE_BASE, OTA_SLOT_PAGE_COUNT) == 0u) ||
++        (EraseRange(OTA_METADATA_BASE, 1u) == 0u)) {
++        (void)QueueStatus(OTA_STATUS_STORAGE, 0, 0u); return;
++    }
++    Wireless_DiscardQueuedFrames();
++    memset(&s_ota, 0, sizeof(s_ota));
++    s_ota.artifact_size = size;
++    s_ota.expected_crc = ReadU32Le(&payload[4]);
++    s_ota.target_version = payload[8];
++    s_ota.state = OTA_STATE_READY;
++    ready[0] = (uint8_t)OTA_ACCEPTED_CHUNK_SIZE;
++    ready[1] = (uint8_t)(OTA_ACCEPTED_CHUNK_SIZE >> 8);
++    (void)QueueStatus(OTA_STATUS_READY, ready, 2u);
++}
++
++static void HandleChunk(const uint8_t *payload, uint16_t length)
++{
++    uint8_t next[4];
++    uint32_t offset;
++    uint16_t data_length;
++    if ((s_ota.state != OTA_STATE_READY) && (s_ota.state != OTA_STATE_TRANSFERRING)) {
++        (void)QueueStatus(OTA_STATUS_BUSY, 0, 0u); return;
++    }
++    if (length <= 4u) { (void)QueueStatus(OTA_STATUS_BAD_OFFSET, 0, 0u); return; }
++    offset = ReadU32Le(payload);
++    data_length = (uint16_t)(length - 4u);
++    if ((data_length > OTA_ACCEPTED_CHUNK_SIZE) ||
++        (offset > s_ota.artifact_size) ||
++        ((uint32_t)data_length > (s_ota.artifact_size - offset))) {
++        (void)QueueStatus(OTA_STATUS_BAD_OFFSET, 0, 0u); return;
++    }
++    if ((offset == s_ota.last_offset) && (data_length == s_ota.last_length) &&
++        (s_ota.next_offset != 0u) &&
++        (memcmp((const void *)(OTA_STAGE_BASE + offset), &payload[4], data_length) == 0)) {
++        WriteU32Le(next, s_ota.next_offset); (void)QueueStatus(OTA_STATUS_ACK, next, 4u); return;
++    }
++    if ((offset != s_ota.next_offset) || ((offset & 1u) != 0u)) {
++        (void)QueueStatus(OTA_STATUS_BAD_OFFSET, 0, 0u); return;
++    }
++    if (ProgramBytes(OTA_STAGE_BASE + offset, &payload[4], data_length) == 0u) {
++        (void)QueueStatus(OTA_STATUS_STORAGE, 0, 0u); ReturnIdle(); return;
++    }
++    s_ota.last_offset = offset;
++    s_ota.last_length = data_length;
++    s_ota.next_offset = offset + data_length;
++    s_ota.timeout_ticks = 0u;
++    s_ota.state = OTA_STATE_TRANSFERRING;
++    WriteU32Le(next, s_ota.next_offset);
++    (void)QueueStatus(OTA_STATUS_ACK, next, 4u);
++}
++
++static void HandleCommit(const uint8_t *payload, uint16_t length)
++{
++    uint32_t commit_crc;
++    if ((s_ota.state != OTA_STATE_TRANSFERRING) || (length != 4u)) {
++        (void)QueueStatus(OTA_STATUS_BUSY, 0, 0u); return;
++    }
++    commit_crc = ReadU32Le(payload);
++    if ((s_ota.next_offset != s_ota.artifact_size) ||
++        (commit_crc != s_ota.expected_crc) ||
++        (FlashCrc32(OTA_STAGE_BASE, s_ota.artifact_size) != s_ota.expected_crc)) {
++        QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_CRC); ReturnIdle(); return;
++    }
++    if (ApplicationVectorValid(s_ota.artifact_size - OTA_SIGNATURE_SIZE) == 0u) {
++        QueueReason(OTA_STATUS_VERIFY_FAILED, OTA_REASON_UNKNOWN); ReturnIdle(); return;
++    }
++    if (WriteMetadata() == 0u) {
++        (void)QueueStatus(OTA_STATUS_STORAGE, 0, 0u); ReturnIdle(); return;
++    }
++    (void)QueueStatus(OTA_STATUS_VERIFY_OK, 0, 0u);
++    (void)QueueStatus(OTA_STATUS_APPLYING, 0, 0u);
++    s_ota.state = OTA_STATE_APPLYING;
++    s_ota.reset_ticks = 0u;
++}
++
++void OtaUpdate_Init(void)
++{
++    memset(&s_ota, 0, sizeof(s_ota));
++}
++
++void OtaUpdate_HandleDisconnect(void)
++{
++    if (s_ota.state != OTA_STATE_APPLYING) { ReturnIdle(); }
++}
++
++uint8_t OtaUpdate_HandleFrame(uint8_t type, const uint8_t *payload, uint16_t length)
++{
++    switch (type) {
++        case OTA_TYPE_BEGIN: HandleBegin(payload, length); return 1u;
++        case OTA_TYPE_CHUNK: HandleChunk(payload, length); return 1u;
++        case OTA_TYPE_COMMIT: HandleCommit(payload, length); return 1u;
++        case OTA_TYPE_ABORT:
++            if (length == 0u) { AbortSession(0u); }
++            else { QueueReason(OTA_STATUS_ABORTED, OTA_REASON_UNKNOWN); ReturnIdle(); }
++            return 1u;
++        default: return 0u;
++    }
++}
++
++void OtaUpdate_Task20ms(void)
++{
++    if ((s_ota.state == OTA_STATE_READY) || (s_ota.state == OTA_STATE_TRANSFERRING)) {
++        if (++s_ota.timeout_ticks >= OTA_TIMEOUT_TICKS_20MS) { AbortSession(OTA_REASON_TIMEOUT); }
++    } else if (s_ota.state == OTA_STATE_APPLYING) {
++        if (s_ota.reset_ticks < OTA_RESET_DELAY_TICKS) { s_ota.reset_ticks++; }
++        if ((s_ota.reset_ticks >= OTA_RESET_DELAY_TICKS) && (Wireless_ProtocolTxIdle() != 0u)) {
++            NVIC_SystemReset();
++        }
++    }
++}
++
++uint8_t OtaUpdate_IsActive(void)
++{
++    return (s_ota.state == OTA_STATE_IDLE) ? 0u : 1u;
++}
+--- 9/tw66gw02/COP/ota_update.h
++++ 10/tw66gw02/COP/ota_update.h
+@@ -0,0 +1,12 @@
++#ifndef MATHIS_OTA_UPDATE_H
++#define MATHIS_OTA_UPDATE_H
++
++#include <stdint.h>
++
++void OtaUpdate_Init(void);
++void OtaUpdate_HandleDisconnect(void);
++uint8_t OtaUpdate_HandleFrame(uint8_t type, const uint8_t *payload, uint16_t length);
++void OtaUpdate_Task20ms(void);
++uint8_t OtaUpdate_IsActive(void);
++
++#endif
+--- 9/tw66gw02/Diagnostics/build_gpio_alive.ps1
++++ 10/tw66gw02/Diagnostics/build_gpio_alive.ps1
+@@ -0,0 +1,40 @@
++param(
++    [string]$KeilRoot = 'C:\Keil_v5'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = Split-Path -Parent $PSScriptRoot
++$outputDir = Join-Path $PSScriptRoot 'build'
++$artifactDir = Join-Path $projectRoot 'OTA_Artifacts'
++New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
++New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
++
++$compiler = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armcc.exe'
++$assembler = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armasm.exe'
++$linker = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armlink.exe'
++$fromelf = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\fromelf.exe'
++$cmsisDevice = Join-Path $projectRoot 'Drivers\CMSIS\Device\ST\STM32F0xx\Include'
++$cmsisCore = Join-Path $projectRoot 'Drivers\CMSIS\Include'
++
++& $assembler --cpu Cortex-M0 --pd '__MICROLIB SETA 0' --xref --debug `
++    -o (Join-Path $outputDir 'startup.o') (Join-Path $projectRoot 'MDK-ARM\startup_stm32f030x8.s')
++if ($LASTEXITCODE -ne 0) { throw 'GPIO diagnostic startup assembly failed.' }
++
++& $compiler -c --cpu Cortex-M0 --c99 -O2 --split_sections --debug `
++    -DSTM32F030x8 -I $cmsisDevice -I $cmsisCore `
++    -o (Join-Path $outputDir 'gpio_alive.o') (Join-Path $PSScriptRoot 'gpio_alive.c')
++if ($LASTEXITCODE -ne 0) { throw 'GPIO diagnostic compilation failed.' }
++
++& $linker --cpu Cortex-M0 --strict --summary_stderr `
++    --scatter (Join-Path $projectRoot 'Bootloader\bootloader.sct') `
++    -o (Join-Path $outputDir 'diagnostic_gpio_alive.axf') `
++    (Join-Path $outputDir 'startup.o') (Join-Path $outputDir 'gpio_alive.o')
++if ($LASTEXITCODE -ne 0) { throw 'GPIO diagnostic link failed.' }
++
++$bin = Join-Path $artifactDir 'diagnostic_gpio_alive.bin'
++$hex = Join-Path $artifactDir 'diagnostic_gpio_alive.hex'
++& $fromelf --bin --output $bin (Join-Path $outputDir 'diagnostic_gpio_alive.axf')
++if ($LASTEXITCODE -ne 0) { throw 'GPIO diagnostic BIN generation failed.' }
++& $fromelf --i32combined --output $hex (Join-Path $outputDir 'diagnostic_gpio_alive.axf')
++if ($LASTEXITCODE -ne 0) { throw 'GPIO diagnostic HEX generation failed.' }
++Write-Host "GPIO-alive diagnostic built: $bin ($((Get-Item $bin).Length) bytes)"
+--- 9/tw66gw02/Diagnostics/gpio_alive.c
++++ 10/tw66gw02/Diagnostics/gpio_alive.c
+@@ -0,0 +1,38 @@
++#include "stm32f030x8.h"
++
++static void BoardPowerAndOutputsInit(void)
++{
++    RCC->AHBENR |= RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN;
++    (void)RCC->AHBENR;
++
++    /* Set output levels before changing modes: PB3 holds board power, PB8 is
++       the buzzer, and PC13 is the run LED/test point used by the application. */
++    GPIOB->BSRR = GPIO_BSRR_BS_3 | GPIO_BSRR_BR_8;
++    GPIOC->BSRR = GPIO_BSRR_BR_13;
++    GPIOB->MODER = (GPIOB->MODER & ~((3u << 6u) | (3u << 16u))) |
++                   (1u << 6u) | (1u << 16u);
++    GPIOC->MODER = (GPIOC->MODER & ~(3u << 26u)) | (1u << 26u);
++    GPIOB->OTYPER &= ~((1u << 3u) | (1u << 8u));
++    GPIOC->OTYPER &= ~(1u << 13u);
++}
++
++void SystemInit(void)
++{
++    BoardPowerAndOutputsInit();
++}
++
++static void BusyDelay(void)
++{
++    volatile uint32_t count;
++    for (count = 0u; count < 800000u; count++) { __NOP(); }
++}
++
++int main(void)
++{
++    BoardPowerAndOutputsInit();
++    while (1) {
++        GPIOC->ODR ^= (1u << 13u);
++        GPIOB->ODR ^= (1u << 8u);
++        BusyDelay();
++    }
++}
+--- 9/tw66gw02/MDK-ARM/tw66gw02_app.sct
++++ 10/tw66gw02/MDK-ARM/tw66gw02_app.sct
+@@ -0,0 +1,15 @@
++; Relocated OTA application. SRAM[0..0xBF] is reserved for vector remap and
++; SRAM[0x1FF0..0x1FFF] is reserved for the development boot trace.
++LR_APP 0x08001800 0x00006A80
++{
++  ER_APP 0x08001800 0x00006A80
++  {
++    *.o (RESET, +First)
++    *(InRoot$$Sections)
++    .ANY (+RO)
++  }
++  RW_APP 0x200000C0 0x00001F30
++  {
++    .ANY (+RW +ZI)
++  }
++}
+--- 9/tw66gw02/MDK-ARM/tw66gw02_direct.sct
++++ 10/tw66gw02/MDK-ARM/tw66gw02_direct.sct
+@@ -0,0 +1,14 @@
++; Direct-start diagnostic application without the OTA bootloader.
++LR_DIRECT 0x08000000 0x0000F800
++{
++  ER_DIRECT 0x08000000 0x0000F800
++  {
++    *.o (RESET, +First)
++    *(InRoot$$Sections)
++    .ANY (+RO)
++  }
++  RW_DIRECT 0x20000000 0x00001FF0
++  {
++    .ANY (+RW +ZI)
++  }
++}
+--- 9/tw66gw02/MDK-ARM/tw66gw02_factory.sct
++++ 10/tw66gw02/MDK-ARM/tw66gw02_factory.sct
+@@ -0,0 +1,18 @@
++; Complete factory image: embedded bootloader plus relocated application.
++LR_FACTORY 0x08000000 0x00008400
++{
++  ER_BOOT_IMAGE 0x08000000 FIXED 0x00001800
++  {
++    boot_image.o (BOOT_IMAGE, +First)
++  }
++  ER_APP 0x08001800 FIXED 0x00006A80
++  {
++    *.o (RESET, +First)
++    *(InRoot$$Sections)
++    .ANY (+RO)
++  }
++  RW_APP 0x200000C0 0x00001F30
++  {
++    .ANY (+RW +ZI)
++  }
++}
+--- 9/tw66gw02/PrepareFactoryBootImage.ps1
++++ 10/tw66gw02/PrepareFactoryBootImage.ps1
+@@ -0,0 +1,23 @@
++param(
++    [string]$KeilRoot = 'C:\Keil_v5'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = $PSScriptRoot
++$assembler = Join-Path $KeilRoot 'ARM\ARM_Compiler_5.06u7\Bin\armasm.exe'
++$bootObject = Join-Path $projectRoot 'MDK-ARM\boot_image.o'
++
++& (Join-Path $projectRoot 'Bootloader\build_bootloader.ps1') -KeilRoot $KeilRoot
++if ($LASTEXITCODE -ne 0) { throw 'Bootloader build failed.' }
++
++Push-Location $projectRoot
++try {
++    & $assembler --cpu Cortex-M0 --xref --debug -o $bootObject `
++        (Join-Path $projectRoot 'MDK-ARM\boot_image.s')
++    if ($LASTEXITCODE -ne 0) { throw 'Bootloader image embedding failed.' }
++}
++finally {
++    Pop-Location
++}
++
++Write-Host "Factory boot image prepared: $bootObject"
+--- 9/tw66gw02/ProgramBootloaderOnlyWithJLink.ps1
++++ 10/tw66gw02/ProgramBootloaderOnlyWithJLink.ps1
+@@ -0,0 +1,62 @@
++param(
++    [string]$JLinkExe = 'C:\Keil_v5\ARM\Segger\JLink.exe'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = $PSScriptRoot
++$artifactDir = Join-Path $projectRoot 'OTA_Artifacts'
++$bootPath = Join-Path $projectRoot 'Bootloader\build\mathis_bootloader.bin'
++$commandFile = Join-Path $artifactDir 'program_bootloader_only.jlink'
++$logFile = Join-Path $artifactDir 'program_bootloader_only_jlink.log'
++$consoleFile = Join-Path $artifactDir 'program_bootloader_only_jlink_console.log'
++
++if (!(Test-Path -LiteralPath $JLinkExe)) { throw "J-Link Commander not found: $JLinkExe" }
++if (!(Test-Path -LiteralPath $bootPath)) { throw "Bootloader BIN not found: $bootPath" }
++[byte[]]$bootBytes = [IO.File]::ReadAllBytes($bootPath)
++if (($bootBytes.Length -lt 8) -or ($bootBytes.Length -gt 0x1800)) {
++    throw "Invalid bootloader size: $($bootBytes.Length)"
++}
++$bootSp = [BitConverter]::ToUInt32($bootBytes, 0)
++$bootReset = [BitConverter]::ToUInt32($bootBytes, 4)
++
++$commands = @(
++    'r',
++    'h',
++    'mem32 0x08001800 2',
++    "loadbin $bootPath, 0x08000000",
++    "verifybin $bootPath, 0x08000000",
++    'mem32 0x08000000 2',
++    'mem32 0x08001800 2',
++    'r',
++    'g',
++    'sleep 1000',
++    'h',
++    'regs',
++    'mem32 0x20001FF0 1',
++    'g',
++    'qc'
++)
++[IO.File]::WriteAllLines($commandFile, $commands, [Text.Encoding]::ASCII)
++
++$consoleLines = @(& $JLinkExe -device STM32F030C8 -if SWD -speed 1000 -autoconnect 1 `
++    -CommanderScript $commandFile -Log $logFile 2>&1 | ForEach-Object { "$_" })
++$consoleLines | ForEach-Object { Write-Host $_ }
++$consoleText = $consoleLines -join "`n"
++[IO.File]::WriteAllText($consoleFile, $consoleText, [Text.UTF8Encoding]::new($false))
++
++if ($consoleText -match '(?i)FAILED:\s*Cannot connect|Cannot connect to the probe|Could not connect|Error:') {
++    throw "J-Link bootloader update failed. See $consoleFile"
++}
++$bootPattern = ('(?i)08000000\s*=\s*{0:X8}\s+{1:X8}' -f $bootSp, $bootReset)
++if ($consoleText -notmatch $bootPattern) {
++    throw "Bootloader vector readback mismatch. See $consoleFile"
++}
++if ($consoleText -notmatch '(?i)08001800\s*=\s*20001598\s+08001991') {
++    throw "Relocated application vector changed or is invalid. See $consoleFile"
++}
++if ($consoleText -notmatch '(?i)20001FF0\s*=\s*A9900007') {
++    throw "Application did not reach its scheduler loop. See $consoleFile"
++}
++
++Write-Host 'Bootloader-only update verified; application scheduler is running.'
++Write-Host "Log: $consoleFile"
+--- 9/tw66gw02/ProgramFactoryWithJLink.ps1
++++ 10/tw66gw02/ProgramFactoryWithJLink.ps1
+@@ -0,0 +1,58 @@
++param(
++    [string]$Image = '.\OTA_Artifacts\mathis_factory_v100.bin',
++    [string]$JLinkExe = 'C:\Keil_v5\ARM\Segger\JLink.exe'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = $PSScriptRoot
++$imagePath = (Resolve-Path -LiteralPath (Join-Path $projectRoot $Image)).Path
++$artifactDir = Join-Path $projectRoot 'OTA_Artifacts'
++$commandFile = Join-Path $artifactDir 'program_factory.jlink'
++$logFile = Join-Path $artifactDir 'program_factory_jlink.log'
++$consoleFile = Join-Path $artifactDir 'program_factory_jlink_console.log'
++
++if (!(Test-Path -LiteralPath $JLinkExe)) { throw "J-Link Commander not found: $JLinkExe" }
++[byte[]]$imageBytes = [IO.File]::ReadAllBytes($imagePath)
++if ($imageBytes.Length -lt 8) { throw 'Image is too short to contain an STM32 vector table.' }
++$initialSp = [BitConverter]::ToUInt32($imageBytes, 0)
++$resetVector = [BitConverter]::ToUInt32($imageBytes, 4)
++
++$commands = @(
++    'r',
++    'h',
++    'erase',
++    "loadbin $imagePath, 0x08000000",
++    "verifybin $imagePath, 0x08000000",
++    'mem32 0x08000000 2',
++    'mem32 0x08001800 2',
++    'r',
++    'g',
++    'qc'
++)
++[IO.File]::WriteAllLines($commandFile, $commands, [Text.Encoding]::ASCII)
++
++$consoleLines = @(& $JLinkExe -device STM32F030C8 -if SWD -speed 1000 -autoconnect 1 `
++    -CommanderScript $commandFile -Log $logFile 2>&1 | ForEach-Object { "$_" })
++$consoleLines | ForEach-Object { Write-Host $_ }
++$consoleText = $consoleLines -join "`n"
++[IO.File]::WriteAllText($consoleFile, $consoleText, [Text.UTF8Encoding]::new($false))
++if ($consoleText -match '(?i)FAILED:\s*Cannot connect|Cannot connect to the probe|Could not connect|Error:') {
++    throw "J-Link did not connect/program the MCU. See $consoleFile"
++}
++$basePattern = ('(?i)08000000\s*=\s*{0:X8}\s+{1:X8}' -f $initialSp, $resetVector)
++if ($consoleText -notmatch $basePattern) {
++    throw "Flash-base vector readback did not match the image. See $consoleFile"
++}
++
++Write-Host 'Factory image programmed and verified.'
++Write-Host "Log: $logFile"
++Write-Host ('Expected flash-base vectors: {0:X8}/{1:X8}.' -f $initialSp, $resetVector)
++if ($imageBytes.Length -ge 0x1808) {
++    $appSp = [BitConverter]::ToUInt32($imageBytes, 0x1800)
++    $appReset = [BitConverter]::ToUInt32($imageBytes, 0x1804)
++    $appPattern = ('(?i)08001800\s*=\s*{0:X8}\s+{1:X8}' -f $appSp, $appReset)
++    if ($consoleText -notmatch $appPattern) {
++        throw "Relocated-application vector readback did not match the image. See $consoleFile"
++    }
++    Write-Host ('Expected relocated-app vectors: {0:X8}/{1:X8}.' -f $appSp, $appReset)
++}
+--- 9/tw66gw02/ReadStartupStateWithJLink.ps1
++++ 10/tw66gw02/ReadStartupStateWithJLink.ps1
+@@ -0,0 +1,37 @@
++param(
++    [string]$JLinkExe = 'C:\Keil_v5\ARM\Segger\JLink.exe'
++)
++
++$ErrorActionPreference = 'Stop'
++$projectRoot = $PSScriptRoot
++$artifactDir = Join-Path $projectRoot 'OTA_Artifacts'
++$commandFile = Join-Path $artifactDir 'read_startup_state.jlink'
++$logFile = Join-Path $artifactDir 'read_startup_state_jlink.log'
++$consoleFile = Join-Path $artifactDir 'read_startup_state_jlink_console.log'
++
++if (!(Test-Path -LiteralPath $JLinkExe)) { throw "J-Link Commander not found: $JLinkExe" }
++
++$commands = @(
++    'h',
++    'regs',
++    'mem32 0x08000000 2',
++    'mem32 0x08001800 2',
++    'mem32 0x20001FF0 1',
++    'g',
++    'qc'
++)
++[IO.File]::WriteAllLines($commandFile, $commands, [Text.Encoding]::ASCII)
++
++$consoleLines = @(& $JLinkExe -device STM32F030C8 -if SWD -speed 1000 -autoconnect 1 `
++    -CommanderScript $commandFile -Log $logFile 2>&1 | ForEach-Object { "$_" })
++$consoleLines | ForEach-Object { Write-Host $_ }
++$consoleText = $consoleLines -join "`n"
++[IO.File]::WriteAllText($consoleFile, $consoleText, [Text.UTF8Encoding]::new($false))
++if (($consoleText -match '(?i)FAILED:\s*Cannot connect|Cannot connect to the probe|Could not connect|Error:') -or
++    ($consoleText -notmatch '(?im)^PC\s*=') -or
++    ($consoleText -notmatch '(?im)^08000000\s*=') -or
++    ($consoleText -notmatch '(?im)^20001FF0\s*=')) {
++    throw "J-Link did not capture a valid MCU state. See $consoleFile"
++}
++
++Write-Host "Startup state captured: $logFile"
+--- 9/tw66gw02/tests/test_ota_artifacts.py
++++ 10/tw66gw02/tests/test_ota_artifacts.py
+@@ -0,0 +1,147 @@
++import json
++import hashlib
++import pathlib
++import struct
++import zlib
++
++
++ROOT = pathlib.Path(__file__).resolve().parents[1]
++ARTIFACTS = ROOT / "OTA_Artifacts"
++PAGE = 0x400
++SLOT = 0x6C00
++APP_MAX = 0x6A80
++APP_BASE = 0x08001800
++
++
++def parse_hex(path):
++    data = {}
++    upper = 0
++    for number, line in enumerate(path.read_text().splitlines(), 1):
++        record = bytes.fromhex(line[1:])
++        assert sum(record) & 0xFF == 0, (path, number, "checksum")
++        count = record[0]
++        address = int.from_bytes(record[1:3], "big")
++        kind = record[3]
++        payload = record[4 : 4 + count]
++        if kind == 0:
++            for offset, value in enumerate(payload):
++                absolute = upper + address + offset
++                assert absolute not in data or data[absolute] == value
++                data[absolute] = value
++        elif kind == 4:
++            upper = int.from_bytes(payload, "big") << 16
++    return data
++
++
++def run_swap(main, stage, incoming_size, trim, interrupted_after=None):
++    """Model the bootloader's journaled three-phase page swap."""
++    scratch = bytearray(PAGE)
++    completed = 0
++    interruptions = 0
++    while completed < (SLOT // PAGE) * 3:
++        page, phase = divmod(completed, 3)
++        start = page * PAGE
++        end = start + PAGE
++        if phase == 0:
++            scratch[:] = main[start:end]
++        elif phase == 1:
++            valid = PAGE
++            if trim and start >= incoming_size:
++                valid = 0
++            elif trim and end > incoming_size:
++                valid = incoming_size - start
++            main[start:end] = stage[start : start + valid] + bytes([0xFF]) * (PAGE - valid)
++        else:
++            stage[start:end] = scratch
++        interruptions += 1
++        if interrupted_after == interruptions:
++            # Power failed before journal append: repeat the same phase.
++            continue
++        completed += 1
++    return main, stage
++
++
++def main():
++    boot_source = (ROOT / "Bootloader" / "boot_main.c").read_text(encoding="utf-8")
++    assert "ImageVectorValid(OTA_APP_BASE, OTA_MAX_APPLICATION_SIZE)" in boot_source
++    assert "ImageVectorValid(OTA_APP_BASE, OTA_APP_SLOT_SIZE)" not in boot_source
++    app100 = (ARTIFACTS / "mathis_app_v100.bin").read_bytes()
++    app101 = (ARTIFACTS / "mathis_app_v101.bin").read_bytes()
++    artifact = (ARTIFACTS / "mathis_ota_v101.ota").read_bytes()
++    boot = (ROOT / "Bootloader" / "build" / "mathis_bootloader.bin").read_bytes()
++    factory_bin = (ARTIFACTS / "mathis_factory_v100.bin").read_bytes()
++    manifest = json.loads((ARTIFACTS / "mathis_ota_v101.manifest.json").read_text(encoding="utf-8-sig"))
++
++    assert len(app100) <= APP_MAX and len(app101) <= APP_MAX
++    assert app100 != app101
++    stack, reset = struct.unpack_from("<II", app101)
++    assert 0x200000C0 <= stack <= 0x20001FF0
++    assert APP_BASE <= (reset & ~1) < APP_BASE + len(app101)
++    assert len(artifact) == len(app101) + 384
++    assert artifact[:-384] == app101 and artifact[-384:] == bytes(384)
++    assert manifest["artifact_size"] == len(artifact)
++    assert manifest["crc32_iso_hdlc"] == f"0x{zlib.crc32(artifact) & 0xFFFFFFFF:08X}"
++    assert manifest["sha256"] == hashlib.sha256(artifact).hexdigest()
++
++    boot_stack, boot_reset = struct.unpack_from("<II", boot)
++    assert 0x20000000 < boot_stack <= 0x20002000
++    assert 0x08000000 <= (boot_reset & ~1) < 0x08000000 + len(boot)
++    assert len(factory_bin) == 0x1800 + len(app100)
++    assert factory_bin[: len(boot)] == boot
++    assert factory_bin[len(boot) : 0x1800] == bytes([0xFF]) * (0x1800 - len(boot))
++    assert factory_bin[0x1800:] == app100
++    keil_factory_path = ARTIFACTS / "keil_factory_v100.bin"
++    if keil_factory_path.exists():
++        keil_factory_bin = keil_factory_path.read_bytes()
++        # fromelf --bincombined pads the unused tail of the fixed 6 KiB boot
++        # execution region with 0x00, while BuildOtaArtifacts leaves erased
++        # flash as 0xFF. Both representations program equivalent content.
++        assert keil_factory_bin[: len(boot)] == boot
++        assert set(keil_factory_bin[len(boot) : 0x1800]) <= {0x00, 0xFF}
++        assert keil_factory_bin[0x1800:] == app100
++
++    direct_path = ARTIFACTS / "diagnostic_direct_v100.bin"
++    min_boot_path = ROOT / "Bootloader" / "build_min" / "mathis_min_bootloader.bin"
++    min_factory_path = ARTIFACTS / "diagnostic_minboot_factory_v100.bin"
++    gpio_path = ARTIFACTS / "diagnostic_gpio_alive.bin"
++    if all(path.exists() for path in (direct_path, min_boot_path, min_factory_path, gpio_path)):
++        direct = direct_path.read_bytes()
++        min_boot = min_boot_path.read_bytes()
++        min_factory = min_factory_path.read_bytes()
++        gpio_alive = gpio_path.read_bytes()
++        direct_stack, direct_reset = struct.unpack_from("<II", direct)
++        assert 0x20000000 < direct_stack <= 0x20001FF0
++        assert 0x08000000 <= (direct_reset & ~1) < 0x08000000 + len(direct)
++        min_stack, min_reset = struct.unpack_from("<II", min_boot)
++        assert 0x20000000 < min_stack <= 0x20002000
++        assert 0x08000000 <= (min_reset & ~1) < 0x08000000 + len(min_boot)
++        assert min_factory[: len(min_boot)] == min_boot
++        assert min_factory[len(min_boot) : 0x1800] == bytes([0xFF]) * (0x1800 - len(min_boot))
++        assert min_factory[0x1800:] == app100
++        gpio_stack, gpio_reset = struct.unpack_from("<II", gpio_alive)
++        assert 0x20000000 < gpio_stack <= 0x20002000
++        assert 0x08000000 <= (gpio_reset & ~1) < 0x08000000 + len(gpio_alive)
++
++    factory = parse_hex(ARTIFACTS / "mathis_factory_v100.hex")
++    assert min(factory) == 0x08000000
++    assert max(factory) < 0x08008400
++    assert any(address < APP_BASE for address in factory)
++    assert any(APP_BASE <= address < 0x08008400 for address in factory)
++
++    old_slot = bytearray(app100 + bytes([0xFF]) * (SLOT - len(app100)))
++    new_stage = bytearray(artifact + bytes([0xFF]) * (SLOT - len(artifact)))
++    expected_new = bytearray(app101 + bytes([0xFF]) * (SLOT - len(app101)))
++    total_phases = (SLOT // PAGE) * 3
++    for cut in range(1, total_phases + 1):
++        installed, backup = run_swap(bytearray(old_slot), bytearray(new_stage), len(app101), True, cut)
++        assert installed == expected_new, ("forward", cut)
++        assert backup == old_slot, ("backup", cut)
++        restored, failed_new = run_swap(installed, backup, SLOT, False, cut)
++        assert restored == old_slot, ("rollback", cut)
++        assert failed_new == expected_new, ("rollback-backup", cut)
++
++    print("OTA artifact, memory map, CRC, and 162 interrupted swap/rollback cases passed")
++
++
++if __name__ == "__main__":
++    main()
+--- 9/tw66gw02/Common/ota_crc.c
++++ 10/tw66gw02/Common/ota_crc.c
+@@ -1,20 +0,0 @@
+-#include "ota_crc.h"
+-
+-uint32_t OtaCrc32Update(uint32_t crc, const uint8_t *data, uint32_t length)
+-{
+-    uint32_t i;
+-    uint8_t bit;
+-    crc = ~crc;
+-    for (i = 0U; i < length; ++i) {
+-        crc ^= data[i];
+-        for (bit = 0U; bit < 8U; ++bit) {
+-            crc = ((crc & 1U) != 0U) ? ((crc >> 1) ^ 0xEDB88320UL) : (crc >> 1);
+-        }
+-    }
+-    return ~crc;
+-}
+-
+-uint32_t OtaCrc32(const void *data, uint32_t length)
+-{
+-    return OtaCrc32Update(0U, (const uint8_t *)data, length);
+-}
+--- 9/tw66gw02/Common/ota_crc.h
++++ 10/tw66gw02/Common/ota_crc.h
+@@ -1,9 +0,0 @@
+-#ifndef MATHIS_OTA_CRC_H
+-#define MATHIS_OTA_CRC_H
+-
+-#include <stdint.h>
+-
+-uint32_t OtaCrc32Update(uint32_t crc, const uint8_t *data, uint32_t length);
+-uint32_t OtaCrc32(const void *data, uint32_t length);
+-
+-#endif
+--- 9/tw66gw02/Common/ota_image_header.c
++++ 10/tw66gw02/Common/ota_image_header.c
+@@ -1,22 +0,0 @@
+-#include "ota_layout.h"
+-#include "config.h"
+-
+-#ifndef MATHIS_SECURITY_VERSION
+-#define MATHIS_SECURITY_VERSION 1UL
+-#endif
+-
+-#if defined(__CC_ARM)
+-__attribute__((at(OTA_IMAGE_HEADER_ADDR), used))
+-#else
+-__attribute__((section(".ota_image_header"), used))
+-#endif
+-const OtaImageHeader g_ota_image_header = {
+-    OTA_IMAGE_MAGIC, OTA_IMAGE_FORMAT_VERSION, sizeof(OtaImageHeader),
+-    OTA_MODEL_ID, (uint8_t)system_version, 0U, MATHIS_SECURITY_VERSION,
+-    0xFFFFFFFFUL, OTA_VECTOR_WORDS, 0U, 0xFFFFFFFFUL,
+-    { 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
+-      0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU },
+-    { 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU,
+-      0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU },
+-    0xFFFFFFFFUL
+-};
+--- 9/tw66gw02/Common/ota_layout.h
++++ 10/tw66gw02/Common/ota_layout.h
+@@ -1,80 +0,0 @@
+-#ifndef MATHIS_OTA_LAYOUT_H
+-#define MATHIS_OTA_LAYOUT_H
+-
+-#include <stdint.h>
+-
+-#define OTA_FLASH_BASE             0x08000000UL
+-#define OTA_FLASH_END              0x08010000UL
+-#define OTA_FLASH_PAGE_SIZE        0x00000400UL
+-
+-#define OTA_BOOT_BASE              0x08000000UL
+-#define OTA_BOOT_SIZE              0x00003400UL
+-#define OTA_META_A_BASE            0x08003400UL
+-#define OTA_META_B_BASE            0x08003800UL
+-#define OTA_META_PAGE_SIZE         0x00000400UL
+-#define OTA_SCRATCH_BASE           0x08003C00UL
+-
+-#define OTA_SLOT_A_BASE            0x08004000UL
+-#define OTA_SLOT_B_BASE            0x0800A000UL
+-#define OTA_SLOT_SIZE              0x00006000UL
+-#define OTA_SLOT_PAGE_COUNT        24UL
+-#define OTA_RSA_SIGNATURE_SIZE     384UL
+-#define OTA_APP_IMAGE_MAX          (OTA_SLOT_SIZE - OTA_RSA_SIGNATURE_SIZE)
+-#define OTA_APP_RELEASE_MAX        23168UL
+-
+-#define OTA_VECTOR_WORDS           48UL
+-#define OTA_VECTOR_BYTES           (OTA_VECTOR_WORDS * 4UL)
+-#define OTA_IMAGE_HEADER_OFFSET     0x000000C0UL
+-#define OTA_IMAGE_HEADER_ADDR       (OTA_SLOT_A_BASE + OTA_IMAGE_HEADER_OFFSET)
+-#define OTA_IMAGE_MAGIC             0x5348544DUL /* "MTHS" in little endian. */
+-#define OTA_IMAGE_FORMAT_VERSION    1U
+-#define OTA_MODEL_ID                0x04U
+-
+-#define OTA_BOOT_API_ADDR           0x08000200UL
+-#define OTA_BOOT_API_MAGIC          0x49504142UL /* "BAPI" */
+-#define OTA_BOOT_API_VERSION        1U
+-
+-#define OTA_DEV_PUBLIC_EXPONENT     65537UL
+-
+-typedef struct {
+-    uint32_t magic;
+-    uint16_t format_version;
+-    uint16_t header_size;
+-    uint8_t model_id;
+-    uint8_t firmware_version;
+-    uint16_t flags;
+-    uint32_t security_version;
+-    uint32_t image_size;
+-    uint16_t vector_words;
+-    uint16_t reserved0;
+-    uint32_t build_epoch;
+-    uint8_t build_id[16];
+-    uint8_t reserved1[16];
+-    uint32_t header_crc32;
+-} OtaImageHeader;
+-
+-typedef enum {
+-    OTA_VERIFY_OK = 0,
+-    OTA_VERIFY_BAD_ARGUMENT = 1,
+-    OTA_VERIFY_BAD_HEADER = 2,
+-    OTA_VERIFY_BAD_CRC = 3,
+-    OTA_VERIFY_BAD_SIGNATURE = 4,
+-    OTA_VERIFY_ROLLBACK = 5
+-} OtaVerifyResult;
+-
+-typedef OtaVerifyResult (*OtaBootVerifyFn)(uint32_t artifact_addr,
+-                                           uint32_t artifact_size,
+-                                           uint32_t expected_crc32,
+-                                           uint32_t minimum_security_version,
+-                                           OtaImageHeader *header_out);
+-
+-typedef struct {
+-    uint32_t magic;
+-    uint16_t abi_version;
+-    uint16_t table_size;
+-    OtaBootVerifyFn verify_artifact;
+-} OtaBootApi;
+-
+-static const OtaBootApi *const OTA_BOOT_API = (const OtaBootApi *)OTA_BOOT_API_ADDR;
+-
+-#endif
+--- 9/tw66gw02/Common/ota_metadata.c
++++ 10/tw66gw02/Common/ota_metadata.c
+@@ -1,178 +0,0 @@
+-#include "ota_metadata.h"
+-#include "ota_crc.h"
+-#include "stm32f0xx_hal.h"
+-#include <stddef.h>
+-#include <string.h>
+-
+-#define META_MAGIC       0x3141544DUL /* "MTA1" */
+-#define META_SCHEMA      1U
+-#define META_COMMIT      0xA55AU
+-#define META_RECORD_SIZE 96U
+-#define META_PER_PAGE    (OTA_META_PAGE_SIZE / META_RECORD_SIZE)
+-
+-typedef struct {
+-    uint32_t magic;
+-    uint16_t schema;
+-    uint16_t type;
+-    uint32_t sequence;
+-    uint16_t payload_length;
+-    uint16_t reserved;
+-    uint8_t payload[OTA_METADATA_PAYLOAD_MAX];
+-    uint32_t crc32;
+-    uint16_t commit;
+-    uint16_t padding;
+-} MetaRecord;
+-
+-typedef char MetaRecordSizeCheck[(sizeof(MetaRecord) == META_RECORD_SIZE) ? 1 : -1];
+-typedef char OtaStateSizeCheck[(sizeof(OtaPersistentState) <= OTA_METADATA_PAYLOAD_MAX) ? 1 : -1];
+-typedef char OtaConfigSizeCheck[(sizeof(OtaPersistentConfig) <= OTA_METADATA_PAYLOAD_MAX) ? 1 : -1];
+-
+-static uint8_t record_valid(const MetaRecord *record)
+-{
+-    uint32_t crc;
+-    if ((record->magic != META_MAGIC) || (record->schema != META_SCHEMA) ||
+-        (record->commit != META_COMMIT) || (record->payload_length > OTA_METADATA_PAYLOAD_MAX) ||
+-        ((record->type != OTA_RECORD_CONFIG) && (record->type != OTA_RECORD_STATE))) {
+-        return 0U;
+-    }
+-    crc = OtaCrc32(record, (uint32_t)offsetof(MetaRecord, crc32));
+-    return (crc == record->crc32) ? 1U : 0U;
+-}
+-
+-static const MetaRecord *latest_record(OtaRecordType type)
+-{
+-    const uint32_t pages[2] = { OTA_META_A_BASE, OTA_META_B_BASE };
+-    const MetaRecord *best = 0;
+-    uint8_t page;
+-    uint8_t slot;
+-    for (page = 0U; page < 2U; ++page) {
+-        for (slot = 0U; slot < META_PER_PAGE; ++slot) {
+-            const MetaRecord *record = (const MetaRecord *)(pages[page] + ((uint32_t)slot * META_RECORD_SIZE));
+-            if ((record_valid(record) != 0U) && (record->type == (uint16_t)type) &&
+-                ((best == 0) || ((int32_t)(record->sequence - best->sequence) > 0))) {
+-                best = record;
+-            }
+-        }
+-    }
+-    return best;
+-}
+-
+-static uint8_t flash_erase_page(uint32_t address)
+-{
+-    FLASH_EraseInitTypeDef erase;
+-    uint32_t page_error = 0U;
+-    erase.TypeErase = FLASH_TYPEERASE_PAGES;
+-    erase.PageAddress = address;
+-    erase.NbPages = 1U;
+-    return (HAL_FLASHEx_Erase(&erase, &page_error) == HAL_OK) ? 1U : 0U;
+-}
+-
+-static uint8_t flash_write_record(uint32_t address, const MetaRecord *record)
+-{
+-    const uint16_t *source = (const uint16_t *)record;
+-    uint16_t offset;
+-    for (offset = 0U; offset < (uint16_t)offsetof(MetaRecord, commit); offset += 2U) {
+-        if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, address + offset, source[offset / 2U]) != HAL_OK) {
+-            return 0U;
+-        }
+-    }
+-    return (HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,
+-                              address + (uint32_t)offsetof(MetaRecord, commit), META_COMMIT) == HAL_OK) ? 1U : 0U;
+-}
+-
+-static uint8_t find_free(uint32_t page_address, uint8_t *slot_out)
+-{
+-    uint8_t slot;
+-    for (slot = 0U; slot < META_PER_PAGE; ++slot) {
+-        const uint32_t *word = (const uint32_t *)(page_address + ((uint32_t)slot * META_RECORD_SIZE));
+-        if (*word == 0xFFFFFFFFUL) { *slot_out = slot; return 1U; }
+-    }
+-    return 0U;
+-}
+-
+-static void make_record(MetaRecord *record, OtaRecordType type, const void *payload,
+-                        uint16_t payload_size, uint32_t sequence)
+-{
+-    memset(record, 0xFF, sizeof(*record));
+-    record->magic = META_MAGIC;
+-    record->schema = META_SCHEMA;
+-    record->type = (uint16_t)type;
+-    record->sequence = sequence;
+-    record->payload_length = payload_size;
+-    memcpy(record->payload, payload, payload_size);
+-    record->crc32 = OtaCrc32(record, (uint32_t)offsetof(MetaRecord, crc32));
+-    record->commit = META_COMMIT;
+-}
+-
+-uint8_t OtaMetadataRead(OtaRecordType type, void *payload, uint16_t payload_size)
+-{
+-    const MetaRecord *record = latest_record(type);
+-    if ((record == 0) || (payload == 0) || (record->payload_length != payload_size)) { return 0U; }
+-    memcpy(payload, record->payload, payload_size);
+-    return 1U;
+-}
+-
+-uint8_t OtaMetadataWrite(OtaRecordType type, const void *payload, uint16_t payload_size)
+-{
+-    const MetaRecord *latest_config;
+-    const MetaRecord *latest_state;
+-    const MetaRecord *latest_any;
+-    MetaRecord record;
+-    MetaRecord keeper_copy[2];
+-    uint8_t keeper_valid[2] = { 0U, 0U };
+-    uint32_t active_page = OTA_META_A_BASE;
+-    uint32_t other_page = OTA_META_B_BASE;
+-    uint32_t sequence = 1U;
+-    uint8_t slot;
+-    uint8_t result = 0U;
+-
+-    if ((payload == 0) || (payload_size > OTA_METADATA_PAYLOAD_MAX)) { return 0U; }
+-    latest_config = latest_record(OTA_RECORD_CONFIG);
+-    latest_state = latest_record(OTA_RECORD_STATE);
+-    latest_any = latest_config;
+-    if ((latest_any == 0) || ((latest_state != 0) && ((int32_t)(latest_state->sequence - latest_any->sequence) > 0))) {
+-        latest_any = latest_state;
+-    }
+-    if (latest_any != 0) {
+-        uint32_t address = (uint32_t)latest_any;
+-        sequence = latest_any->sequence + 1U;
+-        active_page = (address < OTA_META_B_BASE) ? OTA_META_A_BASE : OTA_META_B_BASE;
+-        other_page = (active_page == OTA_META_A_BASE) ? OTA_META_B_BASE : OTA_META_A_BASE;
+-    }
+-    make_record(&record, type, payload, payload_size, sequence);
+-    if (latest_config != 0) { memcpy(&keeper_copy[0], latest_config, sizeof(MetaRecord)); keeper_valid[0] = 1U; }
+-    if (latest_state != 0) { memcpy(&keeper_copy[1], latest_state, sizeof(MetaRecord)); keeper_valid[1] = 1U; }
+-
+-    if (HAL_FLASH_Unlock() != HAL_OK) { return 0U; }
+-    if (find_free(active_page, &slot) != 0U) {
+-        result = flash_write_record(active_page + ((uint32_t)slot * META_RECORD_SIZE), &record);
+-    } else if (flash_erase_page(other_page) != 0U) {
+-        uint8_t next_slot = 0U;
+-        uint8_t i;
+-        result = 1U;
+-        for (i = 0U; i < 2U; ++i) {
+-            if ((keeper_valid[i] != 0U) && (keeper_copy[i].type != (uint16_t)type)) {
+-                if (flash_write_record(other_page + ((uint32_t)next_slot * META_RECORD_SIZE), &keeper_copy[i]) == 0U) {
+-                    result = 0U; break;
+-                }
+-                ++next_slot;
+-            }
+-        }
+-        if ((result != 0U) && (flash_write_record(other_page + ((uint32_t)next_slot * META_RECORD_SIZE), &record) == 0U)) {
+-            result = 0U;
+-        }
+-        if (result != 0U) { (void)flash_erase_page(active_page); }
+-    }
+-    HAL_FLASH_Lock();
+-    return result;
+-}
+-
+-uint8_t OtaMetadataEraseAll(void)
+-{
+-    uint8_t ok;
+-    if (HAL_FLASH_Unlock() != HAL_OK) { return 0U; }
+-    ok = flash_erase_page(OTA_META_A_BASE);
+-    if (flash_erase_page(OTA_META_B_BASE) == 0U) { ok = 0U; }
+-    HAL_FLASH_Lock();
+-    return ok;
+-}
+--- 9/tw66gw02/Common/ota_metadata.h
++++ 10/tw66gw02/Common/ota_metadata.h
+@@ -1,69 +0,0 @@
+-#ifndef MATHIS_OTA_METADATA_H
+-#define MATHIS_OTA_METADATA_H
+-
+-#include <stdint.h>
+-#include "ota_layout.h"
+-
+-#define OTA_METADATA_PAYLOAD_MAX 72U
+-
+-typedef enum {
+-    OTA_RECORD_CONFIG = 1,
+-    OTA_RECORD_STATE = 2
+-} OtaRecordType;
+-
+-typedef enum {
+-    OTA_PERSIST_IDLE = 0,
+-    OTA_PERSIST_DOWNLOADING = 1,
+-    OTA_PERSIST_VERIFIED_PENDING_SWAP = 2,
+-    OTA_PERSIST_SWAPPING = 3,
+-    OTA_PERSIST_INSTALLED_PENDING_CONFIRM = 4,
+-    OTA_PERSIST_CONFIRMED = 5,
+-    OTA_PERSIST_ROLLBACK_PENDING = 6,
+-    OTA_PERSIST_FAILED = 7
+-} OtaPersistState;
+-
+-typedef enum {
+-    OTA_SWAP_NONE = 0,
+-    OTA_SWAP_SCRATCH_VALID = 1,
+-    OTA_SWAP_A_NEW_VALID = 2,
+-    OTA_SWAP_PAGE_SWAPPED = 3
+-} OtaSwapPhase;
+-
+-typedef struct {
+-    uint32_t artifact_size;
+-    uint32_t artifact_crc32;
+-    uint32_t security_version;
+-    uint8_t firmware_version;
+-    uint8_t valid;
+-    uint16_t reserved;
+-} OtaSlotDescriptor;
+-
+-typedef struct {
+-    uint8_t state;
+-    uint8_t swap_phase;
+-    uint8_t swap_page;
+-    uint8_t boot_attempts;
+-    uint32_t expected_artifact_size;
+-    uint32_t expected_crc32;
+-    uint32_t highest_security_version;
+-    uint8_t target_firmware_version;
+-    uint8_t reserved0[3];
+-    OtaSlotDescriptor slot_a;
+-    OtaSlotDescriptor slot_b;
+-    uint32_t next_offset;
+-    uint32_t generation;
+-    uint8_t reserved1[12];
+-} OtaPersistentState;
+-
+-typedef struct {
+-    uint8_t units;
+-    uint8_t reserved[3];
+-    float coeff[3][5];
+-    uint8_t padding[8];
+-} OtaPersistentConfig;
+-
+-uint8_t OtaMetadataRead(OtaRecordType type, void *payload, uint16_t payload_size);
+-uint8_t OtaMetadataWrite(OtaRecordType type, const void *payload, uint16_t payload_size);
+-uint8_t OtaMetadataEraseAll(void);
+-
+-#endif
+--- 9/tw66gw02/MDK-ARM/tw66gw02.sct
++++ 10/tw66gw02/MDK-ARM/tw66gw02.sct
+@@ -1,16 +0,0 @@
+-; *************************************************************
+-; *** Scatter-Loading Description File generated by uVision ***
+-; *************************************************************
+-
+-LR_IROM1 0x08004000 0x00005E80  {    ; slot A application, leaving 384 bytes for RSA signature
+-  ER_IROM1 0x08004000 0x00005E80  {  ; load address = execution address
+-   *.o (RESET, +First)
+-   *(InRoot$$Sections)
+-   .ANY (+RO)
+-   .ANY (+XO)
+-  }
+-  RW_IRAM1 0x200000C0 0x00001F40  {  ; first 192 bytes hold remapped vectors
+-   .ANY (+RW +ZI)
+-  }
+-}
+-
