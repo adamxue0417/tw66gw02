@@ -1,0 +1,483 @@
+
+========================================================================
+
+** ELF Header Information
+
+    File Name: C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\codegen\scheduler-0.o
+
+    Machine class: ELFCLASS32 (32-bit)
+    Data encoding: ELFDATA2LSB (Little endian)
+    Header version: EV_CURRENT (Current version)
+    Operating System ABI: none
+    ABI Version: 0
+    File Type: ET_REL (Relocatable object) (1)
+    Machine: EM_ARM (ARM)
+
+    Entry offset (in SHF_ENTRYSECT section): 0x00000000
+    Flags: None (0x05000000)
+
+    ARM ELF revision: 5 (ABI version 2)
+
+    Built with
+    Component: ARM Compiler 5.06 update 7 (build 960) Tool: armasm [4d35fa]
+    Component: ARM Compiler 5.06 update 7 (build 960) Tool: armcc [4d365d]
+    Component: ARM Compiler 5.06 update 7 (build 960) Tool: armlink [4d3601]
+
+    Header size: 52 bytes (0x34)
+    Program header entry size: 0 bytes (0x0)
+    Section header entry size: 40 bytes (0x28)
+
+    Program header entries: 0
+    Section header entries: 42
+
+    Program header offset: 0 (0x00000000)
+    Section header offset: 5060 (0x000013c4)
+
+    Section header string table index: 39
+
+========================================================================
+
+** Section #1 '.rev16_text' (SHT_PROGBITS) [SHF_ALLOC + SHF_EXECINSTR]
+    Size   : 4 bytes (alignment 4)
+    Address: 0x00000000
+
+    $t
+    .rev16_text
+    __asm___15_TaskScheduler_c_82b89db7____REV16
+        0x00000000:    ba40        @.      REV16    r0,r0
+        0x00000002:    4770        pG      BX       lr
+
+** Section #2 '.revsh_text' (SHT_PROGBITS) [SHF_ALLOC + SHF_EXECINSTR]
+    Size   : 4 bytes (alignment 4)
+    Address: 0x00000000
+
+    $t
+    .revsh_text
+    __asm___15_TaskScheduler_c_82b89db7____REVSH
+        0x00000000:    bac0        ..      REVSH    r0,r0
+        0x00000002:    4770        pG      BX       lr
+
+** Section #3 'i.SCH_Add_Task' (SHT_PROGBITS) [SHF_ALLOC + SHF_EXECINSTR]
+    Size   : 88 bytes (alignment 4)
+    Address: 0x00000000
+
+    $t
+    i.SCH_Add_Task
+    SCH_Add_Task
+        0x00000000:    b5f0        ..      PUSH     {r4-r7,lr}
+        0x00000002:    4605        .F      MOV      r5,r0
+        0x00000004:    2000        .       MOVS     r0,#0
+        0x00000006:    f3ef8310    ....    MRS      r3,PRIMASK
+        0x0000000a:    b672        r.      CPSID    i
+        0x0000000c:    4c10        .L      LDR      r4,[pc,#64] ; [0x50] = 0
+        0x0000000e:    e003        ..      B        {pc}+0xa ; 0x18
+        0x00000010:    1c40        @.      ADDS     r0,r0,#1
+        0x00000012:    b280        ..      UXTH     r0,r0
+        0x00000014:    2820         (      CMP      r0,#0x20
+        0x00000016:    d204        ..      BCS      {pc}+0xc ; 0x22
+        0x00000018:    260c        .&      MOVS     r6,#0xc
+        0x0000001a:    4346        FC      MULS     r6,r0,r6
+        0x0000001c:    59a6        .Y      LDR      r6,[r4,r6]
+        0x0000001e:    2e00        ..      CMP      r6,#0
+        0x00000020:    d1f6        ..      BNE      {pc}-0x10 ; 0x10
+        0x00000022:    2820         (      CMP      r0,#0x20
+        0x00000024:    d00d        ..      BEQ      {pc}+0x1e ; 0x42
+        0x00000026:    2d00        .-      CMP      r5,#0
+        0x00000028:    d00b        ..      BEQ      {pc}+0x1a ; 0x42
+        0x0000002a:    260c        .&      MOVS     r6,#0xc
+        0x0000002c:    4607        .F      MOV      r7,r0
+        0x0000002e:    4377        wC      MULS     r7,r6,r7
+        0x00000030:    193e        >.      ADDS     r6,r7,r4
+        0x00000032:    80b1        ..      STRH     r1,[r6,#4]
+        0x00000034:    80f2        ..      STRH     r2,[r6,#6]
+        0x00000036:    2100        .!      MOVS     r1,#0
+        0x00000038:    7231        1r      STRB     r1,[r6,#8]
+        0x0000003a:    51e5        .Q      STR      r5,[r4,r7]
+        0x0000003c:    f3838810    ....    MSR      PRIMASK,r3
+        0x00000040:    bdf0        ..      POP      {r4-r7,pc}
+        0x00000042:    4904        .I      LDR      r1,[pc,#16] ; [0x54] = 0
+        0x00000044:    2001        .       MOVS     r0,#1
+        0x00000046:    7008        .p      STRB     r0,[r1,#0]
+        0x00000048:    f3838810    ....    MSR      PRIMASK,r3
+        0x0000004c:    2020                MOVS     r0,#0x20
+        0x0000004e:    bdf0        ..      POP      {r4-r7,pc}
+    $d
+        0x00000050:    00000000    ....    DCD    0
+        0x00000054:    00000000    ....    DCD    0
+
+** Section #24 '.reli.SCH_Add_Task' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #3 'i.SCH_Add_Task'
+
+
+** Section #4 'i.SCH_Delete_Task' (SHT_PROGBITS) [SHF_ALLOC + SHF_EXECINSTR]
+    Size   : 72 bytes (alignment 4)
+    Address: 0x00000000
+
+    $t
+    i.SCH_Delete_Task
+    SCH_Delete_Task
+        0x00000000:    b570        p.      PUSH     {r4-r6,lr}
+        0x00000002:    2200        ."      MOVS     r2,#0
+        0x00000004:    f3ef8110    ....    MRS      r1,PRIMASK
+        0x00000008:    b672        r.      CPSID    i
+        0x0000000a:    2302        .#      MOVS     r3,#2
+        0x0000000c:    4c0c        .L      LDR      r4,[pc,#48] ; [0x40] = 0
+        0x0000000e:    2820         (      CMP      r0,#0x20
+        0x00000010:    d304        ..      BCC      {pc}+0xc ; 0x1c
+        0x00000012:    7023        #p      STRB     r3,[r4,#0]
+        0x00000014:    f3818810    ....    MSR      PRIMASK,r1
+        0x00000018:    2001        .       MOVS     r0,#1
+        0x0000001a:    bd70        p.      POP      {r4-r6,pc}
+        0x0000001c:    250c        .%      MOVS     r5,#0xc
+        0x0000001e:    4368        hC      MULS     r0,r5,r0
+        0x00000020:    4d08        .M      LDR      r5,[pc,#32] ; [0x44] = 0
+        0x00000022:    582e        .X      LDR      r6,[r5,r0]
+        0x00000024:    2e00        ..      CMP      r6,#0
+        0x00000026:    d101        ..      BNE      {pc}+0x6 ; 0x2c
+        0x00000028:    7023        #p      STRB     r3,[r4,#0]
+        0x0000002a:    2201        ."      MOVS     r2,#1
+        0x0000002c:    2300        .#      MOVS     r3,#0
+        0x0000002e:    502b        +P      STR      r3,[r5,r0]
+        0x00000030:    1940        @.      ADDS     r0,r0,r5
+        0x00000032:    8083        ..      STRH     r3,[r0,#4]
+        0x00000034:    80c3        ..      STRH     r3,[r0,#6]
+        0x00000036:    7203        .r      STRB     r3,[r0,#8]
+        0x00000038:    f3818810    ....    MSR      PRIMASK,r1
+        0x0000003c:    4610        .F      MOV      r0,r2
+        0x0000003e:    bd70        p.      POP      {r4-r6,pc}
+    $d
+        0x00000040:    00000000    ....    DCD    0
+        0x00000044:    00000000    ....    DCD    0
+
+** Section #25 '.reli.SCH_Delete_Task' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #4 'i.SCH_Delete_Task'
+
+
+** Section #5 'i.SCH_Dispatch_Tasks' (SHT_PROGBITS) [SHF_ALLOC + SHF_EXECINSTR]
+    Size   : 84 bytes (alignment 4)
+    Address: 0x00000000
+
+    $t
+    i.SCH_Dispatch_Tasks
+    SCH_Dispatch_Tasks
+        0x00000000:    b5f8        ..      PUSH     {r3-r7,lr}
+        0x00000002:    4f13        .O      LDR      r7,[pc,#76] ; [0x50] = 0
+        0x00000004:    2400        .$      MOVS     r4,#0
+        0x00000006:    2500        .%      MOVS     r5,#0
+        0x00000008:    f3ef8610    ....    MRS      r6,PRIMASK
+        0x0000000c:    b672        r.      CPSID    i
+        0x0000000e:    4621        !F      MOV      r1,r4
+        0x00000010:    200c        .       MOVS     r0,#0xc
+        0x00000012:    4341        AC      MULS     r1,r0,r1
+        0x00000014:    5878        xX      LDR      r0,[r7,r1]
+        0x00000016:    2800        .(      CMP      r0,#0
+        0x00000018:    d00d        ..      BEQ      {pc}+0x1e ; 0x36
+        0x0000001a:    19c8        ..      ADDS     r0,r1,r7
+        0x0000001c:    7a02        .z      LDRB     r2,[r0,#8]
+        0x0000001e:    2a00        .*      CMP      r2,#0
+        0x00000020:    d009        ..      BEQ      {pc}+0x16 ; 0x36
+        0x00000022:    587d        }X      LDR      r5,[r7,r1]
+        0x00000024:    7a01        .z      LDRB     r1,[r0,#8]
+        0x00000026:    1e49        I.      SUBS     r1,r1,#1
+        0x00000028:    7201        .r      STRB     r1,[r0,#8]
+        0x0000002a:    88c0        ..      LDRH     r0,[r0,#6]
+        0x0000002c:    2800        .(      CMP      r0,#0
+        0x0000002e:    d102        ..      BNE      {pc}+0x8 ; 0x36
+        0x00000030:    4620         F      MOV      r0,r4
+        0x00000032:    f7fffffe    ....    BL       SCH_Delete_Task ; 0x0 Section #4
+        0x00000036:    f3868810    ....    MSR      PRIMASK,r6
+        0x0000003a:    2d00        .-      CMP      r5,#0
+        0x0000003c:    d000        ..      BEQ      {pc}+0x4 ; 0x40
+        0x0000003e:    47a8        .G      BLX      r5
+        0x00000040:    1c64        d.      ADDS     r4,r4,#1
+        0x00000042:    b2a4        ..      UXTH     r4,r4
+        0x00000044:    2c20         ,      CMP      r4,#0x20
+        0x00000046:    d3de        ..      BCC      {pc}-0x40 ; 0x6
+        0x00000048:    f7fffffe    ....    BL       SCH_Report_Status ; 0x0 Section #8
+        0x0000004c:    bdf8        ..      POP      {r3-r7,pc}
+    $d
+        0x0000004e:    0000        ..      DCW    0
+        0x00000050:    00000000    ....    DCD    0
+
+** Section #26 '.reli.SCH_Dispatch_Tasks' (SHT_REL)
+    Size   : 24 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    3 relocations applied to section #5 'i.SCH_Dispatch_Tasks'
+
+
+** Section #6 'i.SCH_Go_To_Sleep' (SHT_PROGBITS) [SHF_ALLOC + SHF_EXECINSTR]
+    Size   : 2 bytes (alignment 2)
+    Address: 0x00000000
+
+    $t
+    i.SCH_Go_To_Sleep
+    SCH_Go_To_Sleep
+        0x00000000:    4770        pG      BX       lr
+
+** Section #7 'i.SCH_Init' (SHT_PROGBITS) [SHF_ALLOC + SHF_EXECINSTR]
+    Size   : 64 bytes (alignment 4)
+    Address: 0x00000000
+
+    $t
+    i.SCH_Init
+    SCH_Init
+        0x00000000:    b570        p.      PUSH     {r4-r6,lr}
+        0x00000002:    f3ef8410    ....    MRS      r4,PRIMASK
+        0x00000006:    b672        r.      CPSID    i
+        0x00000008:    2000        .       MOVS     r0,#0
+        0x0000000a:    4b0b        .K      LDR      r3,[pc,#44] ; [0x38] = 0
+        0x0000000c:    4602        .F      MOV      r2,r0
+        0x0000000e:    210c        .!      MOVS     r1,#0xc
+        0x00000010:    4341        AC      MULS     r1,r0,r1
+        0x00000012:    505a        ZP      STR      r2,[r3,r1]
+        0x00000014:    18c9        ..      ADDS     r1,r1,r3
+        0x00000016:    808a        ..      STRH     r2,[r1,#4]
+        0x00000018:    80ca        ..      STRH     r2,[r1,#6]
+        0x0000001a:    720a        .r      STRB     r2,[r1,#8]
+        0x0000001c:    1c40        @.      ADDS     r0,r0,#1
+        0x0000001e:    b280        ..      UXTH     r0,r0
+        0x00000020:    2820         (      CMP      r0,#0x20
+        0x00000022:    d3f4        ..      BCC      {pc}-0x14 ; 0xe
+        0x00000024:    4d05        .M      LDR      r5,[pc,#20] ; [0x3c] = 0
+        0x00000026:    702a        *p      STRB     r2,[r5,#0]
+        0x00000028:    706a        jp      STRB     r2,[r5,#1]
+        0x0000002a:    f7fffffe    ....    BL       HAL_GetTick
+        0x0000002e:    f3848810    ....    MSR      PRIMASK,r4
+        0x00000032:    6068        h`      STR      r0,[r5,#4]
+        0x00000034:    bd70        p.      POP      {r4-r6,pc}
+    $d
+        0x00000036:    0000        ..      DCW    0
+        0x00000038:    00000000    ....    DCD    0
+        0x0000003c:    00000000    ....    DCD    0
+
+** Section #27 '.reli.SCH_Init' (SHT_REL)
+    Size   : 24 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    3 relocations applied to section #7 'i.SCH_Init'
+
+
+** Section #8 'i.SCH_Report_Status' (SHT_PROGBITS) [SHF_ALLOC + SHF_EXECINSTR]
+    Size   : 64 bytes (alignment 4)
+    Address: 0x00000000
+
+    $t
+    i.SCH_Report_Status
+    SCH_Report_Status
+        0x00000000:    b510        ..      PUSH     {r4,lr}
+        0x00000002:    f3ef8410    ....    MRS      r4,PRIMASK
+        0x00000006:    b672        r.      CPSID    i
+        0x00000008:    f7fffffe    ....    BL       HAL_GetTick
+        0x0000000c:    490a        .I      LDR      r1,[pc,#40] ; [0x38] = 0
+        0x0000000e:    780b        .x      LDRB     r3,[r1,#0]
+        0x00000010:    784a        Jx      LDRB     r2,[r1,#1]
+        0x00000012:    4293        .B      CMP      r3,r2
+        0x00000014:    780a        .x      LDRB     r2,[r1,#0]
+        0x00000016:    d002        ..      BEQ      {pc}+0x8 ; 0x1e
+        0x00000018:    704a        Jp      STRB     r2,[r1,#1]
+        0x0000001a:    6048        H`      STR      r0,[r1,#4]
+        0x0000001c:    e009        ..      B        {pc}+0x16 ; 0x32
+        0x0000001e:    2a00        .*      CMP      r2,#0
+        0x00000020:    d007        ..      BEQ      {pc}+0x12 ; 0x32
+        0x00000022:    684a        Jh      LDR      r2,[r1,#4]
+        0x00000024:    1a80        ..      SUBS     r0,r0,r2
+        0x00000026:    4a05        .J      LDR      r2,[pc,#20] ; [0x3c] = 0xea60
+        0x00000028:    4290        .B      CMP      r0,r2
+        0x0000002a:    d302        ..      BCC      {pc}+0x8 ; 0x32
+        0x0000002c:    2000        .       MOVS     r0,#0
+        0x0000002e:    7008        .p      STRB     r0,[r1,#0]
+        0x00000030:    7048        Hp      STRB     r0,[r1,#1]
+        0x00000032:    f3848810    ....    MSR      PRIMASK,r4
+        0x00000036:    bd10        ..      POP      {r4,pc}
+    $d
+        0x00000038:    00000000    ....    DCD    0
+        0x0000003c:    0000ea60    `...    DCD    60000
+
+** Section #28 '.reli.SCH_Report_Status' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #8 'i.SCH_Report_Status'
+
+
+** Section #9 'i.SCH_Update' (SHT_PROGBITS) [SHF_ALLOC + SHF_EXECINSTR]
+    Size   : 80 bytes (alignment 4)
+    Address: 0x00000000
+
+    $t
+    i.SCH_Update
+    SCH_Update
+        0x00000000:    b510        ..      PUSH     {r4,lr}
+        0x00000002:    4a11        .J      LDR      r2,[pc,#68] ; [0x48] = 0
+        0x00000004:    2100        .!      MOVS     r1,#0
+        0x00000006:    4608        .F      MOV      r0,r1
+        0x00000008:    230c        .#      MOVS     r3,#0xc
+        0x0000000a:    4358        XC      MULS     r0,r3,r0
+        0x0000000c:    5813        .X      LDR      r3,[r2,r0]
+        0x0000000e:    2b00        .+      CMP      r3,#0
+        0x00000010:    d015        ..      BEQ      {pc}+0x2e ; 0x3e
+        0x00000012:    1880        ..      ADDS     r0,r0,r2
+        0x00000014:    8883        ..      LDRH     r3,[r0,#4]
+        0x00000016:    2b00        .+      CMP      r3,#0
+        0x00000018:    d002        ..      BEQ      {pc}+0x8 ; 0x20
+        0x0000001a:    8883        ..      LDRH     r3,[r0,#4]
+        0x0000001c:    1e5b        [.      SUBS     r3,r3,#1
+        0x0000001e:    e00d        ..      B        {pc}+0x1e ; 0x3c
+        0x00000020:    7a03        .z      LDRB     r3,[r0,#8]
+        0x00000022:    2bff        .+      CMP      r3,#0xff
+        0x00000024:    d203        ..      BCS      {pc}+0xa ; 0x2e
+        0x00000026:    7a03        .z      LDRB     r3,[r0,#8]
+        0x00000028:    1c5b        [.      ADDS     r3,r3,#1
+        0x0000002a:    7203        .r      STRB     r3,[r0,#8]
+        0x0000002c:    e002        ..      B        {pc}+0x8 ; 0x34
+        0x0000002e:    4c07        .L      LDR      r4,[pc,#28] ; [0x4c] = 0
+        0x00000030:    2309        .#      MOVS     r3,#9
+        0x00000032:    7023        #p      STRB     r3,[r4,#0]
+        0x00000034:    88c3        ..      LDRH     r3,[r0,#6]
+        0x00000036:    2b00        .+      CMP      r3,#0
+        0x00000038:    d001        ..      BEQ      {pc}+0x6 ; 0x3e
+        0x0000003a:    88c3        ..      LDRH     r3,[r0,#6]
+        0x0000003c:    8083        ..      STRH     r3,[r0,#4]
+        0x0000003e:    1c49        I.      ADDS     r1,r1,#1
+        0x00000040:    b289        ..      UXTH     r1,r1
+        0x00000042:    2920         )      CMP      r1,#0x20
+        0x00000044:    d3df        ..      BCC      {pc}-0x3e ; 0x6
+        0x00000046:    bd10        ..      POP      {r4,pc}
+    $d
+        0x00000048:    00000000    ....    DCD    0
+        0x0000004c:    00000000    ....    DCD    0
+
+** Section #29 '.reli.SCH_Update' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #9 'i.SCH_Update'
+
+
+** Section #10 '.bss' (SHT_NOBITS) [SHF_ALLOC + SHF_WRITE]
+    Size   : 384 bytes (alignment 4)
+    Address: 0x00000000
+
+
+** Section #11 '.data' (SHT_PROGBITS) [SHF_ALLOC + SHF_WRITE]
+    Size   : 8 bytes (alignment 4)
+    Address: 0x00000000
+
+
+** Section #12 '.debug_frame' (SHT_PROGBITS)
+    Size   : 68 bytes
+
+
+** Section #30 '.rel.debug_frame' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #12 '.debug_frame'
+
+
+** Section #13 '.debug_frame' (SHT_PROGBITS)
+    Size   : 68 bytes
+
+
+** Section #31 '.rel.debug_frame' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #13 '.debug_frame'
+
+
+** Section #14 '.debug_frame' (SHT_PROGBITS)
+    Size   : 72 bytes
+
+
+** Section #32 '.rel.debug_frame' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #14 '.debug_frame'
+
+
+** Section #15 '.debug_frame' (SHT_PROGBITS)
+    Size   : 68 bytes
+
+
+** Section #33 '.rel.debug_frame' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #15 '.debug_frame'
+
+
+** Section #16 '.debug_frame' (SHT_PROGBITS)
+    Size   : 76 bytes
+
+
+** Section #34 '.rel.debug_frame' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #16 '.debug_frame'
+
+
+** Section #17 '.debug_frame' (SHT_PROGBITS)
+    Size   : 60 bytes
+
+
+** Section #35 '.rel.debug_frame' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #17 '.debug_frame'
+
+
+** Section #18 '.debug_frame' (SHT_PROGBITS)
+    Size   : 68 bytes
+
+
+** Section #36 '.rel.debug_frame' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #18 '.debug_frame'
+
+
+** Section #19 '.debug_frame' (SHT_PROGBITS)
+    Size   : 72 bytes
+
+
+** Section #37 '.rel.debug_frame' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #19 '.debug_frame'
+
+
+** Section #20 '.debug_frame' (SHT_PROGBITS)
+    Size   : 76 bytes
+
+
+** Section #38 '.rel.debug_frame' (SHT_REL)
+    Size   : 16 bytes (alignment 4)
+    Symbol table #23 '.symtab'
+    2 relocations applied to section #20 '.debug_frame'
+
+
+** Section #21 '.arm_vfe_header' (SHT_PROGBITS)
+    Size   : 4 bytes (alignment 4)
+
+
+** Section #22 '.comment' (SHT_PROGBITS)
+    Size   : 1208 bytes
+
+
+** Section #23 '.symtab' (SHT_SYMTAB)
+    Size   : 1088 bytes (alignment 4)
+    String table #40 '.strtab'
+    Last local symbol no. 53
+
+
+** Section #39 '.shstrtab' (SHT_STRTAB)
+    Size   : 260 bytes
+
+
+** Section #40 '.strtab' (SHT_STRTAB)
+    Size   : 984 bytes
+
+
+** Section #41 '.ARM.attributes' (SHT_ARM_ATTRIBUTES)
+    Size   : 105 bytes
+
+

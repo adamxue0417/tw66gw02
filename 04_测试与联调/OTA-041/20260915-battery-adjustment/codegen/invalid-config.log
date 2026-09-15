@@ -1,0 +1,4 @@
+"C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\01_固件工程\main\OS\TaskScheduler_config.h", line 10: Error:  #35: #error directive: SCH_IDLE_SLEEP_ENABLED_must_be_0_or_1
+  #error SCH_IDLE_SLEEP_ENABLED_must_be_0_or_1
+   ^
+C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\codegen\header_check.c: 0 warnings, 1 error

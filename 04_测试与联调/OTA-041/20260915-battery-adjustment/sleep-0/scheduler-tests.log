@@ -1,0 +1,1 @@
+PASS: 70 checks, SCH_IDLE_SLEEP_ENABLED=0 (mocked IRQ/WFI)

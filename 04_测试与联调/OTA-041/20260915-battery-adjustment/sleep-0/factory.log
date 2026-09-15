@@ -1,0 +1,5 @@
+Bootloader built: 2168 bytes
+Factory boot image prepared: C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\comparison\sleep-0\project\MDK-ARM\boot_image.o
+Keil factory target: C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\comparison\sleep-0\project\MDK-ARM\tw66gw02\tw66gw02.axf
+Factory HEX: C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\comparison\sleep-0\project\OTA_Artifacts\keil_factory_v100.hex
+Factory BIN: C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\comparison\sleep-0\project\OTA_Artifacts\keil_factory_v100.bin

@@ -1,0 +1,5 @@
+Bootloader built: 2168 bytes
+Factory image: C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\comparison\sleep-0\project\OTA_Artifacts\mathis_factory_v100.hex
+Factory binary: C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\comparison\sleep-0\project\OTA_Artifacts\mathis_factory_v100.bin (program at 0x08000000)
+OTA artifact: C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\comparison\sleep-0\project\OTA_Artifacts\mathis_ota_v101.ota (23372 bytes, CRC 0x8CF48178)
+Separated delivery: C:\Users\PC\Desktop\TW66GW02\.worktrees\battery_adjustment\.battery-local\comparison\sleep-0\project\OTA_Artifacts\Release_v100_to_v101

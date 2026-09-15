@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "modes": {
+    "0": {
+      "header_check": "PASS",
+      "compile": "PASS",
+      "wfi_count": 0
+    },
+    "1": {
+      "header_check": "PASS",
+      "compile": "PASS",
+      "wfi_count": 1
+    }
+  },
+  "invalid_define_rejected": true
+}
