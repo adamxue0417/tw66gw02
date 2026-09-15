@@ -1,0 +1,21 @@
+{
+  "test": "TEST-044",
+  "date": "2026-09-15",
+  "result": "PASS",
+  "change": "CHG-010",
+  "decision": "DEC-011",
+  "old_path": "C:/Users/PC/Desktop/TW66GW02/.worktrees/battery_adjustment",
+  "new_path": "C:/Users/PC/Desktop/TW66GW02/01_固件工程/experiments/battery_adjustment",
+  "head_before_document_update": "bd7a7eb9816d9660b479d31fd056f729a290985d",
+  "branch": "battery_adjustment",
+  "upstream": "github/battery_adjustment",
+  "relocated_files_verified_byte_identical": 2381,
+  "old_directory_absent": true,
+  "git_worktree_registration_updated": true,
+  "original_root_head_index_status_unchanged": true,
+  "original_root_files_verified": 256,
+  "frozen_files_verified": 19,
+  "firmware_source_changed": false,
+  "build_rerun": "NOT_RUN: directory/document-only change; prior TEST-042 evidence retained",
+  "physical_testing": "NOT_RUN; TEST-043 still awaits hardware"
+}

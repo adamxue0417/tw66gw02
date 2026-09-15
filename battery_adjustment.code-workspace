@@ -1,0 +1,22 @@
+{
+  "folders": [
+    {
+      "name": "省电测试：计划与 Git",
+      "path": "."
+    },
+    {
+      "name": "省电固件",
+      "path": "01_固件工程/main"
+    },
+    {
+      "name": "省电测试与证据",
+      "path": "04_测试与联调/OTA-041"
+    }
+  ],
+  "settings": {
+    "files.autoGuessEncoding": true,
+    "files.exclude": {
+      ".battery-local": true
+    }
+  }
+}

@@ -1,6 +1,6 @@
 # OTA 交付、生产签名与实机验证固定维护计划
 
-计划版本：**1.4** · 建立：**2026-09-11** · 最后更新：**2026-09-15** · 维护位置：根目录 `plan.md`
+计划版本：**1.5** · 建立：**2026-09-11** · 最后更新：**2026-09-15** · 维护位置：根目录 `plan.md`
 
 [项目入口](README.md) · [维护规则](AGENTS.md) · [交付检查表](05_发布与交付/交付检查表.md)
 
@@ -195,7 +195,7 @@
 
 ### 5.6 OTA-041 独立省电实验（CHG-009 / DEC-010）
 
-仅在 `battery_adjustment` 分支及 `.worktrees/battery_adjustment` 工作树实施。来源为 `chore/workspace-organization` 的 b964654 加当前已核验未提交源码/文档，实验前基线提交 6bd626d。GitHub main 布局不同，不从它重新取代当前工程，也不向 main 合并/推送。
+仅在 `battery_adjustment` 分支及 `01_固件工程/experiments/battery_adjustment` 工作树实施（原路径见 CHG-010）。来源为 `chore/workspace-organization` 的 b964654 加当前已核验未提交源码/文档，实验前基线提交 6bd626d。GitHub main 布局不同，不从它重新取代当前工程，也不向 main 合并/推送。
 
 首版只做任务空闲浅休眠。保留时钟、SysTick、采样、显示、按键、BLE、自动关机、电量阈值及原调度周期实际语义；任务领取/增删/入睡检查处理竞争，任务队列计数饱和时新增内部溢出诊断，错误计时改用 60000 ms。配置头文件 `SCH_IDLE_SLEEP_ENABLED` 默认 1，构建脚本新增 `-IdleSleepEnabled 0/1`，两组共用竞争修复。不修改 Bootloader、App 协议或冻结 v101。
 
@@ -246,6 +246,7 @@ TEST-008（2026-09-14，PASS）：在精简 v2 ZIP 的实际解压工程中，�
 | TEST-040 | G4 上传恢复 | 中断、URL 过期、重复请求；保留候选，查询回执并按同编号核对/重试 | NOT_RUN | 待执行 |
 | TEST-041 | G4 签名回包 | 正常回包通过；服务端哈希、应用前缀、签名或发布 manifest 不符时阻止发布 | NOT_RUN | 待执行 |
 | TEST-042 | OTA-041 离线回归 | 实验前基线重建、Sleep OFF/ON 六项构建、OTA恢复、编译后 C 调度器模拟及实际指令检查 | PASS | [本轮报告](04_测试与联调/OTA-041/20260915-battery-adjustment/README.md)；9 项构建 0 错误/警告；基线及每组各 162 恢复模拟；198 项 C 检查；实际指令/开关检查通过 |
+| TEST-044 | OTA-041 工作树目录迁移 | git worktree move 后核对分支/upstream、完整文件哈希、原工作区和冻结件 | PASS | [迁移证据](04_测试与联调/OTA-041/20260915-worktree-move/README.md)；2381 文件字节一致；不重跑固件或实机测试 |
 | TEST-043 | OTA-041 实机与功耗 | 同板同供电行为回归、BLE 关闭/连接状态 OFF/ON 各三轮五分钟电流对比 | NOT_RUN | 缺少设备、仪表及手机/App 组合 |
 
 设备/App 联调沿用规范状态码：CRC 失败 `Verify failed/0x01`，签名失败 `Verify failed/0x02`，防回滚失败 `Verify failed/0x05`，传输超时 `Aborted/0x04`，低电 `Error—power/0x08`。这里的斜线前后分别表示状态名称与原因/状态值，日志必须分别记录状态字节和原因字节，避免将防回滚原因 0x05 与 Verify failed 状态 0x05 混淆。READY 无首包的 60 秒退出按规范单独验收。
@@ -314,6 +315,7 @@ ISSUE-xxx / 标题：
 | DEC-008 | 测试设备与供电组合 | 未提供，不推定某台设备可测 | 我方硬件/测试、对方 App | 待设备编号、板卡、BLE、手机/App、供电和测量记录 | OTA-001 完成、所有实机验收 |
 | DEC-009 | 安全上传接口 | 仅约定输入输出，暂不绑定服务实现 | 对方后台 | 待 URL 获取方式、认证、请求/回执格式、有效期与重试规则；凭证不写此处 | OTA-030 外部联调、G4 |
 | DEC-010 | 省电范围与 Git 边界 | 日常开机，仅浅休眠，所有现有操作/显示/响应保持 | 用户 | 已确认独立 battery_adjustment 工作树，基线/实现/验证分开提交并推送同名 GitHub 分支，不写 main；后续 ADC 优化另议 | 无；实机仍依赖 DEC-008 |
+| DEC-011 | 实验目录可见性 | 迁入固件工程 experiments 目录，仍使用独立 worktree | 用户 | 已确认迁至 `01_固件工程/experiments/battery_adjustment`，保留 battery_adjustment、历史提交和 upstream | 无 |
 
 外部输入缺失只阻塞依赖部分。对方负责后台和生产签名，我方可以先做代码梳理、接口开发和离线验证；不填虚构参数，不将模拟结果标为真实环境通过。
 
@@ -348,6 +350,8 @@ CHG-008 / 2026-09-14 / v1.3：原 main 将模块宏和私有类型直接定义�
 
 CHG-009 / 2026-09-15 / v1.4：用户确认实施独立浅休眠实验。新增 OTA-041，不执行安全迁移、不调整 OTA-040 阈值；独立工作树和同名分支推送，原工作区及 main 不写。影响调度器、构建接口和 TEST-042/043；已有维护改动先以 6bd626d 保存，再独立提交实现/验证。TEST-042 离线 PASS，代码/构建输入已与实现提交 9cc2b04 逐文件关联；原工作区分支、HEAD、索引、256 个文件和 19 个冻结文件未变。TEST-043 NOT_RUN；OTA-041 因缺少实机条件 BLOCKED。回归与实机分开；关闭开关或新增 revert 提交恢复。
 
+CHG-010 / 2026-09-15 / v1.5：按用户确认，将独立实验工作树从 `.worktrees/battery_adjustment` 通过 `git worktree move` 迁至 `01_固件工程/experiments/battery_adjustment`，方便在固件工程目录发现。保留分支/提交/upstream、源码、产物和旧证据；新增 battery_adjustment.code-workspace 可见入口，更新当前路径说明。影响 OTA-041 的维护路径，TEST-044 PASS；完整 2381 文件迁移前后字节一致。历史构建日志中的旧绝对路径保留，不改写历史；实机状态不变。需要撤回目录时先检查工作树状态及目标为空，再用 git worktree move 返回旧路径，同步本地排除及文档，禁止直接移动或复制 .git 元数据。
+
 ```text
 CHG-xxx / 日期 / 计划版本：
 原约定 / 新约定：
@@ -361,6 +365,7 @@ CHG-xxx / 日期 / 计划版本：
 
 更新日期：2026-09-15（battery_adjustment 分支）。
 
+- **目录入口（CHG-010）：** 打开 `01_固件工程/experiments/battery_adjustment/battery_adjustment.code-workspace`；固件在工作树内 `01_固件工程/main`，证据在 `04_测试与联调/OTA-041`。TEST-044 迁移校验 PASS。
 - **本轮当前入口：OTA-041 BLOCKED（实机条件）。** 独立工作树及基线 6bd626d、实现 9cc2b04 已保存；TEST-042 离线 PASS，详见 [本轮证据](04_测试与联调/OTA-041/20260915-battery-adjustment/README.md)。提交验证记录后只推送 GitHub battery_adjustment，main 保持原引用。下一条具体操作：硬件/测试方登记 DEC-008 的设备、仪表、手机/App 组合，随后执行 TEST-043 的操作回归及电流对照；实机当前 NOT_RUN。
 - **原工作区入口保留：** 原根目录 plan.md 未覆盖，仍维持原交接安排；以下为历史交接及安全迁移入口，不包含在本轮执行范围。
 

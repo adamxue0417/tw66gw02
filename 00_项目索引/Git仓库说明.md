@@ -44,8 +44,10 @@ GitHub 项目：`https://github.com/adamxue0417/tw66gw02.git`。各工作副本�
 
 ## battery_adjustment 独立实验（2026-09-15 / CHG-009）
 
-- 根仓库独立工作树 `.worktrees/battery_adjustment`，分支名为 `battery_adjustment`；来源 b964654 + 当前未提交维护内容，实验前基线为 6bd626d。
+- 根仓库独立工作树 `01_固件工程/experiments/battery_adjustment`（CHG-010 从隐藏目录迁入），分支名为 `battery_adjustment`；来源 b964654 + 当前未提交维护内容，实验前基线为 6bd626d。
 - 在该工作树的 `01_固件工程/main` 开发浅休眠；目录名 main 不代表 GitHub main。原工作区仍为 chore/workspace-organization，原索引、文件、未提交状态保留。
 - 基线、实现、验证分开提交；仅使用 `git push -u github battery_adjustment` 建立同名 upstream，不合入 main、不强推、不批量推送。
-- `.worktrees/` 和 `.battery-local/` 为本机 Git 本地排除目录。源码、必要维护资料和文字证据入库，固件/ZIP/依赖不入库。历史安全线保持独立。
+- 原工作区通过本地排除 `/01_固件工程/experiments/battery_adjustment/` 防止误提交嵌套工作树；`.worktrees/` 保留历史辅助文件排除，实验缓存 `.battery-local/` 仍排除。源码、必要维护资料和文字证据入库，固件/ZIP/依赖不入库。历史安全线保持独立。
 - 对应主计划 OTA-041 和 [实验操作说明](../01_固件工程/main/tests/BATTERY_TESTING.md)；实机未通过前不作为省电量产交付。
+
+CHG-010 / 2026-09-15：工作树已迁至可见 experiments 目录；打开其中 `battery_adjustment.code-workspace` 即可查看固件、验证资料和主计划。历史日志仍记录当时实际构建路径；今后从新路径构建产生新的日志，不改写旧证据。
