@@ -1,10 +1,6 @@
 #include "stm32f030x8.h"
 #include "ota_layout.h"
-
-#define BOOT_ERROR_MASK       (FLASH_SR_PGERR | FLASH_SR_WRPERR)
-#define BOOT_LOG_TOKEN_BASE   (0x5A00u)
-
-#define BOOT_TRACE(value)     (*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = (value))
+#include "boot_internal.h"
 
 /* PB3 drives the board power-hold latch.  A push button only supplies the
  * initial pulse, so the bootloader must take ownership before doing any flash

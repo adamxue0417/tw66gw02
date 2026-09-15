@@ -1,0 +1,1966 @@
+{
+  "main_head": "b964654c6290591b0f4497e63704fa94161df99f",
+  "source_head": "d60b6a8654e6f3ac743a122699d7418b9cdc7d98",
+  "comparison": "Tracked code/config/scripts; UTF-8 BOM/newline normalized, legacy text decoded GB18030 with byte-preserving Latin-1 fallback; not a semantic-equivalence proof",
+  "summary": {
+    "SAME": 132,
+    "CHANGED": 31,
+    "SOURCE_ONLY": 53,
+    "MAIN_ONLY": 1
+  },
+  "files": [
+    {
+      "path": "BSP/C8721.c",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "b998065fb433a10b4b896b40d37afdbbae0c732a58a3497770e5595b53095863",
+      "source_sha256": "b5d58acbf35de0bf4c7c1039fb39d45e146a254de56f4be0a7a97f1996ccbf9e"
+    },
+    {
+      "path": "BSP/C8721.h",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "d57aa90e30e9071ea37c450008cb89dceccfe8121e5a2fd55151f005e5e544bf",
+      "source_sha256": "d2fad65f8521c4a598f2cdb9cf30118b45e684f575bc735d57abc5e4eabb7ac5"
+    },
+    {
+      "path": "BSP/battery_level.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "3a119978004d7d1e9bc8253493ff9f6be67044a6434e12889193ea4e301574fb",
+      "source_sha256": "3a119978004d7d1e9bc8253493ff9f6be67044a6434e12889193ea4e301574fb"
+    },
+    {
+      "path": "BSP/battery_level.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "b0fe7f6466ccfcfdd043222cc979a34e2d988e4762476bcffa5310f34327337e",
+      "source_sha256": "b0fe7f6466ccfcfdd043222cc979a34e2d988e4762476bcffa5310f34327337e"
+    },
+    {
+      "path": "BSP/bh66f5242.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "c49c8c8420a7d54268a294fb74b6a3bd28c0ca671e7b264dbfb674ef9ffb6add",
+      "source_sha256": "c49c8c8420a7d54268a294fb74b6a3bd28c0ca671e7b264dbfb674ef9ffb6add"
+    },
+    {
+      "path": "BSP/bh66f5242.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "338f96fc3aca20c9919e169c22856e0e16bf1bf6686c3f40e156d346b059b25c",
+      "source_sha256": "338f96fc3aca20c9919e169c22856e0e16bf1bf6686c3f40e156d346b059b25c"
+    },
+    {
+      "path": "BSP/boot_api.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "9516babe5d007d312ad62ae193a89462e6087c550994a10de44375db66b9209c"
+    },
+    {
+      "path": "BSP/buzz.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "d4f658cb8fa348122e1fab443de517ad8c024de4a437008405fe303152759786",
+      "source_sha256": "d4f658cb8fa348122e1fab443de517ad8c024de4a437008405fe303152759786"
+    },
+    {
+      "path": "BSP/buzz.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "d6a06eefb3c8d251b1133e5566fbde0a2ba29bb5717e1d67e100e65d91f0662a",
+      "source_sha256": "d6a06eefb3c8d251b1133e5566fbde0a2ba29bb5717e1d67e100e65d91f0662a"
+    },
+    {
+      "path": "BSP/config.h",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "1ac1f0a367a7d433c9cef567d3cc1e4a261842059020a80b21bae4cdd3cc4f76",
+      "source_sha256": "955c24cd3a1c768e4c5907c67ee50df7b066fc5b4aeb1e1e2533b05253941cd1"
+    },
+    {
+      "path": "BSP/key.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "60176aa30184187f18d0418f1007a54e1849addd6c024a66b0bd60852f11909a",
+      "source_sha256": "024fe42baf7b1292e2c2e336b93465c077b087276d08bdc6de508c9c844b781a"
+    },
+    {
+      "path": "BSP/key.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "4c52e123eb6fea0d9635fd338c1a66fc0fa52d4c3ab786ead92822d0a2f01edc",
+      "source_sha256": "4c52e123eb6fea0d9635fd338c1a66fc0fa52d4c3ab786ead92822d0a2f01edc"
+    },
+    {
+      "path": "BSP/ota_layout.h",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a18034ebfbe219c45718f32b42d889973e6c7d5dd4ef64f4257adcfe75cfc855",
+      "source_sha256": "12bc047590136f4f92d5011ec972942f6d5f2872a1fd1601db98ceb4591c9cb7"
+    },
+    {
+      "path": "BSP/power_latch.h",
+      "status": "SOURCE_ONLY",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "6c1852937e647890126b3d2803919f082595a66a7602a362c4240c83993f2ddc"
+    },
+    {
+      "path": "BSP/screen_c8721.c",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "6cdd1853846d18473871e4fe758c7bec47db06bce913b9ade2c4ba160bb7bd6e",
+      "source_sha256": "b1e149a26c8d2b91c4f5c465a12c7d3c615fa13664e8f0419883a30917c1377a"
+    },
+    {
+      "path": "BSP/screen_c8721.h",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "146a83ab868c7d505338e46546d6e472feaaae6a76f4acdd0c9ec2e2601e17eb",
+      "source_sha256": "d3bf6d7fd990dd90632c351a4bf8c979dff6f7718a9a2095fe1c63bc1f1d455f"
+    },
+    {
+      "path": "BSP/temp.c",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e16b89dd44fb07e9a6c9261a733718a3a005adb55afa8c506daeecaf9b2b6889",
+      "source_sha256": "1ff290d8f3d84988f0fb374eae3645268c1ad132ccf5961336f217814908972e"
+    },
+    {
+      "path": "BSP/temp.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "4c9153259ce7a5848afd8978fe058671c6964dc6d148b07e0539cf2d6dcddb39",
+      "source_sha256": "4c9153259ce7a5848afd8978fe058671c6964dc6d148b07e0539cf2d6dcddb39"
+    },
+    {
+      "path": "BSP/wireless.c",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "bda5913ca786880c4c643e4f9398fc629e0ded755fa165f0e3bdb6f2a58ed5a8",
+      "source_sha256": "3dc38447fd39378e17760f5f0d9c9dc37a5c37331106f91714ad313af1853356"
+    },
+    {
+      "path": "BSP/wireless.h",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e3ea69d7bd93e1bcdf1be27a5531bbe3284a5bed3815952e7b787c0948a024d7",
+      "source_sha256": "bc85275be7d938b6a4b96120b1c3debee40afb2a548f9ef197676578bda53ef4"
+    },
+    {
+      "path": "Bootloader/boot_main.c",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a9e114855a8fca13113f3b7d68252c33626c46bf627293b71a78b6805084c13d",
+      "source_sha256": "85544ef0843ea0451a1986e03da818a7e3b46e35aabbcd40b0cb205669f2faf2"
+    },
+    {
+      "path": "Bootloader/boot_security.c",
+      "status": "SOURCE_ONLY",
+      "action": "需适配；见模块清单",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "d0f5e7f85955f073a5ebe26b931315254e06283b2eb045353eccfcd18c945c27"
+    },
+    {
+      "path": "Bootloader/boot_security.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "66f747d0e7fe47b7b9b88f73b4f42f4d4e113f330263479ab7e0437633a50170"
+    },
+    {
+      "path": "Bootloader/bootloader.sct",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "8d70f5f18a0d4bf89f5d0b368a3ac5f945b73c91978511a67b5139b6e1bfd464",
+      "source_sha256": "574ecd2297f13b7ac7d225f036c16bd36ba981042be6bb22d1464dfa974ee212"
+    },
+    {
+      "path": "Bootloader/build_bootloader.ps1",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "76b5db28284eb61b7b58dab95da7ea468b5fccd051d7fd2f3f42235bc563460d",
+      "source_sha256": "7f78ebadedf3ade235c1c658a6d2c8482994ddbe92d6fb22658db70dd2bae9c4"
+    },
+    {
+      "path": "Bootloader/build_min_bootloader.ps1",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e381e8417a9b2663cfed0552dd0c992f633758b207fca5dafb73a89ada002867",
+      "source_sha256": "553eaf2c8861eac3c4be6b456ffb5d8ad971ac4de14b6ff9b4c146632f560a53"
+    },
+    {
+      "path": "Bootloader/min_boot_main.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "c0b1db636b5838e27321b7d9a73807a2c5da35ebdf18e408601622245b95e214",
+      "source_sha256": "7e886f20b9960a396c95a0883906d1f1d61ac315414767236813f4ad79c10f23"
+    },
+    {
+      "path": "BuildKeilFactoryTarget.ps1",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "f98a0dbeec12d393c818c96783f6aad266c396b61c18ec3b054f8e22312d3bdf",
+      "source_sha256": "ade4b805384b947ea6ccc74eab878919e68bb4b8393c3fafebb0a06c462cf88c"
+    },
+    {
+      "path": "BuildOtaArtifacts.ps1",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "89c1d391d7621e4328c521fd3e95ad9c322bdd28f1e3e36ceb2a713ee9261d28",
+      "source_sha256": "8a00b9930a7084537eaa985a065cfdb9d940320fe4907f32942e4fc0d8938702"
+    },
+    {
+      "path": "BuildStartupDiagnostic.ps1",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "d34959753ed8bbe7ad110347269c057b74de2d46dd5ab70754f839a09ea57407",
+      "source_sha256": "28ff7710316d0a62f1fd04a6a1206e220f1c9bfa2a55fc8727c223584cd39c3b"
+    },
+    {
+      "path": "BuildV104Delivery.ps1",
+      "status": "SOURCE_ONLY",
+      "action": "保留 main 生成/工程入口；参考件不直接复制",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "d5a924917d93e6e2dcd4e31a964ecbc37edc4c72da35f4e8dacaa70efa7057b2"
+    },
+    {
+      "path": "COP/gagent_md5.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "7c7435c58508a6299040acb0de43aaef02c798973e1653a93b222dbfe0b28044",
+      "source_sha256": "7c7435c58508a6299040acb0de43aaef02c798973e1653a93b222dbfe0b28044"
+    },
+    {
+      "path": "COP/gagent_md5.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "34f858b2b2f755822bc98fb0389f6f5225448987e033a9d0826f4a6ba655440a",
+      "source_sha256": "34f858b2b2f755822bc98fb0389f6f5225448987e033a9d0826f4a6ba655440a"
+    },
+    {
+      "path": "COP/idle.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "1653bfc080f1c1638400c71d2f38038ce53a579e7c80a9318650395e058b73a5",
+      "source_sha256": "1653bfc080f1c1638400c71d2f38038ce53a579e7c80a9318650395e058b73a5"
+    },
+    {
+      "path": "COP/idle.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a6cbdb71de115f0709a8f21967e33e6ba5a167b0ade7c5fc6a8f55b5894d6870",
+      "source_sha256": "a6cbdb71de115f0709a8f21967e33e6ba5a167b0ade7c5fc6a8f55b5894d6870"
+    },
+    {
+      "path": "COP/main_control.c",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "f122cea871413a937c84d8126fa627352c8098141cc8a7140331afcfc327a89d",
+      "source_sha256": "c3b6e3bf9ef20820c6f4ea3127829bed4225651bb087637a10d562d4df44db81"
+    },
+    {
+      "path": "COP/main_control.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "dc7752e731cc0602547c63338571ff1db080445f32d1fa450240bfd31f2b01d9",
+      "source_sha256": "97a7407af8b06332ab79db85ca776379bc6b3480a4486417461f971ecaa5b6d9"
+    },
+    {
+      "path": "COP/ota.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e5a7e011b7ce278b6a1062ffebf0318c828b19f51f4b14a405e002776d453740",
+      "source_sha256": "e5a7e011b7ce278b6a1062ffebf0318c828b19f51f4b14a405e002776d453740"
+    },
+    {
+      "path": "COP/ota.h",
+      "status": "CHANGED",
+      "action": "迁移；按批次验证",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a91dcf468bb37197fcbdf1b7f80bbff4941a97769c625455bd274d6fa1507d98",
+      "source_sha256": "2f71f322b8b4f568353fd854f2bf4f37386280299672b4e68bc2f0341c14e9e4"
+    },
+    {
+      "path": "COP/ota_boot.c",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "4dd3678ceff56d6c1db45c8fa0cbafdc1720b5c4437fa944a4a74ff5e194a82d",
+      "source_sha256": "9cdeedca3087ad7213ef45ac395ea4e1074976293d3b0f92178ebf4e176da459"
+    },
+    {
+      "path": "COP/ota_boot.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "19a6c7f2ccbf1d4c1ce9075b724d54645540fb94c2765118c0fb4623547bac30",
+      "source_sha256": "59ecbfd0afb6d560c439b64afb56614e30850597aee8cec852c336152b703019"
+    },
+    {
+      "path": "COP/ota_update.c",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "8fd276a2cb1c1ca211336c9a4cb3c1a7c06c9cb2c50a33e0d3961e727a2b9446",
+      "source_sha256": "1d5a88e591d3e74874af95e1b2f005e2cbf5e908ba537a5a7ba76440575a8f7c"
+    },
+    {
+      "path": "COP/ota_update.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "7dc0a910c841b2f3dd7894c4c701a02d1cd2d598500bcd5fabcdfee477c87b3e",
+      "source_sha256": "e1f439adeffce2cc489306bcd5ed725cd71f3315ccc3c00b3ca6e1ea6f0b61ed"
+    },
+    {
+      "path": "COP/pid.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "2cd7d229d6234e952a7c0a99d2a2ca83084bf750cb8cddcab47ac0fabc1566f5",
+      "source_sha256": "2cd7d229d6234e952a7c0a99d2a2ca83084bf750cb8cddcab47ac0fabc1566f5"
+    },
+    {
+      "path": "COP/pid.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "0707bc51d0416321d93d3b78e1ee1feca7176b5ed1bddcb35576241e1ae164f1",
+      "source_sha256": "0707bc51d0416321d93d3b78e1ee1feca7176b5ed1bddcb35576241e1ae164f1"
+    },
+    {
+      "path": "COP/run.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "15ad04788f186e0d60faf5a6be70d2209067f033cf9ca30a0482be615bf79b1a",
+      "source_sha256": "15ad04788f186e0d60faf5a6be70d2209067f033cf9ca30a0482be615bf79b1a"
+    },
+    {
+      "path": "COP/run.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "ea440535e18edbd07c88b6bf689e32eb0be5dd997f29aa6dc68698a86db5713f",
+      "source_sha256": "ea440535e18edbd07c88b6bf689e32eb0be5dd997f29aa6dc68698a86db5713f"
+    },
+    {
+      "path": "COP/set.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "57cde9f0a5dbc1bad14e16bf2b615d8457b3ee428995e06e5f60093f1db1d41a",
+      "source_sha256": "57cde9f0a5dbc1bad14e16bf2b615d8457b3ee428995e06e5f60093f1db1d41a"
+    },
+    {
+      "path": "COP/set.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "1339a678a5a607baf0678eeab5f7c98ec136d99f27e4b119b3b4f252e655b348",
+      "source_sha256": "1339a678a5a607baf0678eeab5f7c98ec136d99f27e4b119b3b4f252e655b348"
+    },
+    {
+      "path": "COP/shutdown.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e5165813723b5271871e38a1b25a30f2f6d5f33711c651a0b0240c957b80d072",
+      "source_sha256": "e5165813723b5271871e38a1b25a30f2f6d5f33711c651a0b0240c957b80d072"
+    },
+    {
+      "path": "COP/shutdown.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "89a9f886d3843504796942195f858eeb3b241a7bca4f6ac4b98b0b90851d2cc1",
+      "source_sha256": "89a9f886d3843504796942195f858eeb3b241a7bca4f6ac4b98b0b90851d2cc1"
+    },
+    {
+      "path": "COP/start_up.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "1780bca013991de3da40cfcd0bab052b2ce32091234965abfe42e9da72b68ab4",
+      "source_sha256": "1780bca013991de3da40cfcd0bab052b2ce32091234965abfe42e9da72b68ab4"
+    },
+    {
+      "path": "COP/start_up.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "754f5a3386f1df67cf379e07b4b5330bcada879c345e71c0bac506d7f9b13706",
+      "source_sha256": "754f5a3386f1df67cf379e07b4b5330bcada879c345e71c0bac506d7f9b13706"
+    },
+    {
+      "path": "COP/test.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "2c2c9c6f7348a436fe1185026392011d26088abe935ecfe4da80c57234f31f47",
+      "source_sha256": "2c2c9c6f7348a436fe1185026392011d26088abe935ecfe4da80c57234f31f47"
+    },
+    {
+      "path": "COP/test.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "fb5533851667c6820aac85f93e32b25272af2cfc1308b1857b40200d382ac6fd",
+      "source_sha256": "fb5533851667c6820aac85f93e32b25272af2cfc1308b1857b40200d382ac6fd"
+    },
+    {
+      "path": "COP/warning.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a73227f5ed7dc0dd3d22e06a2f48c18cd089943d0264cf88f9922a277fba147e",
+      "source_sha256": "a73227f5ed7dc0dd3d22e06a2f48c18cd089943d0264cf88f9922a277fba147e"
+    },
+    {
+      "path": "COP/warning.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "0d224c347a6cf8083e199cab96c1bddddc7b9f1a664aca9f01f1a03e12b31f5d",
+      "source_sha256": "0d224c347a6cf8083e199cab96c1bddddc7b9f1a664aca9f01f1a03e12b31f5d"
+    },
+    {
+      "path": "Core/Inc/adc.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "4052f2e6bc5b3bcb85d083dc16c9dfc2d851564d319e918b6621ea01d4aea37b",
+      "source_sha256": "4052f2e6bc5b3bcb85d083dc16c9dfc2d851564d319e918b6621ea01d4aea37b"
+    },
+    {
+      "path": "Core/Inc/dma.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "7cf6f7450a29d26303cbba5a3ca8c6cb24a02635d6a5ba4d05141fdfc75c4c49",
+      "source_sha256": "7cf6f7450a29d26303cbba5a3ca8c6cb24a02635d6a5ba4d05141fdfc75c4c49"
+    },
+    {
+      "path": "Core/Inc/gpio.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e2d62f964a0b7f238384ed6a20a181d09df9647240a268dc547acf5b35099f74",
+      "source_sha256": "e2d62f964a0b7f238384ed6a20a181d09df9647240a268dc547acf5b35099f74"
+    },
+    {
+      "path": "Core/Inc/main.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "ef067e8a4e2e9040720af5e7cb8d1e3d9360d46a3debf11da9771bb0104293c8",
+      "source_sha256": "ef067e8a4e2e9040720af5e7cb8d1e3d9360d46a3debf11da9771bb0104293c8"
+    },
+    {
+      "path": "Core/Inc/stm32f0xx_hal_conf.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "b7548d75ac43ec9efefd83c00491df3450962801b384b33657e76d98b0a3548d",
+      "source_sha256": "b7548d75ac43ec9efefd83c00491df3450962801b384b33657e76d98b0a3548d"
+    },
+    {
+      "path": "Core/Inc/stm32f0xx_it.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "8803ae7942dd9046fc3f5556d67776fa879282014d6f4eb417dcd38610a19c28",
+      "source_sha256": "19b12c10ffa7a5da88a3dc07129c6d3e128fd81529f979e614af09978f603bb8"
+    },
+    {
+      "path": "Core/Inc/tim.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "b060d62de6437c2e1be10eb11aa9c07afba7588e10491d67739df5bacda5d4bd",
+      "source_sha256": "b060d62de6437c2e1be10eb11aa9c07afba7588e10491d67739df5bacda5d4bd"
+    },
+    {
+      "path": "Core/Inc/usart.h",
+      "status": "CHANGED",
+      "action": "迁移；按批次验证",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "26b6598a423ae5c5767ea5798b83db8e192166bc34a60b3fb311a9bbb3070877",
+      "source_sha256": "0ebdf83369c652bbd8e19e13690d4c5fe6f2a832daed0abe852948bf6e4b3787"
+    },
+    {
+      "path": "Core/Src/adc.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "8908b5138ca35ebe901a8381d9ec7a8d874e0bece07b2b86544025f09774aae5",
+      "source_sha256": "8908b5138ca35ebe901a8381d9ec7a8d874e0bece07b2b86544025f09774aae5"
+    },
+    {
+      "path": "Core/Src/dma.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "69c62ddd8ca5ca7f16d57cc767580c42229a650ad1a4f2f564b9ffa7452e96af",
+      "source_sha256": "69c62ddd8ca5ca7f16d57cc767580c42229a650ad1a4f2f564b9ffa7452e96af"
+    },
+    {
+      "path": "Core/Src/gpio.c",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "39cdde8fa6e00c0aa8b41a114f806c0c20a340d336ac171757f7d8df04193c96",
+      "source_sha256": "b679b2daa9847933ac0b4fb451bcc1356e0ecbfdf97ecadcca2c195189a23420"
+    },
+    {
+      "path": "Core/Src/main.c",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e4f10f2049187a2ea79ba1eedc50550ced5bed4fbdaa91919c87988c8676bd40",
+      "source_sha256": "e545a03635e94ab02f870b7964786164e558387d10f1cf2873ee3f711f401a3f"
+    },
+    {
+      "path": "Core/Src/stm32f0xx_hal_msp.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "0d3c29e612ee305efeb5006b3b1335bd67fea4c6a4888b2fe6075cec5e5dda81",
+      "source_sha256": "0d3c29e612ee305efeb5006b3b1335bd67fea4c6a4888b2fe6075cec5e5dda81"
+    },
+    {
+      "path": "Core/Src/stm32f0xx_it.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "3c127187ea4f230c91ff2a77689d89a027de6c659e546d055e569c30fbbe8400",
+      "source_sha256": "2f97569c6eb1644f4d4750fc793378ca20f194e583ba6690e2b5ea246bd9c2d4"
+    },
+    {
+      "path": "Core/Src/system_stm32f0xx.c",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a5257cd1f7c7f099a2acaafb669a5af2b22b96f5d34a06d33ba212e52a275ea9",
+      "source_sha256": "6ddab737b8cd29f0e6c1050d8aa884e823fe40aea068c25175c2e62d3f1df5fa"
+    },
+    {
+      "path": "Core/Src/tim.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "ef3d834916271c53858be3887ea3ad7932a8d1a8a59dff0f199f083ae9c96e49",
+      "source_sha256": "ef3d834916271c53858be3887ea3ad7932a8d1a8a59dff0f199f083ae9c96e49"
+    },
+    {
+      "path": "Core/Src/usart.c",
+      "status": "CHANGED",
+      "action": "迁移；按批次验证",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a38e1cd2a7a7c7537d2e8bfa51f2753b498792d9666837e17888f3cd3d4f4088",
+      "source_sha256": "b437f59e75434cfe6d8023bb923fe8ebb8cade9df3bb6c05f498a61843ec814d"
+    },
+    {
+      "path": "Diagnostics/build_gpio_alive.ps1",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "98ea8729441becc27af0149e6adb815a81ffba3a590727dca30fd80d37abf2c0",
+      "source_sha256": "73b92e92c3b08b4931e51904efe6af1dfcbde2e5e59169380a7749070c979196"
+    },
+    {
+      "path": "Diagnostics/gpio_alive.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e6083f0e4d6dc2c0da599716bea241c5af67666c770ba527d4e3fea6091165fb",
+      "source_sha256": "3371e08c46612f5cf73805b0d597649df2d4ef9ef90be1b4581607d206b17c82"
+    },
+    {
+      "path": "Drivers/CMSIS/Device/ST/STM32F0xx/Include/stm32f030x8.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "cd18a6eca343810482d09b4ac32fda7ef0c56b05250a2e87402d3a1a2b4c35e8",
+      "source_sha256": "1dbac54147ae3eb6bfe3541faa10432c4b6ada34c2ecb01509d6a36fd9ab2695"
+    },
+    {
+      "path": "Drivers/CMSIS/Device/ST/STM32F0xx/Include/stm32f0xx.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "latin-1",
+      "source_encoding": "latin-1",
+      "main_sha256": "6014250efdc39dad8e7f2d74be95db323e4cccd21fcd862ebf5fdd363d6db634",
+      "source_sha256": "6797014ace07b739b885d61497e76366a30ea5be6dd5c8fc9ac1d113ed40b56b"
+    },
+    {
+      "path": "Drivers/CMSIS/Device/ST/STM32F0xx/Include/system_stm32f0xx.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "d7773a877737eee25efd275f32046c67f473fd23f5278e53004490f48096dbfb",
+      "source_sha256": "fba2f60c67917873d6a010f502508c6e661738a06846f6bb8c3e9edfdfc1f754"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/cmsis_armcc.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "3371c679298b7db7caae23215ab8efdb95fe3b5c6c1a793f8004e5be16940149",
+      "source_sha256": "57b8d88cd03152f60bf74de0149ec979ae20210d86ab06e837aa69c66f27d615"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/cmsis_armclang.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "3a33c83dd7533cd2827164b89e66dc7c0f8376ef4e2d255ec50c1a58b36f670b",
+      "source_sha256": "da29dbad3cf27f6c86437af6bd0b302e105210742ad7a602bea51b104f1661c9"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/cmsis_compiler.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "03ab80c426a8360eaaad833ac816462a9f38cb2e4dbdc490914880ad071181fe",
+      "source_sha256": "cd3cbd1c771a5252827a14c75a12e7ed975f76b9fc1577d53a74ba0e7c1af6c3"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/cmsis_gcc.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "341982e6d6c91119214c47d7a04b31f1f8ce0970c45e2c9fe0870c80d0876e28",
+      "source_sha256": "8c16d51f7884a9fc07c5cbe6f2bcd24e5e092ddc519f71d36740c2d2e2ff6a27"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/cmsis_iccarm.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "03e120db362480dc0c57b9eb2574972029321fb8d9e993e458dbff69e6f4f91e",
+      "source_sha256": "a600765888c69ee60cd2d01d77356902d4ae5fa98aa7e1d73703663c96b7f87a"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/cmsis_version.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "c2570d56ee85d4f2ec0fb62f31d080d3cddf3a015500a4ed5a006a571637b43c",
+      "source_sha256": "280b9fc8739aefa878d47e68d7adbd4908a15f98ec193cdba1a4b514133f5c34"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_armv8mbl.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "6b1a61685f498b80becd4df1219c50fd47f1e8ec23ee28184585b1025387764b",
+      "source_sha256": "220d90f3f99126e656c31c32f099ff766b32cf487f7dd77388e4c9a78e1898c8"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_armv8mml.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "2a9f702aebde491b5a7b96d539413b2ddef1ea6872b09f9397638389aea86d0c",
+      "source_sha256": "825a8799d71f3fa29690b1597dfc2dfb660b103d44e20b8185f26b4f3b4ffdf0"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_cm0.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "1fedf79e11c6c7f7c02fc2c6d93add0f86b62fadbcb913daece240d97a70720c",
+      "source_sha256": "1beaa04c859225f75142d055e9c5dacfc9ac1d88c82934177f745b9c5f3f4094"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_cm0plus.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "9fd6ebad79f26eeb25f5cba28fd87bedc9e13213cd44269b049cf1f379d5ab36",
+      "source_sha256": "c953256e1c1b1cd6accbbfca5d47c09a9b0534f3147b125e17e59c0ae6c30ed7"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_cm1.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "1ca25034076f4952af4d235f2c4302bdc81d123cf55bc329d2fa964d9bc0ece1",
+      "source_sha256": "460281028a261740cd5ec86840bed01c480d70ba5b54a0f9938d4cefadfd486b"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_cm23.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "492e9eebccc634173a92826966c40c98061878daae73c67597e370a8def685f5",
+      "source_sha256": "6303efec943ca0f9eccdab8fc39200d6f95dc943d4051198e0d49f24395028a5"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_cm3.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "655bb08e9474438dec8b1874ea6c63749dc2787b85f06a0987c4870bcb580f21",
+      "source_sha256": "368296087a925cf78133d27e0854d748605441915e0f4fece93f2f97eea68adb"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_cm33.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "f4b8df5e3327f38497b1893c4b6d75ef9758a5443423f19b45f1ffe1f51ecffe",
+      "source_sha256": "7f1b6a76b119e1e1680f756da897929f63d98133442c5115678af60adf20f1a8"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_cm4.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "53712d8aefacaebf3faa2370be8c7c6065328a974242f9e315ffc86b3ee852c5",
+      "source_sha256": "738dff259c25e68ed2529baf425315d8dae1af5dac6c11b66bfdef82e78e86c9"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_cm7.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "4e67355b28417febaa955120abd51fcdcf4d581c5e1522ece1e673c38cd17728",
+      "source_sha256": "6b75e3bef1eb81e0d3e2c311ad26fcdbac4cde2cd3462a62b81a23f6aec0e55f"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_sc000.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "cb3a0b87bdbb70f552773bc442fdacb6c59b06233b5f0d6b2e0e8f56fd561396",
+      "source_sha256": "d1528d13fbf91da620ef977e99802d83ded093c0521c04cad128da23e3001524"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/core_sc300.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "2a3ec02d4b947d6eb09a7b9860a4fbe9b9f45ee1a911f1674a424fd6d3faa683",
+      "source_sha256": "fa514ea0cf5327b0523c2bdfebfb76fd2e69f972e5f60fbfb94ade56b31c722b"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/mpu_armv7.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e4968e627df085e4ebf46be5140be657e035d978ae1938c1c2e3ee49fbde5030",
+      "source_sha256": "b0b6da4ec744b5f547a94e60e24b0a6ff6bb7307d3f81a83d0b7c3a64dc29326"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/mpu_armv8.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "8e5a84b186f303eb3f2ece0cd84f013ac31ed68bffde4feea502acd0b474c40f",
+      "source_sha256": "8280a1d4d3d25f60cdc05b84718cf504f02b7265fc3b7c5790cb29cd7dcf116c"
+    },
+    {
+      "path": "Drivers/CMSIS/Include/tz_context.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "45565c8cb04c653aabaf3cceddfc848b6a0de28c20d4f7e3d475a992c7eee788",
+      "source_sha256": "7fcc21fc190f6fd970390e9caaa6a86d72fd10f9edf4efab36f12aecf1a8baa0"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "3ac002c4df98f17ed8e6802508357643cf72540de7222f903f5bfdc402ab7b44",
+      "source_sha256": "15d4df18dbf6f7a59cc9738f028e0f41412cb68456cd19dfea5ea2d15ccafe7b"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "29e3c732a39e22b5fa3d7197e0d96b3a9cf32b205268c45a517511b9c9ab1292",
+      "source_sha256": "4bf569f9e79e4823ec122fb82bbce650eddfe0c4673189748939fca731c723aa"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_adc.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "874527f39efa00625ca966e51a26b46dcd4aa957a2d39f2afb900f8a484d881e",
+      "source_sha256": "4a0c36b2b01c25d3cfc1c0b8f3229eb76fa0f2e16fe4622650310205af487ecd"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_adc_ex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "57e515316bf65b84a8635f15fb22850ae4ec0197ea9907a14902dbc780bca6b9",
+      "source_sha256": "4d2755bd9d5994b3ec248c407232fe2cbba7f5f1026d9284cb06a8cfc8360892"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_cortex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "6051101b3b55b460ef98bfc854c42ca4cc5b5bb6eba6dda2426c5fd3889b9bbb",
+      "source_sha256": "c06a769fa95b38b34f79284f3317f5e91dafaf0e6bb455e49645f83a43229225"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_def.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "7c831c91bb3ed127dd52b842b919649129095c06eeeef185da6c15ccf9718bcf",
+      "source_sha256": "69fdfccc54dc35d48cfede72acfaf29635da68f7233b6079a19fca29ed46e649"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_dma.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "404be6c6d36948b786025327cfffa42254e6ee48e7910db2fa665030a2a7e475",
+      "source_sha256": "8ee069c14292191e69741dc70faecef486b5e6cd8acc86d8065b79ba7e98123d"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_dma_ex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a7dcbd01b2ea86fdb23bd7e898d2c212a17722f19984e9cdf2f341f2f886ee3d",
+      "source_sha256": "202e5944dcce2deeacc80903eb1ccaa5b551ba053c7ecb8ffc586d5c4f0628d7"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_exti.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e73dc38722d586062b7437067f9e6990f9952cbcb823696bbbf2d2e61a5b3878",
+      "source_sha256": "3dd64cc8d73f0ae77d8abf87dd12f098b6b5c4d1ffbdccbfcd3387dd13bcb6b4"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_flash.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "3bed899f71156113108277ca5282293d03664028bb7e50d4c302f955961d7500",
+      "source_sha256": "cfaaba9d465a7cc9f626722d6266d72b95bbe5eb55569203c339afce24e8ae9e"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_flash_ex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "1e94d0081874d25cd182957103e5e46dba211577e45aa9835020f0b56f248042",
+      "source_sha256": "d16ae367eb79e7d0e8c7a1c20c6662723432e38328694149a712b8782f7d9605"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_gpio.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "1211e581c187d6fdb37bf14753e10073c4c7118f9ffb140977c1f535c702ab73",
+      "source_sha256": "49b0daf00c021816dce8303439309fe8d1762e00b283b14d5f15d5b9d99d1b50"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_gpio_ex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "2c219ba343b4d30fcc1c682805cd823c16c7076dc26253c2e4d135d752c06007",
+      "source_sha256": "aa61d7a77edd78a27288fe2bd79c63bcf3e2f1a976e992171f161e8bad40503e"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_i2c.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "deecbe1b8386fee66a0a6cf262b87b269e3acba4796670cf156cf2bf12bc5964",
+      "source_sha256": "ec4d633410f9d67e4c0d8bd2455f713fe051865855e6c80448bdbd28d850bb8e"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_i2c_ex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "f466424c93867d7b42a184a622de48eb47be2b50fb8766b36bf88eb3c5be1656",
+      "source_sha256": "76cfba8c9914f3c9ad19ae7a4746556f8c89845d299465967d5d7c98216a294c"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_pwr.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "271e3b144808b0a93ff0113e5e1c3821efc622e00e7fcc33b8f24e744360c26f",
+      "source_sha256": "370823441b546d45ea043493c7da94a8ea5d9b514da3fccbbbb40a4332b1660c"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_pwr_ex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "49f0336c35719052670809bbad1487f73dbf0b26db63c0c9b6d44a6d8270a8c4",
+      "source_sha256": "2106ed4c79062efa103b5ec30f415a209720ec8069a852292fd54c7ab6b087b7"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_rcc.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "b91f3fcb137b91be8556cf26017ecc62b53771b3b9cb7fbd0a43e1e8fb5676bc",
+      "source_sha256": "1e5218c1752f51e3adcb81959ebdb7d876048d4788f99b0dad56423baf6951c0"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_rcc_ex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "52232e808e6028a811563ca44e25a9cb104838a946ce4f3121121d5d6ba8e0f1",
+      "source_sha256": "b470a34d6648bca18b8717dfff098d67aaea60a9545e325da730f2438afcc12d"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e2f34e5ddd2437830e355c6afcdb479134da4037702a9800c707fcabb62ae66d",
+      "source_sha256": "77435476448f4881905f5c2ad70b2353f905275af7c732bfaed1be27b469a90b"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "26b61b357edfb63467fd6af7a91d0de4fc07d50adcc4e00e1d6177d3ef2630a4",
+      "source_sha256": "af05b0b5f55456d9a69b50175510447f20b85efb7af57d69beee822579966857"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "794d891aa4cf9b1743904ad2f1a129962f3a6faccb20d5879890a89b480be74a",
+      "source_sha256": "96e77e8b9165f0d18dd6eb3167866196fcdafc13364a4e572e857aed19846b51"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "be6ee1becaa418eb58d357c8021885df19865722c72bbabf0b44c800e6c2934a",
+      "source_sha256": "58165e2dfa4fd28b4053355e848a18e05f8aa90a8931158f531c3582891fa3e8"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_adc.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "c1e849a895ad4e06742eb73b1c32e564881399508bc6d624a2c4aded007f0d6f",
+      "source_sha256": "fcf29ef568ac40c6edcbdfe815b047c0b8d483b314e4c613dbf50b8f7577b580"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_bus.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "e3e9c9a4f1089f3dc933187297c36ad23fe4943b035ffc94917d0c54b1379ba4",
+      "source_sha256": "b2830a7ed0491f88ba511dedc15a44ae92ae9e505b5a3c910b0f5894d26e0a3e"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_cortex.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a704f2b1f39936dbb705c40e329107fcf612ecd0fcbed25bfeebbadba7c6a027",
+      "source_sha256": "64621d8b8ae39929054b53a7f9302aa7c0c2a64af8c881fecc96e3c0c4181267"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_crs.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "0e4cead6a63d9b7dd9791eea1b9fc6cc49d9a561f69d40ca52d9f3fd91e34073",
+      "source_sha256": "fe2aa9f1985a4c2b211a93e639a1b9889b01d3eeee86c7e5b127d34a3d40f099"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_dma.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "3f333021413746ac4b1243978d7c96e3d50291fc9c97de440293e511018dde7c",
+      "source_sha256": "80360164c79035439ac8ad5bdb08acb7dd84851788171d8d4ad21fa25f190777"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_exti.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "3564164aca3102c8fd49020ac93cffd5358fd390b5f5ddb78622192f9e145d72",
+      "source_sha256": "5af57cbe376b5e3d66d1b79639b961d7834b2bc324a6ac517c9aa6894a5c9072"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_gpio.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "cf73dfcae00250a540be22d4c954ce728a477c2c6b3cef347ac7e724c101b429",
+      "source_sha256": "f7f7d285996c3f0b8d54c474db82dd10bb014d6ae17afc48a4ca868546183ff5"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_pwr.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "82df9f38fde9cda27a57dbbf61d5ee82c5c9d83cb01cfad149636e3e9547fa4c",
+      "source_sha256": "05395d5b7633825e371821bdd01ebb14bf4a91ee87ebdd571d64329cdb8d3b7f"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_rcc.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a9e44989596f30e24d7939ea670eb9158737664845d824128b6311a35c335007",
+      "source_sha256": "e52a83bdff50320ea5f6e15d5f6695bac3a99c991c2d383c890cb1fd96f36eaa"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_system.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "b7253d6ac27af7ee42aad18e0bf6d4775cd8c7c351379648f7ab73bba8a82e57",
+      "source_sha256": "eadb9722ca4b36aff7e4a0cd3a58e26ab73ad583bbc94019b929d3ec87ac1375"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_tim.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "802642c6737161b3d85c4ef6cb8c5a87d6526ebbb2de1bf94a3ef4033d919ca7",
+      "source_sha256": "79c1bb8b8173fca78efe8ac6c4c2bee7ff27788fb551ebdbbb3f17c24fe453a1"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_usart.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "c9f179059e5a6cfc01f8c7e7fd34344e7bcde4542f9e934d1367e88360187f31",
+      "source_sha256": "3b7ade97b600bb04326d900f858bc5346e434de6552bda844824a17a65e71f71"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_utils.h",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "2e82b3778341a414dc75c7c6cdd944a906c4abdd9ac96b29163c5f1cbe0b2b94",
+      "source_sha256": "50cf82c6810a9315de81ecd2d97aed6bab9191b11798553b544d2bf1c8d1c243"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "79c8fc228207c4ae967cb5e3bed81fd36e6cacc6a2d9f59809c8f369e1bf979c",
+      "source_sha256": "beed69aee4769102e220052aa8d973f1c4d3f5724ae2fc974d4a9eb80b1e6be7"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_adc.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "14e28654d0ce09d23e411e9ad1f7e43701095df5dd5771b561cbb862618e375b",
+      "source_sha256": "09ed5fed60f8a74e8b73ada0e1e825b08dd2cfa0549ca2a68931d1a3aa31da61"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_adc_ex.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "6d7a4e63940bd47e24da89847a777ca570441188f974e70e021e64e3a9cba5af",
+      "source_sha256": "02737c058749050f9996b848ce06d2768382e3f14732342d91ad1479ac8d2392"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_cortex.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "6ec6b338f389a593c316bb22a0110446f92cb063d56ab9c8f56fea4c2adca681",
+      "source_sha256": "6da76cf6e6953d71701d5f95d5c902d6e54a8fa3d4db3afb48d14e494d9aaa6c"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_dma.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "cbe5a6ce8add054c1fe40f7492fd1f32c028f8ca2490c3798c5087295ecce4d9",
+      "source_sha256": "df012ae14e9e8f779e53cc91ac8276cdd82f20056768a7053add9bf21f3a777f"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_exti.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "a15713e9f0371cbdde5cf4f3e283564307a4eacdb9674cf7f667357f5c5aac71",
+      "source_sha256": "4a42a719c42bd753908a1a85888923462cb332d7f09cdadf4ba2b68084ba847e"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_flash.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "298b60f12f91cbc43dbe16258cff53879b90faf5ef0e3897a5f3d1d187d575fe",
+      "source_sha256": "78d6fbb750575b75d831edf84c68c63214144fe289e9db536bc54098d65ad1ce"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_flash_ex.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "0b74fafa6fc9534c38ef65bcb62a7cf07b425a315bbff9f0aaea3bdfc66b55d8",
+      "source_sha256": "90b7b21fede811ac962c4bfb80754db08091fb5efe54ab9abbc0a7b43d2d2e19"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_gpio.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "2cd38c437a9a1d0c32fd65394bf49ebcc31a56de0c73d9e517539503068021f5",
+      "source_sha256": "1c5ab6e6a42a6191e4d0f972a417444ef8969c78aab60a0bedb630f4c6f0481a"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_i2c.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "7b71d97c597e6cc482380f64fd1db96295c12428063d97f30ac830340ddaf326",
+      "source_sha256": "bf4b8e6c694b24edc46ea7c604e786eef2920f79ff751dd14cc374736c357550"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_i2c_ex.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "163a2aef2446c901a75a4dcc772cf67a1bf187ea395834a68a5a97108c677adb",
+      "source_sha256": "c0e3495bbac8f55057acbe15abd292452d0d24c149fc12b9662ea1226442046a"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_pwr.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "7e8e6ba7de3384a501b7b50f3ac7feb1b1b475849611c03e4bc8e78c8d21337d",
+      "source_sha256": "ee45a6f9316f87f5185408ca5b713befa6ea36cf363d68911ce18368706c9b30"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_pwr_ex.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "d8f0df6ce780c413937a9949c850ddb88fde905725516546e062c2f2abbc63cf",
+      "source_sha256": "7edad016e0669238730cb5a8cff52dc517b3bc7bbab24f063a2dc86e624330a8"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_rcc.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "fe601fa20f95e48d4bb2a9dd7409ff4d0637e184d6b3c4be4207777b246b2856",
+      "source_sha256": "9a4a293ddbb8a91b26fac4b849ad2fd463878ba23ebfec4e51a9efa82255574c"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_rcc_ex.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "128a32f4ee22c9741b76c25eaebca1269aab92669721e8ca0bac80643f1be0b5",
+      "source_sha256": "6b9a3ff04e67be19060556be0f347e4adf40e4244cec1cc55b9197c34f92091d"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_tim.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "63c42e6957bc759da4bff4c375752c8f963132efc28b7889fada70cdf1d887f1",
+      "source_sha256": "1316ba9110b70d9b4f8f11d3d58968fe0b9dec0c9a7499b782a8ad1d8eb3cd44"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_tim_ex.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "0e43f2621c8b0583c14dd0d38865cd6b64e206b71f1cec62724894f19f6a1768",
+      "source_sha256": "3d048e0ed7cfd712179253e924097736e504c2087846c615a2a0116cd0d8c44d"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_uart.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "0724ea2e1d4e53da86562e0eb8be43c0cecdab369ce27ac312bb9b4d883545df",
+      "source_sha256": "17a87c33a0c42979520a3662d32b8dbb5445c7ab6a77155b9097ef76c7cb81b2"
+    },
+    {
+      "path": "Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_uart_ex.c",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "6f70a7275719d4c745411e9c1531c32d6ee9a80e13c978e2bcbda8d39153d4c3",
+      "source_sha256": "fb6e5d18aa45e6fc0df083da5de7b955ee618bad8cec07f06089578b6bcd49f9"
+    },
+    {
+      "path": "MDK-ARM/RTE/_TEST2/RTE_Components.h",
+      "status": "SOURCE_ONLY",
+      "action": "保留 main 生成/工程入口；参考件不直接复制",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "6d8a39fa7345c1ad2921d97519cee913fca1526f8d7c7c89abbf14cf0e17618b"
+    },
+    {
+      "path": "MDK-ARM/RTE/_TW66GW02/RTE_Components.h",
+      "status": "SOURCE_ONLY",
+      "action": "保留 main 生成/工程入口；参考件不直接复制",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "eda78e2d8e0e82fdb580aed8d13e9e662206d4ba17d67b561e1ffdac466f3cff"
+    },
+    {
+      "path": "MDK-ARM/RTE/_tw66gw02/RTE_Components.h",
+      "status": "MAIN_ONLY",
+      "action": "保留 main 生成/工程入口；参考件不直接复制",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": null,
+      "main_sha256": "502c14cf7194aaab65f49dacff2cbc93eb177bb56fec3b8db50beae278fde921",
+      "source_sha256": null
+    },
+    {
+      "path": "MDK-ARM/boot_image.s",
+      "status": "SOURCE_ONLY",
+      "action": "保留 main 生成/工程入口；参考件不直接复制",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "e08086be57af7a789ccc39e57773fc90d72ec57ecff7aa28df23bab26f117747"
+    },
+    {
+      "path": "MDK-ARM/startup_stm32f030x8.s",
+      "status": "CHANGED",
+      "action": "迁移；按批次验证",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "ced5779d000dc89b58cd8e05373f5b315aed1f3a2dd1a7450e1c81fa19231dd0",
+      "source_sha256": "bf8437ac7dc1f532b1f36e6bd203622f8df1b11e20368a435792202649f30f3a"
+    },
+    {
+      "path": "MDK-ARM/tw66gw02.sct",
+      "status": "SOURCE_ONLY",
+      "action": "保留 main 生成/工程入口；参考件不直接复制",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "d8281f52ae54fb3bfd1b7c2c8f36c46d51fb5330eab5f56e6634238c33b172f9"
+    },
+    {
+      "path": "MDK-ARM/tw66gw02.uvprojx",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "c1b313d01aa8da653aa3c116e5aab768a9da660a64dcb22f17edd41375f22222",
+      "source_sha256": "46c39277dc5871b58e1f894bb9a3b4f99dd3871d7d11ef19337c5c5afafe3fd5"
+    },
+    {
+      "path": "MDK-ARM/tw66gw02/TEST2.sct",
+      "status": "SOURCE_ONLY",
+      "action": "保留 main 生成/工程入口；参考件不直接复制",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "e7a3fda057de787634157af13f8b55eead1d7e7daa494e5a0ff24cf156e8ba02"
+    },
+    {
+      "path": "MDK-ARM/tw66gw02/tw66gw02.sct",
+      "status": "SOURCE_ONLY",
+      "action": "保留 main 生成/工程入口；参考件不直接复制",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "ee4f9183632123d856622fae2bc9fac168c0dae91e9edd2c8daca44cf7576e02"
+    },
+    {
+      "path": "MDK-ARM/tw66gw02_app.sct",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "4572905ea080f928996a9bc0cd89a594c82f48edf0a9063771291b7e57a98706",
+      "source_sha256": "0c02c0d1bd8dfc799754bce8e2f07689bcd9218551f4659ac0cc50735c0dc879"
+    },
+    {
+      "path": "MDK-ARM/tw66gw02_direct.sct",
+      "status": "CHANGED",
+      "action": "保留 main；不引入显示/关机策略变化",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "3dac24cd69ecdb1b533440d464189a34b7150f3cd89766cda02e794c13ee4e01",
+      "source_sha256": "55472447919288ca97c60a1e42fe86c5ad0bb4bc41c8e574579d756b7b08de81"
+    },
+    {
+      "path": "MDK-ARM/tw66gw02_factory.sct",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "28642fb9822b6558a3f4ef7da85fed37adfffe3f96c1d0e624cc094ec2138cd4",
+      "source_sha256": "f31c801708fb44cbf62e7583a9e5e776873e1475a09f2d05b201fdc05369eb1f"
+    },
+    {
+      "path": "OS/TaskScheduler.c",
+      "status": "CHANGED",
+      "action": "迁移；按批次验证",
+      "main_encoding": "gb18030",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "b76d41c1074d5ddc4b86d9cbd7ff2fec14a24fa1743418b97a95896c9d356cea",
+      "source_sha256": "69d998f729ea27a548989e07e6128ffb3a3f96a503462258ce6a7caf10173953"
+    },
+    {
+      "path": "OS/TaskScheduler.h",
+      "status": "CHANGED",
+      "action": "迁移；按批次验证",
+      "main_encoding": "gb18030",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "9c297c2253e6b043935e02bf21d824d081b9db41e0c122232c41986ec62406e8",
+      "source_sha256": "72c610ce58648a7c84aa15559c7dc62fee0a5f850fda069ccc2010ef2e157aee"
+    },
+    {
+      "path": "PrepareFactoryBootImage.ps1",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "27366f14f7bd1f8d5358a5d5518d0f4c7c96a9ffb18e9ce598be43c34cd8ea74",
+      "source_sha256": "d1b0e69383bd7906caf52e7356298f5abc91e0511a7c4fa9a0b266e6e25163c7"
+    },
+    {
+      "path": "ProgramBootloaderOnlyWithJLink.ps1",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "6971b3953d4a3b30028a7f0055fbfe251c7b055a36344384f0c8c26bdee4060b",
+      "source_sha256": "4e1a4659fa06d810008009e6dc44abd9ce4b6155f55accb15351dccaa37b3473"
+    },
+    {
+      "path": "ProgramFactoryWithJLink.ps1",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "ccbf2fef56fcc0f42980ca81d389a9021550c5526965975a817194807d2f7829",
+      "source_sha256": "8178582067b60b70b04af8082d86585c088584f019968fdbbbf4c7a30511306e"
+    },
+    {
+      "path": "ProgramSecureFactoryWithJLink.ps1",
+      "status": "SOURCE_ONLY",
+      "action": "需适配；见模块清单",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "81bbf44d8b21ab15ffedaf4d88de05f8f63e296d3920dd963f6f053bc7308a5a"
+    },
+    {
+      "path": "ReadStartupStateWithJLink.ps1",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "9b379cd8bd5eef8340c1b641887606f931128745fa432f8932eda0f113794043",
+      "source_sha256": "f8de73e0b743f7c2aed5075e73215c6ad3574661d87bc4c8f3aef8ba343a7562"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "9fff869010b58186580438d46fb8580e970567dae139e33c97713e1e1bf6c627"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_aead.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "a25de4604faf6a08eab780b3ba5076ca8d7cf69353effe49ab6c6ba41bd47b5a"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_block.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "55f23d829b1e80b97b9e1ad3bdd94405362ee53a764d11fb2a6fb7af9f95f7eb"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_ec.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "0519d15f1c81de3a47f1b2491bfe0945235c1d8a3a46b45548df0473a3ca23c1"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_hash.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "5b272ac0175d33c8ab4b4d66f21974d276ffc38c0b9f16203394a5b9437ef936"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_hmac.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "f096c677d4ef9816580a7c576de74da3275de92068640bca88738c4abe444630"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_kdf.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "87282a4eae49e8e35bdf3279015bd2bd88a712e2ce175649a1fb77678388e6a6"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_pem.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "31afd296d71f6dda6de2489b388e70b6dbf20e3a1af54b4c6e2eb4a823386228"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_prf.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "cf0d7c7b480866de81dd831a53dcd9cba1b13a093edbe27d07886caaa28bbce9"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_rand.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "b6ed02b100c1b8c50f1def69b4f357fa33a79afb5fe3e3105aca2f96cb054d0a"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_rsa.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "73ad7f54b8215f94543d8eb5f0b8568b4f98d5e9d5fb24fad29706aa91313192"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_ssl.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "ed3e5fd5bd627c501e9e905dbfe983e17fbae00ec47a489962da852c75e47635"
+    },
+    {
+      "path": "ThirdParty/BearSSL/inc/bearssl_x509.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "6495db1c71d5f4d33bcbbf4f7558a9362626b49b79007ad275b5e1a6342d0ed4"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/codec/ccopy.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "55b12d2cd8b96eb2b2beeca608c491aea3ab1633473565c276cbd19b850d2ecd"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/codec/dec32be.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "0f0cd8d51e63dd301f3b5b6d5e6a38a9fd21c3d8f245d6188cbf4e03b87fa9ba"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/codec/enc32be.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "9554454c749ef3fd4c53caa3f7f9719fd5137634d0dee99a7ea1812f605b32cc"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/config.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "dce709cd96cdce5ca3699c58bd74b679a8f6ff2f63edf9d7c7efe9ca2651a4a1"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/hash/sha2small.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "7fb9a302efb1818b08633ddf9bb00434d18a642991e0ea9cdac5c8f76c1efae1"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/inner.h",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "d3304c959f62dd3dbb18c2a4b0f9b1306855e391e96027093605842f389c9b74"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_add.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "3dee5b383985980df769a0df5949ac8f76a0416da0ab39276c7d30979b5dc981"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_bitlen.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "7c3855829258df1c94f558222875badee177da72be960937f51db36454937421"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_decmod.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "e39e9e9960812552cfef75374e81b90dddd975bf2365a07ae9c0474000746146"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_decode.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "159179d594ddbe09a0bae99a6ef4caf45a9605bb32672acb43b6e7bcdf44d9fd"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_encode.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "04a8874cce57d0b5f9372f1556ef8294900bff179b7a91b85bdfb44c985a58c6"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_fmont.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "36c1fa1d3fd828fd420830c4082c7977eefc2480a4d7a4417ac04443f248f3ed"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_modpow2.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "e4d2cc41d863e2c502aab97b29c490451f6c508fb2561bd19020f22e5c69de13"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_montmul.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "5985a1799ec5dada6f9a45d6fbb279767dfdab23b2cc0ba78b292f30a4308043"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_muladd.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "580bec97054cf45f1b07aedaefad19824bf8f0c428ca648b917a774fd33b0e51"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_ninv15.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "dbc56f9b5224b138a3a450d5be93d79cf8ea609575a607fd7ef2df28bb4e4cb2"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_sub.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "ebd4d376ec1a2917adf8f25e01392ca22f8633fc668cde2394a2fc154fb37f76"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/int/i15_tmont.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "dc9d4fec252a3f620d8f82a77bfd83d94d111328f31a1e77ebb93a2f5bcc3ac6"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/rsa/rsa_i15_pkcs1_vrfy.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "30832c1b5ad7c837a2213370315c09f3d7e256979d7cc5cfd7667973cc02255c"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/rsa/rsa_i15_pub.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "4fe170ada70472e365fd250d299a7f34e2545800e046a5831181e1673ba45eca"
+    },
+    {
+      "path": "ThirdParty/BearSSL/src/rsa/rsa_pkcs1_sig_unpad.c",
+      "status": "SOURCE_ONLY",
+      "action": "迁移；按批次验证",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "29e7efb628b8fedd9d7625441fb5b5f0aa75529fe33a2f0afebca01463ee5728"
+    },
+    {
+      "path": "Tools/PC_BLE_Test/Run-PC-BLE.ps1",
+      "status": "SOURCE_ONLY",
+      "action": "迁移为可选联调工具；不打包虚拟环境",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "dc5e631a4a3ee6176e36b7b5fbbb15467bf0c09e39b57f5e77960b2ddc39bc25"
+    },
+    {
+      "path": "Tools/PC_BLE_Test/Setup-PC-BLE.ps1",
+      "status": "SOURCE_ONLY",
+      "action": "迁移为可选联调工具；不打包虚拟环境",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "c09a0f93a2b6c9862565c966e71cef02e2474d57711cd81c51a413c1a45166fa"
+    },
+    {
+      "path": "Tools/PC_BLE_Test/mathis_ble.py",
+      "status": "SOURCE_ONLY",
+      "action": "迁移为可选联调工具；不打包虚拟环境",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "b1f3a54faf3c31c82634d50dbca3b6810c074d4c03c13a7f0be723ae85b4b375"
+    },
+    {
+      "path": "Tools/PC_BLE_Test/protocol.py",
+      "status": "SOURCE_ONLY",
+      "action": "迁移为可选联调工具；不打包虚拟环境",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "022da796e6e3a41eed77bf23a0637c2553509aa2c6411ee306c058d675e55abb"
+    },
+    {
+      "path": "Tools/PC_BLE_Test/tests/test_protocol.py",
+      "status": "SOURCE_ONLY",
+      "action": "迁移为可选联调工具；不打包虚拟环境",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "07dfbc267a4d03ab38d31ad6c4631ac6210093e7f719a24d121780e8e1250ad7"
+    },
+    {
+      "path": "VerifySecureProvisioningWithJLink.ps1",
+      "status": "SOURCE_ONLY",
+      "action": "需适配；见模块清单",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "cd7bd7a3b450fbe7866e593308cb38363dbb33872522f1d7e96b89e66494c6f2"
+    },
+    {
+      "path": "tests/test_ota_artifacts.py",
+      "status": "CHANGED",
+      "action": "需适配；见模块清单",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "b348e65dcc19d35141b27697d45cded75014fbb3e33b2e65ddeec78f5309af2b",
+      "source_sha256": "2b2cdfdaf0e00c03b4b455a11e488c53f3df1939a9a394757e6ff3c3e1124fbf"
+    },
+    {
+      "path": "tests/verify_signed_ota.ps1",
+      "status": "SOURCE_ONLY",
+      "action": "需适配；见模块清单",
+      "main_encoding": null,
+      "source_encoding": "utf-8-sig",
+      "main_sha256": null,
+      "source_sha256": "b14d84cfa1e079a1d0b2ad2f978bf2f34d0108b6fe84489a929262c703de6f41"
+    },
+    {
+      "path": "tw66gw02.ioc",
+      "status": "SAME",
+      "action": "保留 main（相同）",
+      "main_encoding": "utf-8-sig",
+      "source_encoding": "utf-8-sig",
+      "main_sha256": "d368cbfcb7755b8f94444f4df1dac49c5fb4dc274726093afe32c58dfae1f28d",
+      "source_sha256": "d368cbfcb7755b8f94444f4df1dac49c5fb4dc274726093afe32c58dfae1f28d"
+    }
+  ]
+}

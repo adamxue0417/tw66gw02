@@ -1,0 +1,5 @@
+Bootloader built: 2168 bytes
+Factory boot image prepared: C:\Users\PC\Desktop\TW66GW02\90_历史原始包\整理前备份\headers-20260914-164049\TW66GW02_工程交接_精简版_v2\01_主程序\main\MDK-ARM\boot_image.o
+Keil factory target: C:\Users\PC\Desktop\TW66GW02\90_历史原始包\整理前备份\headers-20260914-164049\TW66GW02_工程交接_精简版_v2\01_主程序\main\MDK-ARM\tw66gw02\tw66gw02.axf
+Factory HEX: C:\Users\PC\Desktop\TW66GW02\90_历史原始包\整理前备份\headers-20260914-164049\TW66GW02_工程交接_精简版_v2\01_主程序\main\OTA_Artifacts\keil_factory_v100.hex
+Factory BIN: C:\Users\PC\Desktop\TW66GW02\90_历史原始包\整理前备份\headers-20260914-164049\TW66GW02_工程交接_精简版_v2\01_主程序\main\OTA_Artifacts\keil_factory_v100.bin

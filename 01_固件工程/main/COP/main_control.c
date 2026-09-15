@@ -9,6 +9,7 @@
   */
 #include "config.h"
 #include "ota_layout.h"
+#include "main_control_internal.h"
 #include <stddef.h>
 
 _work_process work_process,work_process_backups;
@@ -32,13 +33,6 @@ static uint16_t s_bt_blink_ticks_100ms = 0u;
 static uint16_t s_bt_pairing_ticks_100ms = 0u;
 static uint32_t s_idle_ticks_100ms = 0u;
 
-#define IDLE_AUTO_SHUTDOWN_TICKS_100MS (36000u)
-#define CONFIG_PAGE_A_ADDR              (OTA_CONFIG_A_BASE)
-#define CONFIG_PAGE_B_ADDR              (OTA_CONFIG_B_BASE)
-#define CONFIG_MAGIC                    (0x4D415448u)
-#define CONFIG_VERSION                  (1u)
-#define CONFIG_COMMIT                   (0xA55Au)
-
 static int16_t s_display_temp = 0;
 /* 0:none, 1:-HI, 2:-LO, 3:--- */
 static uint8_t s_display_special = 3u;
@@ -52,18 +46,6 @@ static float s_temp_coeff[TEMP_COEFF_CHANNEL_COUNT][TEMP_COEFF_TERM_COUNT] =
     {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}, /* O surface: y = x by default */
     {0.0f, 0.0f, 0.0f, 1.0f, 0.0f}  /* Cavity: y = x by default */
 };
-
-typedef struct {
-    uint32_t magic;
-    uint16_t version;
-    uint16_t length;
-    uint32_t sequence;
-    uint8_t units;
-    uint8_t reserved[3];
-    float coeff[TEMP_COEFF_CHANNEL_COUNT][TEMP_COEFF_TERM_COUNT];
-    uint16_t crc;
-    uint16_t commit;
-} PersistedConfig;
 
 static uint32_t s_config_sequence = 0u;
 static uint32_t s_config_active_page = 0u;

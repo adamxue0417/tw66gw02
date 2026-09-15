@@ -1,0 +1,250 @@
+{
+  "task": "OTA-010",
+  "step": 2,
+  "result": "PASS",
+  "started": "2026-09-11T15:28:18.466986+08:00",
+  "source_head": "b964654c6290591b0f4497e63704fa94161df99f",
+  "source_archive_sha256": "35084b18195eeb6ceeda66cd0d52505a5112c8c13d334f19a52b9f2f140e559a",
+  "isolated_project": "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\ota010-step2\\main",
+  "frozen_files_before": {
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/delivery-manifest.json": "8e53b9b0f4a1ad3e7ffbca4cd81f62d953dde2485d178ac9da20a8dd15cd7015",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/README.md": "ab13282c053f788ac69610db81cc0a0b1e555a329b7d98d4111063e2880f93c9",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/README.txt": "d37b68ca7c1b49fa98b91ebab87d39b38386ab66bf57643115b820d709ddc703",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/SHA256SUMS.txt": "09094e84dd9c61b6cf49e552b8c218a9f5be5f9d816cb57d6707991401ad24ed",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/source-fingerprint.json": "0a6a4f149f13d4f4d9cf418cf600d39e798b93f6790bd8f4d29dad511f0ab599",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/App_Upload/mathis_ota_v101.manifest.json": "32dbd34c823153e6ac60136f8fb36efa8c21d5b507d6e77134d7a36611bc28d6",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/App_Upload/mathis_ota_v101.ota": "7d72822aa7ad78dde1265e720eed1b003e81f5e70d59e33c9e1a09ce0bb41b8e",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Bootloader/mathis_bootloader.bin": "ea727f03af6c89408c97cede7acf97115dd70354f0c8ba0f2081883ea2d7a497",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Debug_Only/mathis_app_v100.bin": "4d01c033d78148155f91179886934ec99d3b6d07941f0197c9dfe7235690f935",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Debug_Only/mathis_app_v100.hex": "bdd885ab8a2848ce575e92d2e5abafd87129305c336e2419ffaf2e7afbee4951",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Debug_Only/mathis_app_v101.bin": "264edd6ab3f59db8ec053f99466a049a042cb05782a79bb82af354b4f9a095ac",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Debug_Only/mathis_app_v101.hex": "8c8f7a046c7fe2a42d3dccf20bc4f94e188d82c26841e5efbc4d93ccbde18956",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Factory_Flash/mathis_factory_v100.bin": "58aa52601bd24d483e4c036a313cfa4de805237aed065668713f36d1897bcc8b",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Factory_Flash/mathis_factory_v100.hex": "9f49ed81f977a9933972ac98a29362de664c421164daf127c98f7111336217b8",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Verification/build_v100.log": "e2936a2c8c8599a87b10218ac757892db733901d53bb609905176f00aa78e6d7",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Verification/build_v101.log": "1b6948e97e185810b8b99637515bf89278140a2a576467c756cc92c53e7290c5",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Verification/main_ota_test.log": "67f264bb337ed92d458f7c3d55cd4f72d6dd177451dd89aa8888bf86809446fa",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Verification/Original_release_SHA256SUMS.txt": "dcbd57d921e9ecfdfe61205c36fd7e8c64e834f708a8bd8999672cfaf4388505",
+    "05_发布与交付/MCU固件/main_v100-to-v101_DEV/Verification/step4-validation.json": "33809303665a7e615b8ab0dfa9cf435bcd16b28341e7ba874b5ec8bd235e540b"
+  },
+  "commands": {
+    "compiler-version": {
+      "command": [
+        "C:\\Keil_v5\\ARM\\ARM_Compiler_5.06u7\\Bin\\armcc.exe",
+        "--vsn"
+      ],
+      "cwd": "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\ota010-step2\\main",
+      "started": "2026-09-11T15:28:20.903231+08:00",
+      "finished": "2026-09-11T15:28:20.963087+08:00",
+      "exit_code": 0,
+      "log": "compiler-version.log",
+      "log_sha256": "0aa0165b8b556716742cb013540e37c7d352cd6344197d40a2f23c6a1bce329e"
+    },
+    "factory-build": {
+      "command": [
+        "powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\ota010-step2\\main\\BuildKeilFactoryTarget.ps1"
+      ],
+      "cwd": "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\ota010-step2\\main",
+      "started": "2026-09-11T15:28:20.973286+08:00",
+      "finished": "2026-09-11T15:28:32.499531+08:00",
+      "exit_code": 0,
+      "log": "factory-build.log",
+      "log_sha256": "65afc7e75624ff4c4840b6cc4891d35bd16192da953c5a7009ea5bb08588927c"
+    },
+    "ota-build": {
+      "command": [
+        "powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\ota010-step2\\main\\BuildOtaArtifacts.ps1",
+        "-FactoryVersion",
+        "100",
+        "-OtaVersion",
+        "101"
+      ],
+      "cwd": "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\ota010-step2\\main",
+      "started": "2026-09-11T15:28:32.521214+08:00",
+      "finished": "2026-09-11T15:28:47.549117+08:00",
+      "exit_code": 0,
+      "log": "ota-build.log",
+      "log_sha256": "d0c852468d8979df7455231de02306c2a9c77cf80444d71eb27d88504a695f51"
+    },
+    "ota-tests": {
+      "command": [
+        "C:\\Users\\PC\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\ota010-step2\\main\\tests\\test_ota_artifacts.py"
+      ],
+      "cwd": "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\ota010-step2\\main",
+      "started": "2026-09-11T15:28:47.561876+08:00",
+      "finished": "2026-09-11T15:28:47.657623+08:00",
+      "exit_code": 0,
+      "log": "ota-tests.log",
+      "log_sha256": "18a290c9c4b566305b3469504618174e3807c8854d34dc6fd9a4f1436859c762"
+    }
+  },
+  "before": {
+    "source_files_unchanged": 675,
+    "frozen_delivery_files_unchanged": 19,
+    "git_heads_unchanged": true
+  },
+  "outputs": [
+    {
+      "path": "OTA_Artifacts/build_factory_keil.log",
+      "bytes": 1841,
+      "sha256": "8dfb33d85ddcf8082bcf359af13a622c19bf55414bc24fb7f0b5915b0dc3e00e"
+    },
+    {
+      "path": "OTA_Artifacts/build_v100.log",
+      "bytes": 1884,
+      "sha256": "773568d29ee29e247fd4e3034e8e25e88c30508edb01c7b1f6df3a0e40ec031c"
+    },
+    {
+      "path": "OTA_Artifacts/build_v101.log",
+      "bytes": 1884,
+      "sha256": "eabd793fe42e429a007f418e875ea8e6e9488ece7f5573bb97cab8c50549f888"
+    },
+    {
+      "path": "OTA_Artifacts/keil_factory_v100.bin",
+      "bytes": 29028,
+      "sha256": "1bed731a40a9b2195050d865b20d5f0ac0a8be9678f0928de1e8856b396a95d6"
+    },
+    {
+      "path": "OTA_Artifacts/keil_factory_v100.hex",
+      "bytes": 81702,
+      "sha256": "4c67bfdebbca42c5d5dd8ba57834e0cd70bd3e64de1f41f442094051b15b4125"
+    },
+    {
+      "path": "OTA_Artifacts/mathis_app_v100.bin",
+      "bytes": 22884,
+      "sha256": "4d01c033d78148155f91179886934ec99d3b6d07941f0197c9dfe7235690f935"
+    },
+    {
+      "path": "OTA_Artifacts/mathis_app_v100.hex",
+      "bytes": 64422,
+      "sha256": "bdd885ab8a2848ce575e92d2e5abafd87129305c336e2419ffaf2e7afbee4951"
+    },
+    {
+      "path": "OTA_Artifacts/mathis_app_v101.bin",
+      "bytes": 22884,
+      "sha256": "264edd6ab3f59db8ec053f99466a049a042cb05782a79bb82af354b4f9a095ac"
+    },
+    {
+      "path": "OTA_Artifacts/mathis_app_v101.hex",
+      "bytes": 64422,
+      "sha256": "8c8f7a046c7fe2a42d3dccf20bc4f94e188d82c26841e5efbc4d93ccbde18956"
+    },
+    {
+      "path": "OTA_Artifacts/mathis_factory_v100.bin",
+      "bytes": 29028,
+      "sha256": "58aa52601bd24d483e4c036a313cfa4de805237aed065668713f36d1897bcc8b"
+    },
+    {
+      "path": "OTA_Artifacts/mathis_factory_v100.hex",
+      "bytes": 70564,
+      "sha256": "9f49ed81f977a9933972ac98a29362de664c421164daf127c98f7111336217b8"
+    },
+    {
+      "path": "OTA_Artifacts/mathis_ota_v101.manifest.json",
+      "bytes": 483,
+      "sha256": "32dbd34c823153e6ac60136f8fb36efa8c21d5b507d6e77134d7a36611bc28d6"
+    },
+    {
+      "path": "OTA_Artifacts/mathis_ota_v101.ota",
+      "bytes": 23268,
+      "sha256": "7d72822aa7ad78dde1265e720eed1b003e81f5e70d59e33c9e1a09ce0bb41b8e"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/App_Upload/mathis_ota_v101.manifest.json",
+      "bytes": 483,
+      "sha256": "32dbd34c823153e6ac60136f8fb36efa8c21d5b507d6e77134d7a36611bc28d6"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/App_Upload/mathis_ota_v101.ota",
+      "bytes": 23268,
+      "sha256": "7d72822aa7ad78dde1265e720eed1b003e81f5e70d59e33c9e1a09ce0bb41b8e"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v100.bin",
+      "bytes": 22884,
+      "sha256": "4d01c033d78148155f91179886934ec99d3b6d07941f0197c9dfe7235690f935"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v100.hex",
+      "bytes": 64422,
+      "sha256": "bdd885ab8a2848ce575e92d2e5abafd87129305c336e2419ffaf2e7afbee4951"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v101.bin",
+      "bytes": 22884,
+      "sha256": "264edd6ab3f59db8ec053f99466a049a042cb05782a79bb82af354b4f9a095ac"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/Debug_Only/mathis_app_v101.hex",
+      "bytes": 64422,
+      "sha256": "8c8f7a046c7fe2a42d3dccf20bc4f94e188d82c26841e5efbc4d93ccbde18956"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/Factory_Flash/mathis_factory_v100.bin",
+      "bytes": 29028,
+      "sha256": "58aa52601bd24d483e4c036a313cfa4de805237aed065668713f36d1897bcc8b"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/Factory_Flash/mathis_factory_v100.hex",
+      "bytes": 70564,
+      "sha256": "9f49ed81f977a9933972ac98a29362de664c421164daf127c98f7111336217b8"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/README.txt",
+      "bytes": 360,
+      "sha256": "d37b68ca7c1b49fa98b91ebab87d39b38386ab66bf57643115b820d709ddc703"
+    },
+    {
+      "path": "OTA_Artifacts/Release_v100_to_v101/SHA256SUMS.txt",
+      "bytes": 416,
+      "sha256": "dcbd57d921e9ecfdfe61205c36fd7e8c64e834f708a8bd8999672cfaf4388505"
+    }
+  ],
+  "rebuilt_manifest": {
+    "format": "mathis-dev-ota-v1",
+    "warning": "DEVELOPMENT OTA - NOT FOR PRODUCTION; RSA verification and anti-rollback are disabled",
+    "target_version": 101,
+    "application_size": 22884,
+    "signature_size": 384,
+    "artifact_size": 23268,
+    "crc32_iso_hdlc": "0x119B455F",
+    "sha256": "7d72822aa7ad78dde1265e720eed1b003e81f5e70d59e33c9e1a09ce0bb41b8e",
+    "application_base": "0x08001800",
+    "development_signature_placeholder": true
+  },
+  "rebuilt_artifact_equals_frozen": true,
+  "optional_diagnostic_checks": "NOT_RUN: diagnostic binaries not generated by these two baseline build commands",
+  "hardware": "NOT_RUN",
+  "native_build_logs": [
+    {
+      "path": "build_factory_keil.log",
+      "sha256": "8dfb33d85ddcf8082bcf359af13a622c19bf55414bc24fb7f0b5915b0dc3e00e"
+    },
+    {
+      "path": "build_v100.log",
+      "sha256": "773568d29ee29e247fd4e3034e8e25e88c30508edb01c7b1f6df3a0e40ec031c"
+    },
+    {
+      "path": "build_v101.log",
+      "sha256": "eabd793fe42e429a007f418e875ea8e6e9488ece7f5573bb97cab8c50549f888"
+    }
+  ],
+  "after": {
+    "source_files_unchanged": 675,
+    "frozen_delivery_files_unchanged": 19,
+    "git_heads_unchanged": true
+  },
+  "isolated_tracked_files_changed_by_build": [],
+  "finished": "2026-09-11T15:28:48.005503+08:00"
+}

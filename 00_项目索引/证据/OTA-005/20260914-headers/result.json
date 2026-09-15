@@ -1,0 +1,1020 @@
+{
+  "task": "OTA-005",
+  "test": "TEST-008",
+  "result": "PASS",
+  "hardware": "NOT_RUN",
+  "work": "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049",
+  "commands": [
+    {
+      "label": "header-0",
+      "command": [
+        "C:/Keil_v5/ARM/ARM_Compiler_5.06u7/Bin/armcc.exe",
+        "-c",
+        "--cpu",
+        "Cortex-M0",
+        "--c99",
+        "-DSTM32F030x8",
+        "-DUSE_HAL_DRIVER",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\BSP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\COP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\OS",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Core\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Device\\ST\\STM32F0xx\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\STM32F0xx_HAL_Driver\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\MDK-ARM\\RTE\\_tw66gw02",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Bootloader",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main",
+        "-o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_0.o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_0.c"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "header-1",
+      "command": [
+        "C:/Keil_v5/ARM/ARM_Compiler_5.06u7/Bin/armcc.exe",
+        "-c",
+        "--cpu",
+        "Cortex-M0",
+        "--c99",
+        "-DSTM32F030x8",
+        "-DUSE_HAL_DRIVER",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\BSP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\COP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\OS",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Core\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Device\\ST\\STM32F0xx\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\STM32F0xx_HAL_Driver\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\MDK-ARM\\RTE\\_tw66gw02",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Bootloader",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main",
+        "-o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_1.o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_1.c"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "header-2",
+      "command": [
+        "C:/Keil_v5/ARM/ARM_Compiler_5.06u7/Bin/armcc.exe",
+        "-c",
+        "--cpu",
+        "Cortex-M0",
+        "--c99",
+        "-DSTM32F030x8",
+        "-DUSE_HAL_DRIVER",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\BSP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\COP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\OS",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Core\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Device\\ST\\STM32F0xx\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\STM32F0xx_HAL_Driver\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\MDK-ARM\\RTE\\_tw66gw02",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Bootloader",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main",
+        "-o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_2.o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_2.c"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "header-3",
+      "command": [
+        "C:/Keil_v5/ARM/ARM_Compiler_5.06u7/Bin/armcc.exe",
+        "-c",
+        "--cpu",
+        "Cortex-M0",
+        "--c99",
+        "-DSTM32F030x8",
+        "-DUSE_HAL_DRIVER",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\BSP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\COP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\OS",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Core\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Device\\ST\\STM32F0xx\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\STM32F0xx_HAL_Driver\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\MDK-ARM\\RTE\\_tw66gw02",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Bootloader",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main",
+        "-o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_3.o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_3.c"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "header-4",
+      "command": [
+        "C:/Keil_v5/ARM/ARM_Compiler_5.06u7/Bin/armcc.exe",
+        "-c",
+        "--cpu",
+        "Cortex-M0",
+        "--c99",
+        "-DSTM32F030x8",
+        "-DUSE_HAL_DRIVER",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\BSP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\COP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\OS",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Core\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Device\\ST\\STM32F0xx\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\STM32F0xx_HAL_Driver\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\MDK-ARM\\RTE\\_tw66gw02",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Bootloader",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main",
+        "-o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_4.o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_4.c"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "header-5",
+      "command": [
+        "C:/Keil_v5/ARM/ARM_Compiler_5.06u7/Bin/armcc.exe",
+        "-c",
+        "--cpu",
+        "Cortex-M0",
+        "--c99",
+        "-DSTM32F030x8",
+        "-DUSE_HAL_DRIVER",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\BSP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\COP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\OS",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Core\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Device\\ST\\STM32F0xx\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\STM32F0xx_HAL_Driver\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\MDK-ARM\\RTE\\_tw66gw02",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Bootloader",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main",
+        "-o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_5.o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_5.c"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "header-6",
+      "command": [
+        "C:/Keil_v5/ARM/ARM_Compiler_5.06u7/Bin/armcc.exe",
+        "-c",
+        "--cpu",
+        "Cortex-M0",
+        "--c99",
+        "-DSTM32F030x8",
+        "-DUSE_HAL_DRIVER",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\BSP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\COP",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\OS",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Core\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\CMSIS\\Device\\ST\\STM32F0xx\\Include",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Drivers\\STM32F0xx_HAL_Driver\\Inc",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\MDK-ARM\\RTE\\_tw66gw02",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\Bootloader",
+        "-I",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main",
+        "-o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_6.o",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\header_6.c"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "factory-build",
+      "command": [
+        "powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\BuildKeilFactoryTarget.ps1"
+      ],
+      "exit_code": 0
+    },
+    {
+      "label": "ota-build",
+      "command": [
+        "powershell.exe",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\Users\\PC\\Desktop\\TW66GW02\\90_历史原始包\\整理前备份\\headers-20260914-164049\\TW66GW02_工程交接_精简版_v2\\01_主程序\\main\\BuildOtaArtifacts.ps1",
+        "-FactoryVersion",
+        "100",
+        "-OtaVersion",
+        "101"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "files": [
+    {
+      "path": "01_主程序/main/BSP/C8721.c",
+      "sha256": "b998065fb433a10b4b896b40d37afdbbae0c732a58a3497770e5595b53095863"
+    },
+    {
+      "path": "01_主程序/main/BSP/C8721.h",
+      "sha256": "d57aa90e30e9071ea37c450008cb89dceccfe8121e5a2fd55151f005e5e544bf"
+    },
+    {
+      "path": "01_主程序/main/BSP/battery_level.c",
+      "sha256": "3a119978004d7d1e9bc8253493ff9f6be67044a6434e12889193ea4e301574fb"
+    },
+    {
+      "path": "01_主程序/main/BSP/battery_level.h",
+      "sha256": "b0fe7f6466ccfcfdd043222cc979a34e2d988e4762476bcffa5310f34327337e"
+    },
+    {
+      "path": "01_主程序/main/BSP/bh66f5242.c",
+      "sha256": "c49c8c8420a7d54268a294fb74b6a3bd28c0ca671e7b264dbfb674ef9ffb6add"
+    },
+    {
+      "path": "01_主程序/main/BSP/bh66f5242.h",
+      "sha256": "338f96fc3aca20c9919e169c22856e0e16bf1bf6686c3f40e156d346b059b25c"
+    },
+    {
+      "path": "01_主程序/main/BSP/buzz.c",
+      "sha256": "d4f658cb8fa348122e1fab443de517ad8c024de4a437008405fe303152759786"
+    },
+    {
+      "path": "01_主程序/main/BSP/buzz.h",
+      "sha256": "d6a06eefb3c8d251b1133e5566fbde0a2ba29bb5717e1d67e100e65d91f0662a"
+    },
+    {
+      "path": "01_主程序/main/BSP/config.h",
+      "sha256": "1ac1f0a367a7d433c9cef567d3cc1e4a261842059020a80b21bae4cdd3cc4f76"
+    },
+    {
+      "path": "01_主程序/main/BSP/key.c",
+      "sha256": "60176aa30184187f18d0418f1007a54e1849addd6c024a66b0bd60852f11909a"
+    },
+    {
+      "path": "01_主程序/main/BSP/key.h",
+      "sha256": "4c52e123eb6fea0d9635fd338c1a66fc0fa52d4c3ab786ead92822d0a2f01edc"
+    },
+    {
+      "path": "01_主程序/main/BSP/ota_layout.h",
+      "sha256": "a18034ebfbe219c45718f32b42d889973e6c7d5dd4ef64f4257adcfe75cfc855"
+    },
+    {
+      "path": "01_主程序/main/BSP/screen_c8721.c",
+      "sha256": "6cdd1853846d18473871e4fe758c7bec47db06bce913b9ade2c4ba160bb7bd6e"
+    },
+    {
+      "path": "01_主程序/main/BSP/screen_c8721.h",
+      "sha256": "146a83ab868c7d505338e46546d6e472feaaae6a76f4acdd0c9ec2e2601e17eb"
+    },
+    {
+      "path": "01_主程序/main/BSP/temp.c",
+      "sha256": "95842bcb2c1083c892584f2aa59719db773f76e3ff9b4afc5647229d568701fb"
+    },
+    {
+      "path": "01_主程序/main/BSP/temp.h",
+      "sha256": "e8d3af1211c18eb5f9f8c9d5c8f7c13b99fe59a785efd10379b9ccddd06c493a"
+    },
+    {
+      "path": "01_主程序/main/BSP/temp_config.h",
+      "sha256": "ae4e7b14f87a8ff85aafea74540bac8b5e9152d3544b18036c257658d6405369"
+    },
+    {
+      "path": "01_主程序/main/BSP/wireless.c",
+      "sha256": "e288f586690f7d629576ab4f0546bd43e4bcf2b5f39d95f604a06df5032f8107"
+    },
+    {
+      "path": "01_主程序/main/BSP/wireless.h",
+      "sha256": "d91c4eb74c5c3acc40546c0bbf9ceb0fa71e8e4670c1188c5264439a0835d21b"
+    },
+    {
+      "path": "01_主程序/main/BSP/wireless_internal.h",
+      "sha256": "87b37f19cd0572950b752d7e148a32b5424c1dfdc710889891aeb04eaca32f98"
+    },
+    {
+      "path": "01_主程序/main/Bootloader/boot_internal.h",
+      "sha256": "426590b207787f1fd186ac16efc61be434d34e7e8c51b1b663ebec053f3f5b28"
+    },
+    {
+      "path": "01_主程序/main/Bootloader/boot_main.c",
+      "sha256": "148d25c6c523153919fa025722b23aee87125a179c97aff0f70ced81291a5dcc"
+    },
+    {
+      "path": "01_主程序/main/Bootloader/bootloader.sct",
+      "sha256": "8d70f5f18a0d4bf89f5d0b368a3ac5f945b73c91978511a67b5139b6e1bfd464"
+    },
+    {
+      "path": "01_主程序/main/Bootloader/build_bootloader.ps1",
+      "sha256": "76b5db28284eb61b7b58dab95da7ea468b5fccd051d7fd2f3f42235bc563460d"
+    },
+    {
+      "path": "01_主程序/main/BuildKeilFactoryTarget.ps1",
+      "sha256": "f98a0dbeec12d393c818c96783f6aad266c396b61c18ec3b054f8e22312d3bdf"
+    },
+    {
+      "path": "01_主程序/main/BuildOtaArtifacts.ps1",
+      "sha256": "89c1d391d7621e4328c521fd3e95ad9c322bdd28f1e3e36ceb2a713ee9261d28"
+    },
+    {
+      "path": "01_主程序/main/COP/gagent_md5.c",
+      "sha256": "7c7435c58508a6299040acb0de43aaef02c798973e1653a93b222dbfe0b28044"
+    },
+    {
+      "path": "01_主程序/main/COP/gagent_md5.h",
+      "sha256": "34f858b2b2f755822bc98fb0389f6f5225448987e033a9d0826f4a6ba655440a"
+    },
+    {
+      "path": "01_主程序/main/COP/idle.c",
+      "sha256": "1653bfc080f1c1638400c71d2f38038ce53a579e7c80a9318650395e058b73a5"
+    },
+    {
+      "path": "01_主程序/main/COP/idle.h",
+      "sha256": "a6cbdb71de115f0709a8f21967e33e6ba5a167b0ade7c5fc6a8f55b5894d6870"
+    },
+    {
+      "path": "01_主程序/main/COP/main_control.c",
+      "sha256": "bcfa5b02beccfc7e4676131949e5b6f3893221346325d26486f547d4e5931199"
+    },
+    {
+      "path": "01_主程序/main/COP/main_control.h",
+      "sha256": "dc7752e731cc0602547c63338571ff1db080445f32d1fa450240bfd31f2b01d9"
+    },
+    {
+      "path": "01_主程序/main/COP/main_control_internal.h",
+      "sha256": "5c445813fd3d869bd750ca7f48a83b78aa5cef44dfcc4a688a5f78efea8d43c5"
+    },
+    {
+      "path": "01_主程序/main/COP/ota.c",
+      "sha256": "e5a7e011b7ce278b6a1062ffebf0318c828b19f51f4b14a405e002776d453740"
+    },
+    {
+      "path": "01_主程序/main/COP/ota.h",
+      "sha256": "a91dcf468bb37197fcbdf1b7f80bbff4941a97769c625455bd274d6fa1507d98"
+    },
+    {
+      "path": "01_主程序/main/COP/ota_boot.c",
+      "sha256": "4dd3678ceff56d6c1db45c8fa0cbafdc1720b5c4437fa944a4a74ff5e194a82d"
+    },
+    {
+      "path": "01_主程序/main/COP/ota_boot.h",
+      "sha256": "19a6c7f2ccbf1d4c1ce9075b724d54645540fb94c2765118c0fb4623547bac30"
+    },
+    {
+      "path": "01_主程序/main/COP/ota_update.c",
+      "sha256": "feef24a2a8ae00808a05dae45ef5a74ef4bd9ed8191cd168b3f94e6ea3eb47ee"
+    },
+    {
+      "path": "01_主程序/main/COP/ota_update.h",
+      "sha256": "36fc0e0a855d39ff7585104026b9e229b3994a8b9bcc224aa903479bbb83c05f"
+    },
+    {
+      "path": "01_主程序/main/COP/ota_update_internal.h",
+      "sha256": "47bc95cd3d1a021dfae92a1d7ea9f91cbab37c71ce204213b22b1aa7819046ba"
+    },
+    {
+      "path": "01_主程序/main/COP/pid.c",
+      "sha256": "2cd7d229d6234e952a7c0a99d2a2ca83084bf750cb8cddcab47ac0fabc1566f5"
+    },
+    {
+      "path": "01_主程序/main/COP/pid.h",
+      "sha256": "0707bc51d0416321d93d3b78e1ee1feca7176b5ed1bddcb35576241e1ae164f1"
+    },
+    {
+      "path": "01_主程序/main/COP/run.c",
+      "sha256": "15ad04788f186e0d60faf5a6be70d2209067f033cf9ca30a0482be615bf79b1a"
+    },
+    {
+      "path": "01_主程序/main/COP/run.h",
+      "sha256": "ea440535e18edbd07c88b6bf689e32eb0be5dd997f29aa6dc68698a86db5713f"
+    },
+    {
+      "path": "01_主程序/main/COP/set.c",
+      "sha256": "57cde9f0a5dbc1bad14e16bf2b615d8457b3ee428995e06e5f60093f1db1d41a"
+    },
+    {
+      "path": "01_主程序/main/COP/set.h",
+      "sha256": "1339a678a5a607baf0678eeab5f7c98ec136d99f27e4b119b3b4f252e655b348"
+    },
+    {
+      "path": "01_主程序/main/COP/shutdown.c",
+      "sha256": "e5165813723b5271871e38a1b25a30f2f6d5f33711c651a0b0240c957b80d072"
+    },
+    {
+      "path": "01_主程序/main/COP/shutdown.h",
+      "sha256": "89a9f886d3843504796942195f858eeb3b241a7bca4f6ac4b98b0b90851d2cc1"
+    },
+    {
+      "path": "01_主程序/main/COP/start_up.c",
+      "sha256": "1780bca013991de3da40cfcd0bab052b2ce32091234965abfe42e9da72b68ab4"
+    },
+    {
+      "path": "01_主程序/main/COP/start_up.h",
+      "sha256": "754f5a3386f1df67cf379e07b4b5330bcada879c345e71c0bac506d7f9b13706"
+    },
+    {
+      "path": "01_主程序/main/COP/test.c",
+      "sha256": "2c2c9c6f7348a436fe1185026392011d26088abe935ecfe4da80c57234f31f47"
+    },
+    {
+      "path": "01_主程序/main/COP/test.h",
+      "sha256": "fb5533851667c6820aac85f93e32b25272af2cfc1308b1857b40200d382ac6fd"
+    },
+    {
+      "path": "01_主程序/main/COP/warning.c",
+      "sha256": "a73227f5ed7dc0dd3d22e06a2f48c18cd089943d0264cf88f9922a277fba147e"
+    },
+    {
+      "path": "01_主程序/main/COP/warning.h",
+      "sha256": "0d224c347a6cf8083e199cab96c1bddddc7b9f1a664aca9f01f1a03e12b31f5d"
+    },
+    {
+      "path": "01_主程序/main/Core/Inc/adc.h",
+      "sha256": "4052f2e6bc5b3bcb85d083dc16c9dfc2d851564d319e918b6621ea01d4aea37b"
+    },
+    {
+      "path": "01_主程序/main/Core/Inc/dma.h",
+      "sha256": "7cf6f7450a29d26303cbba5a3ca8c6cb24a02635d6a5ba4d05141fdfc75c4c49"
+    },
+    {
+      "path": "01_主程序/main/Core/Inc/gpio.h",
+      "sha256": "e2d62f964a0b7f238384ed6a20a181d09df9647240a268dc547acf5b35099f74"
+    },
+    {
+      "path": "01_主程序/main/Core/Inc/main.h",
+      "sha256": "ef067e8a4e2e9040720af5e7cb8d1e3d9360d46a3debf11da9771bb0104293c8"
+    },
+    {
+      "path": "01_主程序/main/Core/Inc/stm32f0xx_hal_conf.h",
+      "sha256": "b7548d75ac43ec9efefd83c00491df3450962801b384b33657e76d98b0a3548d"
+    },
+    {
+      "path": "01_主程序/main/Core/Inc/stm32f0xx_it.h",
+      "sha256": "8803ae7942dd9046fc3f5556d67776fa879282014d6f4eb417dcd38610a19c28"
+    },
+    {
+      "path": "01_主程序/main/Core/Inc/tim.h",
+      "sha256": "b060d62de6437c2e1be10eb11aa9c07afba7588e10491d67739df5bacda5d4bd"
+    },
+    {
+      "path": "01_主程序/main/Core/Inc/usart.h",
+      "sha256": "26b6598a423ae5c5767ea5798b83db8e192166bc34a60b3fb311a9bbb3070877"
+    },
+    {
+      "path": "01_主程序/main/Core/Src/adc.c",
+      "sha256": "8908b5138ca35ebe901a8381d9ec7a8d874e0bece07b2b86544025f09774aae5"
+    },
+    {
+      "path": "01_主程序/main/Core/Src/dma.c",
+      "sha256": "69c62ddd8ca5ca7f16d57cc767580c42229a650ad1a4f2f564b9ffa7452e96af"
+    },
+    {
+      "path": "01_主程序/main/Core/Src/gpio.c",
+      "sha256": "39cdde8fa6e00c0aa8b41a114f806c0c20a340d336ac171757f7d8df04193c96"
+    },
+    {
+      "path": "01_主程序/main/Core/Src/main.c",
+      "sha256": "e4f10f2049187a2ea79ba1eedc50550ced5bed4fbdaa91919c87988c8676bd40"
+    },
+    {
+      "path": "01_主程序/main/Core/Src/stm32f0xx_hal_msp.c",
+      "sha256": "0d3c29e612ee305efeb5006b3b1335bd67fea4c6a4888b2fe6075cec5e5dda81"
+    },
+    {
+      "path": "01_主程序/main/Core/Src/stm32f0xx_it.c",
+      "sha256": "3c127187ea4f230c91ff2a77689d89a027de6c659e546d055e569c30fbbe8400"
+    },
+    {
+      "path": "01_主程序/main/Core/Src/system_stm32f0xx.c",
+      "sha256": "a5257cd1f7c7f099a2acaafb669a5af2b22b96f5d34a06d33ba212e52a275ea9"
+    },
+    {
+      "path": "01_主程序/main/Core/Src/tim.c",
+      "sha256": "ef3d834916271c53858be3887ea3ad7932a8d1a8a59dff0f199f083ae9c96e49"
+    },
+    {
+      "path": "01_主程序/main/Core/Src/usart.c",
+      "sha256": "a38e1cd2a7a7c7537d2e8bfa51f2753b498792d9666837e17888f3cd3d4f4088"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Device/ST/STM32F0xx/Include/stm32f030x8.h",
+      "sha256": "cd18a6eca343810482d09b4ac32fda7ef0c56b05250a2e87402d3a1a2b4c35e8"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Device/ST/STM32F0xx/Include/stm32f0xx.h",
+      "sha256": "6014250efdc39dad8e7f2d74be95db323e4cccd21fcd862ebf5fdd363d6db634"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Device/ST/STM32F0xx/Include/system_stm32f0xx.h",
+      "sha256": "d7773a877737eee25efd275f32046c67f473fd23f5278e53004490f48096dbfb"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Device/ST/STM32F0xx/LICENSE.txt",
+      "sha256": "135fb2d86e9ecdf6824cc3bba21c72b8e380c07b055fbebb6b995463eb609baf"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/cmsis_armcc.h",
+      "sha256": "3371c679298b7db7caae23215ab8efdb95fe3b5c6c1a793f8004e5be16940149"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/cmsis_armclang.h",
+      "sha256": "3a33c83dd7533cd2827164b89e66dc7c0f8376ef4e2d255ec50c1a58b36f670b"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/cmsis_compiler.h",
+      "sha256": "03ab80c426a8360eaaad833ac816462a9f38cb2e4dbdc490914880ad071181fe"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/cmsis_gcc.h",
+      "sha256": "341982e6d6c91119214c47d7a04b31f1f8ce0970c45e2c9fe0870c80d0876e28"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/cmsis_iccarm.h",
+      "sha256": "03e120db362480dc0c57b9eb2574972029321fb8d9e993e458dbff69e6f4f91e"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/cmsis_version.h",
+      "sha256": "c2570d56ee85d4f2ec0fb62f31d080d3cddf3a015500a4ed5a006a571637b43c"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_armv8mbl.h",
+      "sha256": "6b1a61685f498b80becd4df1219c50fd47f1e8ec23ee28184585b1025387764b"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_armv8mml.h",
+      "sha256": "2a9f702aebde491b5a7b96d539413b2ddef1ea6872b09f9397638389aea86d0c"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_cm0.h",
+      "sha256": "1fedf79e11c6c7f7c02fc2c6d93add0f86b62fadbcb913daece240d97a70720c"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_cm0plus.h",
+      "sha256": "9fd6ebad79f26eeb25f5cba28fd87bedc9e13213cd44269b049cf1f379d5ab36"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_cm1.h",
+      "sha256": "1ca25034076f4952af4d235f2c4302bdc81d123cf55bc329d2fa964d9bc0ece1"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_cm23.h",
+      "sha256": "492e9eebccc634173a92826966c40c98061878daae73c67597e370a8def685f5"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_cm3.h",
+      "sha256": "655bb08e9474438dec8b1874ea6c63749dc2787b85f06a0987c4870bcb580f21"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_cm33.h",
+      "sha256": "f4b8df5e3327f38497b1893c4b6d75ef9758a5443423f19b45f1ffe1f51ecffe"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_cm4.h",
+      "sha256": "53712d8aefacaebf3faa2370be8c7c6065328a974242f9e315ffc86b3ee852c5"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_cm7.h",
+      "sha256": "4e67355b28417febaa955120abd51fcdcf4d581c5e1522ece1e673c38cd17728"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_sc000.h",
+      "sha256": "cb3a0b87bdbb70f552773bc442fdacb6c59b06233b5f0d6b2e0e8f56fd561396"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/core_sc300.h",
+      "sha256": "2a3ec02d4b947d6eb09a7b9860a4fbe9b9f45ee1a911f1674a424fd6d3faa683"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/mpu_armv7.h",
+      "sha256": "e4968e627df085e4ebf46be5140be657e035d978ae1938c1c2e3ee49fbde5030"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/mpu_armv8.h",
+      "sha256": "8e5a84b186f303eb3f2ece0cd84f013ac31ed68bffde4feea502acd0b474c40f"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/Include/tz_context.h",
+      "sha256": "45565c8cb04c653aabaf3cceddfc848b6a0de28c20d4f7e3d475a992c7eee788"
+    },
+    {
+      "path": "01_主程序/main/Drivers/CMSIS/LICENSE.txt",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h",
+      "sha256": "3ac002c4df98f17ed8e6802508357643cf72540de7222f903f5bfdc402ab7b44"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal.h",
+      "sha256": "29e3c732a39e22b5fa3d7197e0d96b3a9cf32b205268c45a517511b9c9ab1292"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_adc.h",
+      "sha256": "874527f39efa00625ca966e51a26b46dcd4aa957a2d39f2afb900f8a484d881e"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_adc_ex.h",
+      "sha256": "57e515316bf65b84a8635f15fb22850ae4ec0197ea9907a14902dbc780bca6b9"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_cortex.h",
+      "sha256": "6051101b3b55b460ef98bfc854c42ca4cc5b5bb6eba6dda2426c5fd3889b9bbb"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_def.h",
+      "sha256": "7c831c91bb3ed127dd52b842b919649129095c06eeeef185da6c15ccf9718bcf"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_dma.h",
+      "sha256": "404be6c6d36948b786025327cfffa42254e6ee48e7910db2fa665030a2a7e475"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_dma_ex.h",
+      "sha256": "a7dcbd01b2ea86fdb23bd7e898d2c212a17722f19984e9cdf2f341f2f886ee3d"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_exti.h",
+      "sha256": "e73dc38722d586062b7437067f9e6990f9952cbcb823696bbbf2d2e61a5b3878"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_flash.h",
+      "sha256": "3bed899f71156113108277ca5282293d03664028bb7e50d4c302f955961d7500"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_flash_ex.h",
+      "sha256": "1e94d0081874d25cd182957103e5e46dba211577e45aa9835020f0b56f248042"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_gpio.h",
+      "sha256": "1211e581c187d6fdb37bf14753e10073c4c7118f9ffb140977c1f535c702ab73"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_gpio_ex.h",
+      "sha256": "2c219ba343b4d30fcc1c682805cd823c16c7076dc26253c2e4d135d752c06007"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_i2c.h",
+      "sha256": "deecbe1b8386fee66a0a6cf262b87b269e3acba4796670cf156cf2bf12bc5964"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_i2c_ex.h",
+      "sha256": "f466424c93867d7b42a184a622de48eb47be2b50fb8766b36bf88eb3c5be1656"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_pwr.h",
+      "sha256": "271e3b144808b0a93ff0113e5e1c3821efc622e00e7fcc33b8f24e744360c26f"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_pwr_ex.h",
+      "sha256": "49f0336c35719052670809bbad1487f73dbf0b26db63c0c9b6d44a6d8270a8c4"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_rcc.h",
+      "sha256": "b91f3fcb137b91be8556cf26017ecc62b53771b3b9cb7fbd0a43e1e8fb5676bc"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_rcc_ex.h",
+      "sha256": "52232e808e6028a811563ca44e25a9cb104838a946ce4f3121121d5d6ba8e0f1"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim.h",
+      "sha256": "e2f34e5ddd2437830e355c6afcdb479134da4037702a9800c707fcabb62ae66d"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_tim_ex.h",
+      "sha256": "26b61b357edfb63467fd6af7a91d0de4fc07d50adcc4e00e1d6177d3ef2630a4"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart.h",
+      "sha256": "794d891aa4cf9b1743904ad2f1a129962f3a6faccb20d5879890a89b480be74a"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_hal_uart_ex.h",
+      "sha256": "be6ee1becaa418eb58d357c8021885df19865722c72bbabf0b44c800e6c2934a"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_adc.h",
+      "sha256": "c1e849a895ad4e06742eb73b1c32e564881399508bc6d624a2c4aded007f0d6f"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_bus.h",
+      "sha256": "e3e9c9a4f1089f3dc933187297c36ad23fe4943b035ffc94917d0c54b1379ba4"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_cortex.h",
+      "sha256": "a704f2b1f39936dbb705c40e329107fcf612ecd0fcbed25bfeebbadba7c6a027"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_crs.h",
+      "sha256": "0e4cead6a63d9b7dd9791eea1b9fc6cc49d9a561f69d40ca52d9f3fd91e34073"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_dma.h",
+      "sha256": "3f333021413746ac4b1243978d7c96e3d50291fc9c97de440293e511018dde7c"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_exti.h",
+      "sha256": "3564164aca3102c8fd49020ac93cffd5358fd390b5f5ddb78622192f9e145d72"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_gpio.h",
+      "sha256": "cf73dfcae00250a540be22d4c954ce728a477c2c6b3cef347ac7e724c101b429"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_pwr.h",
+      "sha256": "82df9f38fde9cda27a57dbbf61d5ee82c5c9d83cb01cfad149636e3e9547fa4c"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_rcc.h",
+      "sha256": "a9e44989596f30e24d7939ea670eb9158737664845d824128b6311a35c335007"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_system.h",
+      "sha256": "b7253d6ac27af7ee42aad18e0bf6d4775cd8c7c351379648f7ab73bba8a82e57"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_tim.h",
+      "sha256": "802642c6737161b3d85c4ef6cb8c5a87d6526ebbb2de1bf94a3ef4033d919ca7"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_usart.h",
+      "sha256": "c9f179059e5a6cfc01f8c7e7fd34344e7bcde4542f9e934d1367e88360187f31"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Inc/stm32f0xx_ll_utils.h",
+      "sha256": "2e82b3778341a414dc75c7c6cdd944a906c4abdd9ac96b29163c5f1cbe0b2b94"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/LICENSE.txt",
+      "sha256": "d5a162f3eaf2b7b6762f00700017cae5695ebbdce7932fead8316448baafd9c1"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal.c",
+      "sha256": "79c8fc228207c4ae967cb5e3bed81fd36e6cacc6a2d9f59809c8f369e1bf979c"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_adc.c",
+      "sha256": "14e28654d0ce09d23e411e9ad1f7e43701095df5dd5771b561cbb862618e375b"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_adc_ex.c",
+      "sha256": "6d7a4e63940bd47e24da89847a777ca570441188f974e70e021e64e3a9cba5af"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_cortex.c",
+      "sha256": "6ec6b338f389a593c316bb22a0110446f92cb063d56ab9c8f56fea4c2adca681"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_dma.c",
+      "sha256": "cbe5a6ce8add054c1fe40f7492fd1f32c028f8ca2490c3798c5087295ecce4d9"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_exti.c",
+      "sha256": "a15713e9f0371cbdde5cf4f3e283564307a4eacdb9674cf7f667357f5c5aac71"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_flash.c",
+      "sha256": "298b60f12f91cbc43dbe16258cff53879b90faf5ef0e3897a5f3d1d187d575fe"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_flash_ex.c",
+      "sha256": "0b74fafa6fc9534c38ef65bcb62a7cf07b425a315bbff9f0aaea3bdfc66b55d8"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_gpio.c",
+      "sha256": "2cd38c437a9a1d0c32fd65394bf49ebcc31a56de0c73d9e517539503068021f5"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_i2c.c",
+      "sha256": "7b71d97c597e6cc482380f64fd1db96295c12428063d97f30ac830340ddaf326"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_i2c_ex.c",
+      "sha256": "163a2aef2446c901a75a4dcc772cf67a1bf187ea395834a68a5a97108c677adb"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_pwr.c",
+      "sha256": "7e8e6ba7de3384a501b7b50f3ac7feb1b1b475849611c03e4bc8e78c8d21337d"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_pwr_ex.c",
+      "sha256": "d8f0df6ce780c413937a9949c850ddb88fde905725516546e062c2f2abbc63cf"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_rcc.c",
+      "sha256": "fe601fa20f95e48d4bb2a9dd7409ff4d0637e184d6b3c4be4207777b246b2856"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_rcc_ex.c",
+      "sha256": "128a32f4ee22c9741b76c25eaebca1269aab92669721e8ca0bac80643f1be0b5"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_tim.c",
+      "sha256": "63c42e6957bc759da4bff4c375752c8f963132efc28b7889fada70cdf1d887f1"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_tim_ex.c",
+      "sha256": "0e43f2621c8b0583c14dd0d38865cd6b64e206b71f1cec62724894f19f6a1768"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_uart.c",
+      "sha256": "0724ea2e1d4e53da86562e0eb8be43c0cecdab369ce27ac312bb9b4d883545df"
+    },
+    {
+      "path": "01_主程序/main/Drivers/STM32F0xx_HAL_Driver/Src/stm32f0xx_hal_uart_ex.c",
+      "sha256": "6f70a7275719d4c745411e9c1531c32d6ee9a80e13c978e2bcbda8d39153d4c3"
+    },
+    {
+      "path": "01_主程序/main/MDK-ARM/DebugConfig/tw66gw02_STM32F030C8Tx_1.0.1.dbgconf",
+      "sha256": "84df6b891b456893fe861a92ebedea76ec1257e871a909d786cef6d9c04a0c6c"
+    },
+    {
+      "path": "01_主程序/main/MDK-ARM/RTE/_tw66gw02/RTE_Components.h",
+      "sha256": "502c14cf7194aaab65f49dacff2cbc93eb177bb56fec3b8db50beae278fde921"
+    },
+    {
+      "path": "01_主程序/main/MDK-ARM/startup_stm32f030x8.s",
+      "sha256": "ced5779d000dc89b58cd8e05373f5b315aed1f3a2dd1a7450e1c81fa19231dd0"
+    },
+    {
+      "path": "01_主程序/main/MDK-ARM/tw66gw02.uvprojx",
+      "sha256": "c1b313d01aa8da653aa3c116e5aab768a9da660a64dcb22f17edd41375f22222"
+    },
+    {
+      "path": "01_主程序/main/MDK-ARM/tw66gw02_app.sct",
+      "sha256": "4572905ea080f928996a9bc0cd89a594c82f48edf0a9063771291b7e57a98706"
+    },
+    {
+      "path": "01_主程序/main/MDK-ARM/tw66gw02_factory.sct",
+      "sha256": "28642fb9822b6558a3f4ef7da85fed37adfffe3f96c1d0e624cc094ec2138cd4"
+    },
+    {
+      "path": "01_主程序/main/OS/TaskScheduler.c",
+      "sha256": "31cff10a68e8f7fdcca98d2309c24f5ea89c4de5c8eea9dc95bc5966493f2d45"
+    },
+    {
+      "path": "01_主程序/main/OS/TaskScheduler.h",
+      "sha256": "362a2bb4fc41934c21bd13113506dd9ba485a1e3ee94007a6b18c8d48beb85fd"
+    },
+    {
+      "path": "01_主程序/main/PrepareFactoryBootImage.ps1",
+      "sha256": "27366f14f7bd1f8d5358a5d5518d0f4c7c96a9ffb18e9ce598be43c34cd8ea74"
+    },
+    {
+      "path": "01_主程序/main/tw66gw02.ioc",
+      "sha256": "d368cbfcb7755b8f94444f4df1dac49c5fb4dc274726093afe32c58dfae1f28d"
+    },
+    {
+      "path": "01_主程序/main/编码规范.md",
+      "sha256": "da0114cf23c664c13ece7c099c89c6e878a742fc837ca7ad849de05cb4ee365c"
+    },
+    {
+      "path": "01_主程序/固件/App_Upload/mathis_ota_v101.manifest.json",
+      "sha256": "32dbd34c823153e6ac60136f8fb36efa8c21d5b507d6e77134d7a36611bc28d6"
+    },
+    {
+      "path": "01_主程序/固件/App_Upload/mathis_ota_v101.ota",
+      "sha256": "7d72822aa7ad78dde1265e720eed1b003e81f5e70d59e33c9e1a09ce0bb41b8e"
+    },
+    {
+      "path": "01_主程序/固件/Factory_Flash/mathis_factory_v100.hex",
+      "sha256": "9f49ed81f977a9933972ac98a29362de664c421164daf127c98f7111336217b8"
+    },
+    {
+      "path": "02_客户需求/BLE协议/Mathis_BLE_Specification_v0.4_Draft.md",
+      "sha256": "9c886eef3d1f416512d65076f94a8893554f43c35683b00f7bd5955c0cf1af16"
+    },
+    {
+      "path": "02_客户需求/UI操作逻辑/原始需求/UI_Operational_Logic_V1.6.xlsx",
+      "sha256": "80b0a260ed1ee9d98cfd48065c0c43642d79ce022f375ac59607e2f00d42ae3d"
+    },
+    {
+      "path": "02_客户需求/UI操作逻辑/解析/260323_Mathis_UI_Operational_Logic-V1.6_完整解析.md",
+      "sha256": "d975154bd7443adc5c1936d802fb216b6d42b43a63c5aae3d261c6dcdbb4f987"
+    },
+    {
+      "path": "02_客户需求/模块接口/EMB101x系列合家亲蓝牙 AT 指令.docx",
+      "sha256": "ee93a3b8e4156680d0f405a640336a997ea878dd84faec642b0f29891e6cff10"
+    },
+    {
+      "path": "02_客户需求/模块接口/EMB1082_蓝牙接口说明.md",
+      "sha256": "247668bb06785b2acc3d6d71c7cee150c2183fa06a8342ee0b4c4207f7eba295"
+    },
+    {
+      "path": "02_客户需求/模块接口/base command.docx",
+      "sha256": "82a1ada507ede3d282a5f5e25acdb26cb72432cf93874f0482473ef5f66e1444"
+    },
+    {
+      "path": "02_客户需求/模块接口/功能指令.docx",
+      "sha256": "72c0c21ae33aca610075468a2219edc97f89fa86d2d39f147ff53044649ac1da"
+    },
+    {
+      "path": "02_客户需求/温度与校准/Coefficient proposal MATHIS.pptx",
+      "sha256": "3468bbd1763bb7e32c22c8873f66f5bf462e7e132ffb3e342a1da4b6a6e040a9"
+    },
+    {
+      "path": "02_客户需求/温度与校准/Pt1000温度阻值对照表.xls",
+      "sha256": "6ad9079c761683c36a5f31eb0159c3c6aecfed67dabbda5d1435633d5af5d816"
+    },
+    {
+      "path": "03_硬件原理图/TW66GW02-ON.pdf",
+      "sha256": "0d61e454e97e34515a0a6cd6f4a52b7bcf308705f48e8adbea41001b7a5f6b98"
+    },
+    {
+      "path": "使用说明.md",
+      "sha256": "21577795fce074c437d3d10191f6c50cc389010a118740147fccc5907c1d07d5"
+    }
+  ],
+  "header_checks": 7,
+  "build": "factory/v100/v101: 0 errors, 0 warnings",
+  "tests": "162 interrupted swap/rollback and artifact/layout checks PASS",
+  "compared_artifacts": {
+    "Bootloader/build/mathis_bootloader.bin": "ea727f03af6c89408c97cede7acf97115dd70354f0c8ba0f2081883ea2d7a497",
+    "OTA_Artifacts/mathis_app_v100.bin": "4d01c033d78148155f91179886934ec99d3b6d07941f0197c9dfe7235690f935",
+    "OTA_Artifacts/mathis_app_v101.bin": "264edd6ab3f59db8ec053f99466a049a042cb05782a79bb82af354b4f9a095ac",
+    "OTA_Artifacts/Release_v100_to_v101/Factory_Flash/mathis_factory_v100.hex": "9f49ed81f977a9933972ac98a29362de664c421164daf127c98f7111336217b8",
+    "OTA_Artifacts/Release_v100_to_v101/App_Upload/mathis_ota_v101.ota": "7d72822aa7ad78dde1265e720eed1b003e81f5e70d59e33c9e1a09ce0bb41b8e",
+    "OTA_Artifacts/Release_v100_to_v101/App_Upload/mathis_ota_v101.manifest.json": "32dbd34c823153e6ac60136f8fb36efa8c21d5b507d6e77134d7a36611bc28d6"
+  },
+  "zip_path": "05_发布与交付/工程师交接/TW66GW02_工程交接_精简版_v2.zip",
+  "zip_sha256": "0b71345ae755f6d57e87134fdcffd667229f631708aa534e70921afe02fc640d",
+  "zip_bytes": 2361389,
+  "file_count": 178,
+  "old_zip_unchanged": true,
+  "frozen_files_unchanged": 40
+}

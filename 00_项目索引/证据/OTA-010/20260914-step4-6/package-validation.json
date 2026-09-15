@@ -1,0 +1,18 @@
+{
+  "id": "TW66GW02_HANDOVER_20260914_v1",
+  "result": "PASS",
+  "zip_path": "05_发布与交付/工程师交接/TW66GW02_HANDOVER_20260914_v1.zip",
+  "zip_bytes": 213045474,
+  "zip_sha256": "b654390eb40157dc6d6e0d625372450a3f5e5e28fc5dfd2389693eb8a69ecddc",
+  "payload_files": 918,
+  "zip_entries": 920,
+  "source_files_verified": 675,
+  "required_document_links": "PASS",
+  "historical_missing_link_count": 92,
+  "archive_readback": "PASS",
+  "extraction_directory": "90_历史原始包/整理前备份/handover-verify-20260914-094951",
+  "receiver_verifier": "PASS",
+  "receiver_stdout": "PASS: 918 payload files verified; manifest/checksums and required entrypoints present.",
+  "source_code_migration": "NOT_RUN",
+  "hardware": "NOT_RUN"
+}

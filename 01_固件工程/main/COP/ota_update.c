@@ -2,51 +2,7 @@
 #include "ota_layout.h"
 #include "ota_boot.h"
 #include "ota_update.h"
-
-#define OTA_TYPE_BEGIN             (0x10u)
-#define OTA_TYPE_CHUNK             (0x11u)
-#define OTA_TYPE_COMMIT            (0x12u)
-#define OTA_TYPE_ABORT             (0x13u)
-#define OTA_TYPE_STATUS            (0x90u)
-
-#define OTA_STATUS_READY           (0x01u)
-#define OTA_STATUS_ACK             (0x03u)
-#define OTA_STATUS_VERIFY_OK       (0x04u)
-#define OTA_STATUS_VERIFY_FAILED   (0x05u)
-#define OTA_STATUS_APPLYING        (0x06u)
-#define OTA_STATUS_ABORTED         (0x07u)
-#define OTA_STATUS_POWER           (0x08u)
-#define OTA_STATUS_STORAGE         (0x09u)
-#define OTA_STATUS_BUSY            (0x0Au)
-#define OTA_STATUS_BAD_OFFSET      (0x0Bu)
-
-#define OTA_REASON_CRC             (0x01u)
-#define OTA_REASON_SIZE            (0x03u)
-#define OTA_REASON_TIMEOUT         (0x04u)
-#define OTA_REASON_UNKNOWN         (0xFFu)
-#define OTA_TIMEOUT_TICKS_20MS     (3000u)
-#define OTA_RESET_DELAY_TICKS      (25u)
-
-enum
-{
-    OTA_STATE_IDLE = 0,
-    OTA_STATE_READY,
-    OTA_STATE_TRANSFERRING,
-    OTA_STATE_APPLYING
-};
-
-typedef struct
-{
-    uint32_t artifact_size;
-    uint32_t expected_crc;
-    uint32_t next_offset;
-    uint32_t last_offset;
-    uint16_t last_length;
-    uint16_t timeout_ticks;
-    uint16_t reset_ticks;
-    uint8_t target_version;
-    uint8_t state;
-} OtaSession;
+#include "ota_update_internal.h"
 
 static OtaSession s_ota;
 

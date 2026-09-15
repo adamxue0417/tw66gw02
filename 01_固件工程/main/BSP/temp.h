@@ -10,6 +10,7 @@
 #ifndef   __TEMP_H__
 #define   __TEMP_H__
 #include "config.h"
+#include "temp_config.h"
 #define TempCount 4
 #define USR_ADC_COUNT	4
 #define USR_ADC_CH_NR	2
@@ -46,6 +47,5 @@ extern volatile uint8_t ADC_Start_DMA_OVER;
 extern channel_env_t ch_env[USR_ADC_CH_NR];
 void TempGetTask(void);
 void Temp_Get_Init(void);
-void TempGetTask(void);
 #endif
 

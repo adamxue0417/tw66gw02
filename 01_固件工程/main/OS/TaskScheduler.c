@@ -11,9 +11,6 @@
 	 利用SCH_Add_Task将任务函数加入到线程中，便可以实现任务的定时调度功能。
  */
 /***************************************************************************************************************************************************************/
-#define RETURN_ERROR  1
-#define RETURN_NORMAL 0
-#define SCH_REPORT_ERRORS 1 			 //开启错误检测
 sTask SCH_tasks_G[SCH_MAX_TASKS];  //任务队列
 SCH_Error_TypeDef Error_Code_G = NOT_ERROR;
 static uint16_t Error_tick_count_G;//跟踪上次记录错误以来的时间
@@ -150,11 +147,11 @@ uint8_t SCH_Delete_Task(const uint16_t Task_Index)
 		//设置全局错误变量
 		Error_Code_G = ERROR_SCH_CANOT_DELETE_TASK;
 		//同时返回错误代码
-		Return_code = RETURN_ERROR;
+		Return_code = SCH_RETURN_ERROR;
 	}
 	else
 	{
-		Return_code = RETURN_NORMAL;
+		Return_code = SCH_RETURN_NORMAL;
 	}
 	SCH_tasks_G[Task_Index].pTask = 0x00000000;
 	SCH_tasks_G[Task_Index].Delay = 0;

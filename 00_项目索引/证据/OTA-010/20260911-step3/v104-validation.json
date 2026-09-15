@@ -1,0 +1,26 @@
+{
+  "result": "PASS",
+  "application_size": 24476,
+  "artifact_size": 24860,
+  "bootloader_size": 8188,
+  "factory_size": 31432,
+  "application_sha256": "e4fe846bd6e31ff963cd236c09ef3458c07a99d2bcfb5257ee11af6bfebd4107",
+  "artifact_sha256": "4ea2f3917c8461c6d37abae1c45e33476706bcb9670b8aa18af7b9d5da0e5468",
+  "crc32": "0xC8BCBCC5",
+  "bootloader_sha256": "db88e94fab70bcea08ad03ec66d628b15dcac8482e2d85fb0624f9f18c86d8d9",
+  "factory_sha256": "9dda30be007f7d037e465f95a08e0f438a043ec444ed297a6ab0a03fb9b4b882",
+  "matches_frozen_v104": true,
+  "boot_api": {
+    "abi": 1,
+    "size": 60,
+    "capabilities": 5,
+    "layout": 2,
+    "prod_key_enabled": false
+  },
+  "compiled_i15_modulus_matches_public_key": true,
+  "key_bits": 3072,
+  "public_fingerprint_sha256": "3fccdcb727514f80a264fec76933c305262d3ce92f91f8a9711e4eec1a84c0d4",
+  "factory_bin_and_hex_match": true,
+  "original_v103_input_preserved": true,
+  "hardware": "NOT_RUN"
+}

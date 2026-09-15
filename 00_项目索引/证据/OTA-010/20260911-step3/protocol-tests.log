@@ -1,0 +1,9 @@
+test_crc_vectors (test_protocol.ProtocolTests.test_crc_vectors) ... ok
+test_frame_round_trip (test_protocol.ProtocolTests.test_frame_round_trip) ... ok
+test_manifest_rejects_mutation (test_protocol.ProtocolTests.test_manifest_rejects_mutation) ... ok
+test_split_coalesced_bad_crc_resync (test_protocol.ProtocolTests.test_split_coalesced_bad_crc_resync) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.040s
+
+OK

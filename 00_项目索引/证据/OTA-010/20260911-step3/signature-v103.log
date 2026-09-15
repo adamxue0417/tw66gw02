@@ -1,0 +1,2 @@
+Verified OK
+PASS: valid signature accepted; modified app, modified signature, zero signature, and wrong key rejected.

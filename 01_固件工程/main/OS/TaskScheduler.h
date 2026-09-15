@@ -2,6 +2,11 @@
 #define  __TASKSCHEDULER_H
 #include "stdint.h"
 
+/* SCH_Delete_Task return values; error reporting uses #ifdef (presence). */
+#define SCH_RETURN_ERROR  (1u)
+#define SCH_RETURN_NORMAL (0u)
+#define SCH_REPORT_ERRORS 1
+
 #define SCH_MAX_TASKS 32   //最大任务数量
 
 //以下是错误代码

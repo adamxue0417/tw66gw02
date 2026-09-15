@@ -3,13 +3,14 @@
 #define __WIRELESS_H__
 
 #include "config.h"
+#include "ota_update.h"
 
 #define MATHIS_START_BYTE          (0x5Au)
 #define MATHIS_MAX_PAYLOAD         (236u)
 #define MATHIS_MAX_FRAME           (244u)
 #define MATHIS_TYPE_CMD            (0x01u)
 #define MATHIS_TYPE_TELEMETRY      (0x81u)
-#define MATHIS_TYPE_OTA_STATUS     (0x90u)
+#define MATHIS_TYPE_OTA_STATUS     (OTA_TYPE_STATUS)
 
 #define MATHIS_CMD_SET_UNITS       (0x01u)
 #define MATHIS_CMD_POWER_OFF       (0x02u)
