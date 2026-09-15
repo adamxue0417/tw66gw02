@@ -1,4 +1,6 @@
 #include "TaskScheduler.h"
+#include "TaskScheduler_config.h"
+#include "stm32f0xx_hal.h"
 /**
  * @file    TaskScheduler.c
  * @brief   ÏµÍ³ÈÎÎñµ÷¶ÈÎÄ¼ş
@@ -11,9 +13,9 @@
 	 ÀûÓÃSCH_Add_Task½«ÈÎÎñº¯Êı¼ÓÈëµ½Ïß³ÌÖĞ£¬±ã¿ÉÒÔÊµÏÖÈÎÎñµÄ¶¨Ê±µ÷¶È¹¦ÄÜ¡£
  */
 /***************************************************************************************************************************************************************/
-sTask SCH_tasks_G[SCH_MAX_TASKS];  //ÈÎÎñ¶ÓÁĞ
-SCH_Error_TypeDef Error_Code_G = NOT_ERROR;
-static uint16_t Error_tick_count_G;//¸ú×ÙÉÏ´Î¼ÇÂ¼´íÎóÒÔÀ´µÄÊ±¼ä
+volatile sTask SCH_tasks_G[SCH_MAX_TASKS];  //ÈÎÎñ¶ÓÁĞ
+volatile SCH_Error_TypeDef Error_Code_G = NOT_ERROR;
+static uint32_t s_error_started_ms;//¸ú×ÙÉÏ´Î¼ÇÂ¼´íÎóÒÔÀ´µÄÊ±¼ä
 static uint8_t Last_error_code_G = NOT_ERROR;//ÉÏ´ÎµÄ´íÎó´úÂë£¨ÔÚ1 ·ÖÖÓÖ®ºó¸´Î»£©
 /**
  * @brief   SCH_Initº¯Êı¹¦ÄÜ¼òÊö
@@ -26,12 +28,18 @@ static uint8_t Last_error_code_G = NOT_ERROR;//ÉÏ´ÎµÄ´íÎó´úÂë£¨ÔÚ1 ·ÖÖÓÖ®ºó¸´Î»£
 void SCH_Init(void)
 {
     uint16_t i;
-    for(i = 0; i < SCH_MAX_TASKS; i++)
-    {
-        SCH_Delete_Task(i);
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    for (i = 0u; i < SCH_MAX_TASKS; i++) {
+        SCH_tasks_G[i].pTask = 0;
+        SCH_tasks_G[i].Delay = 0u;
+        SCH_tasks_G[i].Preiod = 0u;
+        SCH_tasks_G[i].RunMe = 0u;
     }
     Error_Code_G = NOT_ERROR;
-    //systick¶¨Ê±Æ÷³õÊ¼»¯
+    Last_error_code_G = NOT_ERROR;
+    s_error_started_ms = HAL_GetTick();
+    __set_PRIMASK(primask);
 }
 /**
  * @brief   SCH_Updateº¯Êı¹¦ÄÜ¼òÊö
@@ -53,7 +61,12 @@ void SCH_Update(void) //¸Ãº¯ÊıÓÉ¶¨Ê±Æ÷ÖĞ¶Ï´¥·¢£¬½¨Òé·ÅÈë1ms¶¨Ê±Æ÷ÖĞ¶ÏµÄÊ±»ùÖĞ½øĞ
 			if(SCH_tasks_G[Index].Delay == 0)
 			{
 				//ÈÎÎñĞèÒªÔËĞĞ
-				SCH_tasks_G[Index].RunMe += 1;
+				if (SCH_tasks_G[Index].RunMe < UINT8_MAX) {
+                    SCH_tasks_G[Index].RunMe += 1u;
+                } else {
+                    /* Do not wrap pending work to zero and incorrectly sleep. */
+                    Error_Code_G = ERROR_SCH_PENDING_OVERFLOW;
+                }
 				if(SCH_tasks_G[Index].Preiod)
 				{
 					//µ÷¶ÈÖÜÆÚĞÔµÄÈÎÎñÔÙ´ÎÔËĞĞ
@@ -78,26 +91,21 @@ void SCH_Update(void) //¸Ãº¯ÊıÓÉ¶¨Ê±Æ÷ÖĞ¶Ï´¥·¢£¬½¨Òé·ÅÈë1ms¶¨Ê±Æ÷ÖĞ¶ÏµÄÊ±»ùÖĞ½øĞ
  */
 uint16_t SCH_Add_Task(void(*pFunction)(void), const uint16_t Delay, const uint16_t Period)
 {
-	uint16_t Index = 0;
-	   while((SCH_tasks_G[Index].pTask != 0) && (Index < SCH_MAX_TASKS))
-	{
-		Index++;
-	}
-	//ÊÇ·ñµ½´ï¶ÓÁĞ½áÎ²£¿
-	if(Index == SCH_MAX_TASKS)
-	{
-		//ÈÎÎñ¶ÓÁĞÒÑÂú
-		//
-		//ÉèÖÃÈ«¾Ö´íÎó±äÁ¿
-		Error_Code_G = ERROR_SCH_TOO_MANY_TASKS;
-		return SCH_MAX_TASKS;
-	}
-	//Èç¹ûÔËĞĞµ½ÕâÀïËµÃ÷ÈÎÎñ¶ÓÁĞÖĞÓĞ¿Õ¼ä
-	SCH_tasks_G[Index].pTask = pFunction;
-	SCH_tasks_G[Index].Delay = Delay;
-	SCH_tasks_G[Index].Preiod = Period;
-	SCH_tasks_G[Index].RunMe = 0;
-	return Index; 
+    uint16_t index = 0u;
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    while ((index < SCH_MAX_TASKS) && (SCH_tasks_G[index].pTask != 0)) { index++; }
+    if ((index == SCH_MAX_TASKS) || (pFunction == 0)) {
+        Error_Code_G = ERROR_SCH_TOO_MANY_TASKS;
+        __set_PRIMASK(primask);
+        return SCH_MAX_TASKS;
+    }
+    SCH_tasks_G[index].Delay = Delay;
+    SCH_tasks_G[index].Preiod = Period;
+    SCH_tasks_G[index].RunMe = 0u;
+    SCH_tasks_G[index].pTask = pFunction;
+    __set_PRIMASK(primask);
+    return index;
 }
 /**
  * @brief   SCH_Dispatch_Tasksº¯Êı¹¦ÄÜ¼òÊö
@@ -109,25 +117,24 @@ uint16_t SCH_Add_Task(void(*pFunction)(void), const uint16_t Delay, const uint16
  */
 void SCH_Dispatch_Tasks(void)
 {
-	uint16_t Index;
-	//µ÷¶È£¨ÔËĞĞ£©ÏÂÒ»¸öÈÎÎñ£¨Èç¹ûÓĞÈÎÎñ¾ÍĞ÷£©
-	for(Index = 0; Index < SCH_MAX_TASKS; Index++)
-	{
-		if(SCH_tasks_G[Index].RunMe > 0)
-		{
-			(*SCH_tasks_G[Index].pTask)();
-			SCH_tasks_G[Index].RunMe -= 1;
-			//ÖÜÆÚĞÔµÄÈÎÎñ½«×Ô¶¯ÔÙ´ÎÖ´ĞĞ
-			//Èç¹ûÕâÊÇ¸öµ¥´ÎÖ´ĞĞµÄÈÎÎñ£¬½«Ëü´ÓÁĞ±íÖĞÉ¾³ı
-			if(SCH_tasks_G[Index].Preiod == 0)
-			{
-				SCH_Delete_Task(Index);
-			}
-		}
-	}
-	SCH_Report_Status();
-	//µ÷¶ÈÆ÷¿ªÊ¼¿ÕÏĞ
-	SCH_Go_To_Sleep();
+    uint16_t index;
+    for (index = 0u; index < SCH_MAX_TASKS; index++) {
+        void (*task)(void) = 0;
+        uint32_t primask = __get_PRIMASK();
+        __disable_irq();
+        if ((SCH_tasks_G[index].pTask != 0) && (SCH_tasks_G[index].RunMe > 0u)) {
+            task = SCH_tasks_G[index].pTask;
+            /* Claim before running: an ISR during the callback cannot be lost. */
+            SCH_tasks_G[index].RunMe -= 1u;
+            if (SCH_tasks_G[index].Preiod == 0u) {
+                (void)SCH_Delete_Task(index);
+            }
+        }
+        __set_PRIMASK(primask);
+        if (task != 0) { task(); }
+    }
+    SCH_Report_Status();
+    SCH_Go_To_Sleep();
 }
 /**
  * @brief   SCH_Delete_Taskº¯Êı¹¦ÄÜ¼òÊö
@@ -139,25 +146,24 @@ void SCH_Dispatch_Tasks(void)
  */
 uint8_t SCH_Delete_Task(const uint16_t Task_Index)
 {
-	uint8_t Return_code;
-	if(SCH_tasks_G[Task_Index].pTask == 0)
-	{
-		//ÕâÀïÃ»ÓĞÈÎÎñ...
-		//
-		//ÉèÖÃÈ«¾Ö´íÎó±äÁ¿
-		Error_Code_G = ERROR_SCH_CANOT_DELETE_TASK;
-		//Í¬Ê±·µ»Ø´íÎó´úÂë
-		Return_code = SCH_RETURN_ERROR;
-	}
-	else
-	{
-		Return_code = SCH_RETURN_NORMAL;
-	}
-	SCH_tasks_G[Task_Index].pTask = 0x00000000;
-	SCH_tasks_G[Task_Index].Delay = 0;
-	SCH_tasks_G[Task_Index].Preiod = 0;
-	SCH_tasks_G[Task_Index].RunMe = 0;
-	return Return_code;
+    uint8_t result = SCH_RETURN_NORMAL;
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (Task_Index >= SCH_MAX_TASKS) {
+        Error_Code_G = ERROR_SCH_CANOT_DELETE_TASK;
+        __set_PRIMASK(primask);
+        return SCH_RETURN_ERROR;
+    }
+    if (SCH_tasks_G[Task_Index].pTask == 0) {
+        Error_Code_G = ERROR_SCH_CANOT_DELETE_TASK;
+        result = SCH_RETURN_ERROR;
+    }
+    SCH_tasks_G[Task_Index].pTask = 0;
+    SCH_tasks_G[Task_Index].Delay = 0u;
+    SCH_tasks_G[Task_Index].Preiod = 0u;
+    SCH_tasks_G[Task_Index].RunMe = 0u;
+    __set_PRIMASK(primask);
+    return result;
 }
 /**
  * @brief   SCH_Report_Statusº¯Êı¹¦ÄÜ¼òÊö
@@ -169,34 +175,21 @@ uint8_t SCH_Delete_Task(const uint16_t Task_Index)
  */
 void SCH_Report_Status(void)
 {
-	#ifdef SCH_REPORT_ERRORS
-	//Ö»ÔÚĞèÒª±¨¸æ´íÎóÊ±ÊÊÓÃ
-	//¼ì²éĞÂµÄ´íÎó´úÂë
-	if(Error_Code_G != Last_error_code_G)
-	{
-		//LED´íÎóÊä³ö
-		Last_error_code_G = Error_Code_G;
-		
-		if(Error_Code_G != 0)
-		{
-			Error_tick_count_G = 60000;
-		}
-		else
-		{
-			Error_tick_count_G = 0;
-		}
-	}
-	else
-	{
-		if(Error_tick_count_G != 0)
-		{
-			if(--Error_tick_count_G == 0)
-			{
-				Error_Code_G = NOT_ERROR;//¸´Î»´íÎó
-			}
-		}
-	}
-	#endif
+#ifdef SCH_REPORT_ERRORS
+    uint32_t primask = __get_PRIMASK();
+    uint32_t now_ms;
+    __disable_irq();
+    now_ms = HAL_GetTick();
+    if (Error_Code_G != Last_error_code_G) {
+        Last_error_code_G = (uint8_t)Error_Code_G;
+        s_error_started_ms = now_ms;
+    } else if ((Error_Code_G != NOT_ERROR) &&
+               ((uint32_t)(now_ms - s_error_started_ms) >= SCH_ERROR_HOLD_MS)) {
+        Error_Code_G = NOT_ERROR;
+        Last_error_code_G = NOT_ERROR;
+    }
+    __set_PRIMASK(primask);
+#endif
 }
 /**
  * @brief   SCH_Go_To_Sleepº¯Êı¹¦ÄÜ¼òÊö
@@ -206,8 +199,28 @@ void SCH_Report_Status(void)
  * 
  * ÏêÏ¸ËµÃ÷£º´Ëº¯ÊıÎªÈÎÎñµ÷¶ÈÆ÷½øÈëĞİÃßº¯Êı£¬ÓÃÓÚ¶Ô½ø³ÌÖĞµÄÈÎÎñ¿ÕÏĞÊ±£¬¶ÔÈÎÎñµ÷¶ÈÆ÷½øĞĞĞİÃß´¦Àí¡£
  */
-static void SCH_Go_To_Sleep(void)
+void SCH_Go_To_Sleep(void)
 {
-
+#if SCH_IDLE_SLEEP_ENABLED
+    uint16_t index;
+    uint32_t primask = __get_PRIMASK();
+    /* Sleep is only valid in thread mode with interrupts originally enabled. */
+    if ((primask != 0u) || (__get_IPSR() != 0u)) { return; }
+    __disable_irq();
+    for (index = 0u; index < SCH_MAX_TASKS; index++) {
+        if (SCH_tasks_G[index].RunMe != 0u) {
+            __set_PRIMASK(primask);
+            return;
+        }
+    }
+    /* PM0215: a pending enabled IRQ wakes WFI even with PRIMASK set.
+       Keep the mask across the final check/WFI, then service the IRQ.
+       SysTick and all peripheral clocks remain enabled. */
+    SCB->SCR &= ~(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk);
+    __DSB();
+    __WFI();
+    __set_PRIMASK(primask);
+    __ISB();
+#endif
 }
 

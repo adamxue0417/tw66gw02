@@ -1,5 +1,6 @@
 param(
-    [string]$KeilRoot = 'C:\Keil_v5'
+    [string]$KeilRoot = 'C:\Keil_v5',
+    [ValidateSet(0,1)][int]$IdleSleepEnabled = 1
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,6 +18,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Factory boot image preparation failed.' }
 
 try {
     $template = Get-Content (Join-Path $mdkDir 'tw66gw02.uvprojx') -Raw -Encoding UTF8
+    $template = $template.Replace('<Define>USE_HAL_DRIVER,STM32F030x8</Define>',
+        "<Define>USE_HAL_DRIVER,STM32F030x8,SCH_IDLE_SLEEP_ENABLED=$IdleSleepEnabled</Define>")
     $disabledBeforeMake = @'
           <BeforeMake>
             <RunUserProg1>0</RunUserProg1>

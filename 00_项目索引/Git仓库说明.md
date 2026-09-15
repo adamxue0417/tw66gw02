@@ -40,3 +40,12 @@ GitHub 项目：`https://github.com/adamxue0417/tw66gw02.git`。各工作副本�
 交付二进制、手机安装包、本地恢复 ZIP、密钥和依赖环境不随本次源码提交上传；交付 manifest、源码指纹、SHA-256、说明和验证记录纳入主仓库。恢复实际交付件仍需本地交付目录或另行分发的制品，GitHub 中部分指向本地归档的链接因此只在完整工作区可用。
 
 前四步报告中的“尚未提交”等表述是当时执行记录。当前提交与推送结果以各分支 Git 历史为准。
+
+
+## battery_adjustment 独立实验（2026-09-15 / CHG-009）
+
+- 根仓库独立工作树 `.worktrees/battery_adjustment`，分支名为 `battery_adjustment`；来源 b964654 + 当前未提交维护内容，实验前基线为 6bd626d。
+- 在该工作树的 `01_固件工程/main` 开发浅休眠；目录名 main 不代表 GitHub main。原工作区仍为 chore/workspace-organization，原索引、文件、未提交状态保留。
+- 基线、实现、验证分开提交；仅使用 `git push -u github battery_adjustment` 建立同名 upstream，不合入 main、不强推、不批量推送。
+- `.worktrees/` 和 `.battery-local/` 为本机 Git 本地排除目录。源码、必要维护资料和文字证据入库，固件/ZIP/依赖不入库。历史安全线保持独立。
+- 对应主计划 OTA-041 和 [实验操作说明](../01_固件工程/main/tests/BATTERY_TESTING.md)；实机未通过前不作为省电量产交付。

@@ -1,7 +1,8 @@
 param(
     [ValidateRange(0,255)][int]$FactoryVersion = 100,
     [ValidateRange(0,255)][int]$OtaVersion = 101,
-    [string]$KeilRoot = 'C:\Keil_v5'
+    [string]$KeilRoot = 'C:\Keil_v5',
+    [ValidateSet(0,1)][int]$IdleSleepEnabled = 1
 )
 
 $ErrorActionPreference = 'Stop'
@@ -35,7 +36,7 @@ function Invoke-AppBuild([int]$Version, [string]$Label) {
                                   "<OutputDirectory>$temporaryOutput</OutputDirectory>")
     $template = $template.Replace(
         '<Define>USE_HAL_DRIVER,STM32F030x8</Define>',
-        "<Define>USE_HAL_DRIVER,STM32F030x8,MATHIS_FW_VERSION=$Version</Define>")
+        "<Define>USE_HAL_DRIVER,STM32F030x8,MATHIS_FW_VERSION=$Version,SCH_IDLE_SLEEP_ENABLED=$IdleSleepEnabled</Define>")
     $template = $template.Replace('.\tw66gw02_factory.sct', '.\tw66gw02_app.sct')
     $bootObjectEntry = @'
             <File>
