@@ -1,3 +1,4 @@
+/* 应用侧开发版 OTA：IDLE→READY→TRANSFERRING→APPLYING，暂存镜像后交给 Bootloader 安装。 */
 #include "config.h"
 #include "ota_layout.h"
 #include "ota_boot.h"
@@ -94,6 +95,7 @@ static uint8_t ApplicationVectorValid(uint32_t application_size)
     return ((reset >= OTA_APP_BASE) && (reset < (OTA_APP_BASE + application_size))) ? 1u : 0u;
 }
 
+/* 元数据最后写 commit 半字；只有完整提交后 Bootloader 才能识别待安装镜像。 */
 static uint8_t WriteMetadata(void)
 {
     OtaMetadataHeader header;
@@ -139,6 +141,7 @@ static void AbortSession(uint8_t reason)
     ReturnIdle();
 }
 
+/* 总长度含签名占位；试运行未确认或电量不足 30% 时拒绝开始，准入通过后才擦除暂存区。 */
 static void HandleBegin(const uint8_t *payload, uint16_t length)
 {
     MathisTelemetrySnapshot snapshot;
@@ -184,6 +187,7 @@ static void HandleChunk(const uint8_t *payload, uint16_t length)
         ((uint32_t)data_length > (s_ota.artifact_size - offset))) {
         (void)QueueStatus(OTA_STATUS_BAD_OFFSET, 0, 0u); return;
     }
+    /* 只接受上一块偏移、长度及 Flash 内容均相同的重传，重复 ACK 而不重复写入。 */
     if ((offset == s_ota.last_offset) && (data_length == s_ota.last_length) &&
         (s_ota.next_offset != 0u) &&
         (memcmp((const void *)(OTA_STAGE_BASE + offset), &payload[4], data_length) == 0)) {
@@ -204,6 +208,7 @@ static void HandleChunk(const uint8_t *payload, uint16_t length)
     (void)QueueStatus(OTA_STATUS_ACK, next, 4u);
 }
 
+/* 开发版仅检查接收完整性、CRC 和应用向量；签名尾部为占位，本路径未执行 RSA 验签。 */
 static void HandleCommit(const uint8_t *payload, uint16_t length)
 {
     uint32_t commit_crc;
@@ -252,6 +257,7 @@ uint8_t OtaUpdate_HandleFrame(uint8_t type, const uint8_t *payload, uint16_t len
     }
 }
 
+/* 超时按无线任务调用次数推进；提交后等待发送队列空闲及复位延迟，再复位进入安装流程。 */
 void OtaUpdate_Task20ms(void)
 {
     if ((s_ota.state == OTA_STATE_READY) || (s_ota.state == OTA_STATE_TRANSFERRING)) {

@@ -282,6 +282,7 @@ volatile uint8_t usart2_tx_busy = 0u;
 uint8_t U1_Data[2];
 uint8_t U2_Data[2];
 
+/* USART1 对接蓝牙、USART2 对接测温；DMA 加空闲中断接收，协议解析由前台任务完成。 */
 void com_init(void)
 {
   __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
@@ -293,6 +294,7 @@ void com_init(void)
   HAL_UART_Receive_DMA(&huart2, COM2.dmaBuf, COM_RXSIZE);
 }
 
+/* 串口空闲中断发布收到的数据块；旧块未消费时保留旧块、丢弃新块并计数，然后重启 DMA。 */
 void _usart_callback(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart, TypeDefCOM *com)
 {
   uint32_t remain;
@@ -355,6 +357,7 @@ void uart_dma_poll_check(UART_HandleTypeDef *huart, DMA_HandleTypeDef *hdma_uart
   *last_pos = current_pos;
 }
 
+/* 短临界区内复制待处理块并清标志，随后恢复进入前的中断状态；上层仍需自行拼帧。 */
 uint16_t COM_TakeRx(TypeDefCOM *com, uint8_t *dest, uint16_t capacity)
 {
   uint16_t length = 0u;

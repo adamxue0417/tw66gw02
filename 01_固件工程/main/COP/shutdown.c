@@ -4,7 +4,7 @@
   * @author 
   * @version V1.0
   * @date
-  * @brief   Shutdown state control implementation.
+  * @brief   历史关机接口；实际蓝牙断电和电源锁存控制在 MainControl。
   ******************************************************************************
   */
 #include "config.h"
@@ -13,7 +13,7 @@
 /**
   * @function shutdown_control()
   * ------------------
-  * @brief    Execute shutdown state control logic.
+  * @brief    仅清除系统错误状态，不执行硬件断电。
   * @param    None
   * @note     None
   */
@@ -25,7 +25,7 @@ void shutdown_control(void)
 /**
   * @function ShutdownTimeFillIrq()
   * ---------------------
-  * @brief    Update shutdown timing counters from timer interrupt.
+  * @brief    历史计时接口；内部逻辑已注释，当前不生效。
   * @param    None
   * @note     None
   */

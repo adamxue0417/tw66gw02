@@ -4,7 +4,7 @@
   * @author 
   * @version V1.0
   * @date
-  * @brief   BH66F5242 temperature acquisition implementation.
+  * @brief   历史测温兼容接口；实际采集在 BSP/temp.c。
   ******************************************************************************
   */
 #include "config.h"
@@ -56,7 +56,7 @@ void TempInit(void)
 /**
   * @function TempStabDis()
   * -------------
-  * @brief    Stabilize temperature display output.
+  * @brief    兼容空接口；当前不处理显示稳定。
   * @param    None
   * @note     None
   */
@@ -66,7 +66,7 @@ void TempStabDis(void)
 /**
   * @function LCDDisplayCalculation()
   * -----------------------
-  * @brief    Calculate LCD display temperature from sampled data.
+  * @brief    兼容空接口；忽略输入，不计算显示值。
   * @param    t - input parameter
   * @note     None
   */
@@ -77,7 +77,7 @@ void LCDDisplayCalculation(Temp_GetTypeDef* t)
 /**
   * @function adc_filter()
   * ------------
-  * @brief    Apply ADC moving average filter.
+  * @brief    兼容占位接口；当前固定返回 0，不执行滤波。
   * @param    channel - input parameter
   * @note     None
   */

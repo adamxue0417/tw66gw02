@@ -4,7 +4,7 @@
   * @author 
   * @version V1.0
   * @date
-  * @brief   Temperature and battery acquisition implementation.
+  * @brief   通过 USART2 获取三路外部温度，通过 ADC 获取本地探针和电量，并维护去抖、滤波状态。
   ******************************************************************************
   */
 #include "config.h"
@@ -90,6 +90,7 @@ void channel_env_init(void)
   * @param    None
   * @note     None
   */
+/* 前台阻塞采样，等待 DMA 完成中断并剔除极值后平均；调用期间必须允许 ADC 中断推进。 */
 void Get_Filter_ADC12bitResult(void)
 {
     uint16_t i, j;
@@ -296,7 +297,7 @@ uint16_t Temp_Handle(uint16_t arr[],uint8_t length, uint16_t temp)
 /**
   * @function Battery_Get_mV()
   * ----------------
-  * @brief    Average battery ADC over one minute, then convert it to millivolts.
+  * @brief    电量 ADC 做 120 点滑动平均后换算为采样口径 mV；启动时按已有样本数平均。
   * @param    channel - input parameter
   * @note     None
   */
@@ -343,7 +344,7 @@ static void UpdateBatteryLevel(uint16_t batt_mV)
 
     g_battery_mv = batt_mV;
 
-    /* Requirement: low battery only when voltage is below 1.1 V. */
+    /* 低于 1100 mV 累计确认低电，达到 1200 mV 累计恢复；中间区间保留状态与计数。 */
     if (batt_mV < BATTERY_LOW_MV_THRESHOLD)
     {
         if (low_cnt < BATTERY_DEBOUNCE_COUNT) { low_cnt++; }
@@ -546,6 +547,7 @@ static int16_t debounce_external_temp(uint8_t idx, int16_t sample)
   * @param    None
   * @note     None
   */
+/* 外部回包按大端 32 位、百分之一摄氏度解析；本次数据不足 15 字节时保留上次缓存。 */
 static void update_three_temps_from_uart2(void)
 {
     uint8_t rx[32];
@@ -601,6 +603,7 @@ void Temp_Get_Init(void)
   * @param    None
   * @note     None
   */
+/* 正常温度最终存为摄氏度，错误/断开/高低温用哨兵值保留。探针 Temp_Get 返回华氏度，去抖后再转摄氏度；电量独立更新。 */
 void TempGetTask(void)
 {
     uint8_t i;

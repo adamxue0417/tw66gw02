@@ -137,6 +137,7 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
+/* 1 ms 中断只推进任务就绪计数，业务回调由主循环调度。 */
  SCH_Update();
 
   /* USER CODE END SysTick_IRQn 1 */

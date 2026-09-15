@@ -1,0 +1,122 @@
+{
+  "result": "PASS",
+  "base_commit": "6bd626d3390f025e3b486585e34d397e571613ec",
+  "v2_zip_sha256": "0b71345ae755f6d57e87134fdcffd667229f631708aa534e70921afe02fc640d",
+  "v2_source_files_matched": 164,
+  "changed_files": [
+    {
+      "path": "BSP/C8721.c",
+      "encoding": "utf8",
+      "before_sha256": "b998065fb433a10b4b896b40d37afdbbae0c732a58a3497770e5595b53095863",
+      "after_sha256": "ecfc5f9ae84ce84fe695af291919017e1f002db8614705dae5d751ff158d9092",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "BSP/bh66f5242.c",
+      "encoding": "utf8",
+      "before_sha256": "c49c8c8420a7d54268a294fb74b6a3bd28c0ca671e7b264dbfb674ef9ffb6add",
+      "after_sha256": "1fc32f112a2831eec575a883bc0ecfcdbb7495da67abfbef69601863f14294e7",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "BSP/key.c",
+      "encoding": "utf8",
+      "before_sha256": "60176aa30184187f18d0418f1007a54e1849addd6c024a66b0bd60852f11909a",
+      "after_sha256": "1d2ff4b60be2852660f3526119a9e5cebb4248d7b58b159786c3f2ff0d7a1b47",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "BSP/screen_c8721.c",
+      "encoding": "utf8",
+      "before_sha256": "6cdd1853846d18473871e4fe758c7bec47db06bce913b9ade2c4ba160bb7bd6e",
+      "after_sha256": "bd39d6d748039192bb2d78407f19d551c868f68c7ec09d66900a98d5c17def52",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "BSP/temp.c",
+      "encoding": "utf8",
+      "before_sha256": "95842bcb2c1083c892584f2aa59719db773f76e3ff9b4afc5647229d568701fb",
+      "after_sha256": "23bd1ff6d51dfaeba697da12053415ad0563c690bd7fff5ed5f718d729cb9766",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "BSP/temp_config.h",
+      "encoding": "utf8",
+      "before_sha256": "ae4e7b14f87a8ff85aafea74540bac8b5e9152d3544b18036c257658d6405369",
+      "after_sha256": "3fedd7ce11d79ab8f3a413e2b4f1c2da1eb96bb84d2d9648986779b4c0cfb6e4",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "BSP/wireless.c",
+      "encoding": "utf8",
+      "before_sha256": "e288f586690f7d629576ab4f0546bd43e4bcf2b5f39d95f604a06df5032f8107",
+      "after_sha256": "719bc51d8521ed30d7b2d508e9c5f2435d810f30c28033f08bd8a115525f0f11",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "COP/main_control.c",
+      "encoding": "utf8",
+      "before_sha256": "bcfa5b02beccfc7e4676131949e5b6f3893221346325d26486f547d4e5931199",
+      "after_sha256": "108f14d2bd00fa67f174192574c19e0f1f924ce8385383849fbc4844348ad742",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "COP/ota_boot.c",
+      "encoding": "utf8",
+      "before_sha256": "4dd3678ceff56d6c1db45c8fa0cbafdc1720b5c4437fa944a4a74ff5e194a82d",
+      "after_sha256": "8a0b5f0da678b39ab8df31029d18131628d2f7ebd5a8fcba9fd19a95f93fe8e6",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "COP/ota_update.c",
+      "encoding": "utf8",
+      "before_sha256": "feef24a2a8ae00808a05dae45ef5a74ef4bd9ed8191cd168b3f94e6ea3eb47ee",
+      "after_sha256": "a408d267fafcdaef8aee3bb1e22c6b029b8535f1292d5e5528e5f73caf57bff2",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "COP/shutdown.c",
+      "encoding": "utf8",
+      "before_sha256": "e5165813723b5271871e38a1b25a30f2f6d5f33711c651a0b0240c957b80d072",
+      "after_sha256": "f904946b58ab2ae29ad84cf7d5b7b149f80e20e854cb7c523c2e17831be135ab",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "COP/start_up.c",
+      "encoding": "utf8",
+      "before_sha256": "1780bca013991de3da40cfcd0bab052b2ce32091234965abfe42e9da72b68ab4",
+      "after_sha256": "b69a49232ef111d313b80830747f7912d0f1bac0de02538f609f895409aac6fc",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "Core/Src/main.c",
+      "encoding": "utf8",
+      "before_sha256": "e4f10f2049187a2ea79ba1eedc50550ced5bed4fbdaa91919c87988c8676bd40",
+      "after_sha256": "804058c0714158a5a9d2ed8016d8dfe64704d0f59d86a8f676822abe0086fe47",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "Core/Src/stm32f0xx_it.c",
+      "encoding": "utf8",
+      "before_sha256": "3c127187ea4f230c91ff2a77689d89a027de6c659e546d055e569c30fbbe8400",
+      "after_sha256": "efbddef2b78871dd9c3c5506cf7536c22dbdaf522ce0fdbef48190b508665f6c",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "Core/Src/usart.c",
+      "encoding": "utf8",
+      "before_sha256": "a38e1cd2a7a7c7537d2e8bfa51f2753b498792d9666837e17888f3cd3d4f4088",
+      "after_sha256": "c274f6d0ac796a4adb1aba73fdf0e4f6fc7ba142d4a6a730ae497b4d4cb51f2f",
+      "c_tokens_equal": true
+    },
+    {
+      "path": "OS/TaskScheduler.c",
+      "encoding": "gbk",
+      "before_sha256": "31cff10a68e8f7fdcca98d2309c24f5ea89c4de5c8eea9dc95bc5966493f2d45",
+      "after_sha256": "c4b1d34eec6bc419a81884fd531a2b85fa85d5335f69c0094fd71637385f4ba1",
+      "c_tokens_equal": true
+    }
+  ],
+  "unchanged_tracked_main_files": 165,
+  "method": "C tokens equal; strict original encoding; existing newline forms; all other tracked main files byte equal"
+}

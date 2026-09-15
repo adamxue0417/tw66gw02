@@ -4,7 +4,7 @@
   * @author 
   * @version V1.0
   * @date
-  * @brief   Command and communication driver level with C8721.
+  * @brief   C8721 板级通信驱动：发送命令、显示数据及校验。
   ******************************************************************************
   */
 #include "C8721.h"
@@ -345,6 +345,7 @@ void CF_DisplayBufAutomatic(void)
   * @note     None
   */
 
+/* 分段刷新：第 0 段发送配置，第 1～8 段各发送 16 字节，第 9 段发送校验并触发显示更新。 */
 void  CF_DisplaySegment(uint8_t step)
 {
 	   uint8_t i;

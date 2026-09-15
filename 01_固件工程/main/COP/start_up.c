@@ -4,7 +4,7 @@
   * @author 
   * @version V1.0
   * @date
-  * @brief   Startup state control implementation.
+  * @brief   历史启动接口；本文件各控制函数为空实现，实际初始化见 main.c 和 SysDataInit。
   ******************************************************************************
   */
 #include "config.h"
@@ -17,7 +17,7 @@ uint16_t StartUpKeepTempTimer=0;
 /**
   * @function ResetStartUpControl()
   * ---------------------
-  * @brief    Reset startup state control counters.
+  * @brief    保留接口；当前未执行计数复位。
   * @param    None
   * @note     None
   */
@@ -30,7 +30,7 @@ void ResetStartUpControl(void)
 /**
   * @function start_up_control()
   * ------------------
-  * @brief    Execute startup state control logic.
+  * @brief    保留接口；当前无启动控制逻辑。
   * @param    None
   * @note     None
   */
@@ -41,7 +41,7 @@ void start_up_control(void)
 /**
   * @function StartUpTimeFillIrq()
   * --------------------
-  * @brief    Update startup timing counters from timer interrupt.
+  * @brief    历史中断接口；计时逻辑已注释，当前不生效。
   * @param    None
   * @note     None
   */

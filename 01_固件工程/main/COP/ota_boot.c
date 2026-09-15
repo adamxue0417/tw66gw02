@@ -1,3 +1,4 @@
+/* 应用侧试运行确认接口，读取并补写 OTA 元数据标记；此文件不负责搬移镜像。 */
 #include "config.h"
 #include "ota_layout.h"
 #include "ota_boot.h"
@@ -26,6 +27,7 @@ uint8_t OtaBoot_IsTrial(void)
                         OTA_MARKER_CONFIRMED, OTA_MARKER_CONFIRMED_INV) == 0u) ? 1u : 0u;
 }
 
+/* 存在待确认元数据时禁止开始下一次更新，防止覆盖当前安装/回退信息。 */
 uint8_t OtaBoot_CanStartUpdate(void)
 {
     if (HeaderPresent() == 0u) { return 1u; }
@@ -33,6 +35,7 @@ uint8_t OtaBoot_CanStartUpdate(void)
                        OTA_MARKER_CONFIRMED, OTA_MARKER_CONFIRMED_INV);
 }
 
+/* 由启动时登记的一次性任务调用，写入确认标记及反码；已确认时不重复写 Flash。 */
 void OtaBoot_ConfirmRunningImage(void)
 {
     uint32_t address;

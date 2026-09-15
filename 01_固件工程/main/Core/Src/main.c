@@ -68,7 +68,7 @@ void SystemClock_Config(void);
   */
 int main(void)
 {
-	/* Retain board power immediately after the C runtime has initialized. */
+	/* C 运行库就绪后立即拉高 PB3 锁存供电，避免后续初始化期间掉电。 */
 	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
 	GPIOB->BSRR = GPIO_BSRR_BS_3;
 	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_APP_MAIN;
@@ -104,6 +104,7 @@ int main(void)
 	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_PERIPH_READY;
   /* USER CODE BEGIN 2 */
   
+/* 先恢复业务参数，再初始化采集、显示和串口；试运行镜像主动请求蓝牙配对。 */
 	SysDataInit();
 	*(volatile uint32_t *)OTA_BOOT_TRACE_ADDRESS = OTA_BOOT_TRACE_DATA_READY;
 	if (OtaBoot_IsTrial() != 0u) { UI_RequestBluetoothPairing(); }
@@ -113,11 +114,13 @@ int main(void)
   com_init();
   Wireless_Init();
 	
+/* 任务参数基于 1 ms SysTick；周期任务到期置待执行计数，主循环串行运行，详见调度器。 */
  SCH_Add_Task(Key_Scan, 0, 10);
  SCH_Add_Task(DisplayTask, 0 , 10); 
  SCH_Add_Task(TempGetTask, 0 , 500);
  SCH_Add_Task(MainControl, 0 , 100);
  SCH_Add_Task(WirelessTask, 0, 20);
+/* 延后约 10 秒单次确认试运行镜像；Period=0 表示执行后删除。 */
  SCH_Add_Task(OtaBoot_ConfirmRunningImage, 10000, 0);
  
   /* USER CODE END 2 */

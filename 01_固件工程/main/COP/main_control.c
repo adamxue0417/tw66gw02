@@ -4,7 +4,7 @@
   * @author 
   * @version V1.0
   * @date
-  * @brief   Main control state machine and UI runtime cache implementation.
+  * @brief   集中处理工作状态、探针切屏、蓝牙状态、自动关机及 UI 缓存；参数使用双页 Flash 保存。
   ******************************************************************************
   */
 #include "config.h"
@@ -93,6 +93,7 @@ static void ConfigLoad(void)
     }
 }
 
+/* 写入另一配置页，先数据/CRC、最后提交标记；保留旧有效页，启动按序号选择最新有效记录。 */
 static uint8_t ConfigSave(void)
 {
     PersistedConfig cfg;
@@ -649,6 +650,7 @@ uint8_t UI_SetUnits(uint8_t units, uint8_t persist)
     return 1u;
 }
 
+/* 现有恢复出厂命令仅恢复摄氏单位并保存；不会清空温度校准系数。 */
 void UI_FactoryReset(void)
 {
     system_data.units = unitC;
@@ -656,6 +658,7 @@ void UI_FactoryReset(void)
     UI_NotifyLocalInteraction();
 }
 
+/* 遥测通道按内部 2/1/0 映射，正常温度固定用摄氏度，不随显示单位变化；电量百分比沿用采样电压的线性映射。 */
 void UI_GetTelemetrySnapshot(MathisTelemetrySnapshot *snapshot)
 {
     uint8_t i;
@@ -734,6 +737,7 @@ static void BluetoothHwPowerOff(void)
   * @param    None
   * @note     None
   */
+/* 处理配对、连接及断线重连，统一控制供电和图标；超时计数按 MainControl 调用次数推进。 */
 static void BluetoothTask_100ms(void)
 {
     if (s_bt_poweroff_req != 0u) {
@@ -800,6 +804,7 @@ static void BluetoothTask_100ms(void)
   * @param    None
   * @note     None
   */
+/* 在主控任务集中计算显示值和特殊状态，显示任务只读缓存，避免分段刷新期间切换数据来源。 */
 static void UpdateDisplayCache(void)
 {
     uint8_t no_main_temp;
@@ -948,9 +953,8 @@ void MainControl(void)
         s_idle_ticks_100ms = 0u;
     }
 
-        /* Two-step power-off:
-         * 1) enter shutdown immediately (screen off),
-         * 2) wait KEY0 release, then cut PB3 power latch. */
+        /* 状态切换处已处理关机断电；这里在 KEY0 松开时再次释放 PB3 锁存并回到 idle。
+         * 本轮自动关机也可能直接进入此路径。 */
     if (work_process == shutdown) {
         if (key0 != 0u) {
             Power_Off;

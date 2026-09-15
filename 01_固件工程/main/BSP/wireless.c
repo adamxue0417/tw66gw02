@@ -1,4 +1,4 @@
-/** Mathis BLE framed protocol, including the development OTA transport. */
+/* BLE 串口协议：拆包校验、命令分发、遥测队列和开发版 OTA 传输。 */
 #include "config.h"
 #include "ota_update.h"
 #include "wireless_internal.h"
@@ -59,6 +59,7 @@ static uint8_t ProtocolToInternalChannel(uint8_t channel)
     return (channel < 3u) ? map[channel] : 0xFFu;
 }
 
+/* 系数按通道暂存 AB/CD/E 三部分，收齐后才尝试整体保存；不完整数据会在任务中超时清除。 */
 static uint8_t HandleCoefficientPart(uint8_t subcmd, const uint8_t *payload, uint16_t length)
 {
     uint8_t protocol_channel;
@@ -174,6 +175,7 @@ static void ResyncBufferedFrame(void)
     s_rx_count = 0u; s_rx_expected = 0u;
 }
 
+/* DMA 分块不等于协议帧；跨块累积到声明长度再校验 CRC，坏帧尝试重新寻找帧头。 */
 static void FeedProtocolByte(uint8_t byte)
 {
     if (s_rx_count == 0u) {
@@ -216,19 +218,13 @@ static void SetConnection(uint8_t connected)
 
 static void FeedIncomingByte(uint8_t byte)
 {
-    /* FF 01 / FF 00 are accepted only as payload of a CRC-valid Mathis CMD. */
+    /* 帧内 FF 01/FF 00 只有作为 CRC 正确的 Mathis 命令才生效；独立模块事件走另一入口。 */
     FeedProtocolByte(byte);
 }
 
 static uint8_t HandleModuleTelemetryEvent(const uint8_t *data, uint16_t length)
 {
-    /*
-     * Some EMB1082 firmware revisions report TX-notify subscription state as
-     * a standalone two-byte UART event. This is a module-local transport event,
-     * not an App Mathis message. Only recognise the exact two-byte DMA chunk
-     * while the framed parser is idle, so FF 01/FF 00 inside a split Mathis
-     * payload cannot be mistaken for a connection event.
-     */
+    /* 部分 EMB1082 固件用独立两字节事件报告订阅状态；仅解析器空闲且 DMA 块恰为两字节时识别，避免误读分包中的载荷。 */
     if ((s_rx_count != 0u) || (length != 2u) || (data[0] != MATHIS_CMD_TELEMETRY_CTRL)) {
         return 0u;
     }
@@ -335,6 +331,7 @@ void Wireless_Init(void)
     ClearPending(); OtaUpdate_Init(); COM1.rxFlag = 0u; COM1.rxLen = 0u;
 }
 
+/* 前台消费 USART1 收包，推进系数超时与 OTA；OTA 活跃时暂停周期遥测，末尾处理发送队列。 */
 void WirelessTask(void)
 {
     uint16_t i;

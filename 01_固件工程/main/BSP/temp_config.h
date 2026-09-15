@@ -1,8 +1,8 @@
 #ifndef MATHIS_TEMP_CONFIG_H
 #define MATHIS_TEMP_CONFIG_H
 
-/* Existing acquisition thresholds, in the current measurement domain.
- * Relocation only: do not reinterpret these as confirmed pack voltages. */
+/* 温度上下限单位为摄氏度，确认/恢复计数单位为采样次数。
+ * 电量 mV 为现有采样换算口径；分压比及单节/整组含义待硬件确认。 */
 
 #define PROBE_TEMP_C_LOW_LIMIT   (0)
 #define PROBE_TEMP_C_HIGH_LIMIT  (500)
@@ -16,7 +16,7 @@
 #define BATTERY_LOW_MV_THRESHOLD   (1100u)
 #define BATTERY_RECOVER_MV_THRESHOLD (1200u)
 #define BATTERY_DEBOUNCE_COUNT     (20u)
-/* TempGetTask runs every 500 ms: 120 samples form a 60-second window. */
+/* 测温任务周期参数为 500 tick；120 点窗口约 60 秒，实际随调度和采样耗时变化。 */
 #define BATTERY_ADC_AVERAGE_SAMPLES (120u)
 
 #endif

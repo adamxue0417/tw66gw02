@@ -4,7 +4,7 @@
   * @author 
   * @version V1.0
   * @date
-  * @brief   C8721 screen mapping and display task implementation.
+  * @brief   把主控缓存的温度、状态和图标映射到 C8721 显示缓冲。
   ******************************************************************************
   */
 #include "screen_c8721.h"
@@ -335,7 +335,7 @@ static void ClearGauge(void)
 
 /*
  * Refresh display from screen_data.DisplayMapTable.
- * Call periodically (e.g. every 10 ms) from the scheduler .
+ * 调度周期参数为 10 tick；每次只发送一段，十次调用完成一帧。
  */
 uint8_t  displaystep=0;
 /**
@@ -345,6 +345,7 @@ uint8_t  displaystep=0;
   * @param    None
   * @note     None
   */
+/* 仅 step=0 取主控缓存并组帧，随后分十段发送同一帧；idle/shutdown 保持清空帧。特殊状态 1/2/3 对应 -HI/-LO/---。 */
 void DisplayTask(void)
 {
     int16_t displayTemp;

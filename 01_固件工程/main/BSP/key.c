@@ -4,7 +4,7 @@
   * @author 
   * @version V1.0
   * @date
-  * @brief   Key scan, key event dispatch and key action implementation.
+  * @brief   按键扫描产生事件，由 MainControl 消费并执行显示、单位和蓝牙操作。
   ******************************************************************************
   */
 #include "config.h"
@@ -35,6 +35,7 @@ static uint8_t IsDisplayDashOnlyAlarm(void)
   * @param    None
   * @note     None
   */
+/* 低电平按下；计数单位为扫描次数。待机时 KEY0 去抖后在按下阶段触发，其余短按通常在松开时产生事件。 */
 void Key_Scan(void)
 {
     static uint16_t time_count[KeyNumber];
@@ -69,7 +70,7 @@ void Key_Scan(void)
                 }
                 if ((i == 0u) && (key0_shutdown_sent == 0u) && (key0_press_started_idle == 0u))
                 {
-                    /* Force shutdown immediately at >=1s while still pressed. */
+                    /* 非待机起按的 KEY0 达到 100 次扫描即请求关机，不等松手。 */
                     work_process = shutdown;
                     UI_NotifyLocalInteraction();
                     key0_shutdown_sent = 1u;
@@ -211,7 +212,7 @@ void Key1_short_press(void)
   */
 void Key0_long_press(void)
 {
-    /* KEY0 >=1s: force shutdown from any state (no release required). */
+    /* KEY0 长按事件请求关机；扫描层负责过滤待机起按的例外。 */
     work_process = shutdown;
     UI_NotifyLocalInteraction();
 }
@@ -231,7 +232,7 @@ void Key1_long_press(void)
             break;
 
         default:
-            /* Bluetooth button >=1s: toggle pairing/power-off. */
+            /* 蓝牙长按请求配对或关电；已连接时此请求不生效，由超长按处理。 */
             UI_RequestBluetoothToggle();
             UI_NotifyLocalInteraction();
             break;
@@ -255,6 +256,7 @@ void Key0_very_long_press(void)
   * @param    None
   * @note     None
   */
+/* KEY1 达到 1000 次扫描的超长按，可关闭已连接的蓝牙。 */
 void Key1_very_long_press(void)
 {
     if ((work_process != idle) && (work_process != shutdown) &&
