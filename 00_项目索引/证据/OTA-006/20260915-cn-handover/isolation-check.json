@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "root_head": "b964654c6290591b0f4497e63704fa94161df99f",
+  "root_existing_status_unchanged": true,
+  "root_status_additions": [],
+  "battery_head": "8b31efc993a8030887d66b30b67bf858fe57edad",
+  "battery_status_unchanged": true,
+  "zip_readback_files": 178,
+  "all_markdown_local_links": 19,
+  "source_commit": "8bff5517d895afb6a8c592af9437147daf8f3142"
+}

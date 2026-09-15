@@ -1,0 +1,5 @@
+Bootloader built: 2168 bytes
+Factory image: C:\Users\PC\Desktop\TW66GW02\.handover-local\cn-v3-20260915-175758\TW66GW02_工程交接_精简版_v3_中文注释\01_主程序\main\OTA_Artifacts\mathis_factory_v100.hex
+Factory binary: C:\Users\PC\Desktop\TW66GW02\.handover-local\cn-v3-20260915-175758\TW66GW02_工程交接_精简版_v3_中文注释\01_主程序\main\OTA_Artifacts\mathis_factory_v100.bin (program at 0x08000000)
+OTA artifact: C:\Users\PC\Desktop\TW66GW02\.handover-local\cn-v3-20260915-175758\TW66GW02_工程交接_精简版_v3_中文注释\01_主程序\main\OTA_Artifacts\mathis_ota_v101.ota (23268 bytes, CRC 0x119B455F)
+Separated delivery: C:\Users\PC\Desktop\TW66GW02\.handover-local\cn-v3-20260915-175758\TW66GW02_工程交接_精简版_v3_中文注释\01_主程序\main\OTA_Artifacts\Release_v100_to_v101
